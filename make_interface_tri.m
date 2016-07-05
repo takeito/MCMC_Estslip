@@ -1,26 +1,65 @@
 function make_interface_tri
-[OBS.lat, OBS.lon]=meshgrid(31:0.5:37,132:0.5:139);
-OBS.lat=OBS.lat(:);
-OBS.lon=OBS.lon(:);
-OBS.hight=ones(size(OBS.lat));
-sub_f='./plate_phs.txt';
-bound_f='./bound.txt';
+PRM.OBS_F='./data_set.txt';
+PRM.SUB_F='./plate_phs.txt';
+PRM.BOU_F='./bound.txt';
+PRM.NMESH=1000;
 %
-n_mesh=1000;
-[s]=init_interface_tri(sub_f,bound_f,n_mesh.*10);
-[s]=down_tri(s,OBS,n_mesh);
+OBS=READ_OBS(PRM);
+s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
+s=DOWN_TRI(s,OBS,PRM.NMESH);
+save('plate_phs',s)
+end
+%% READ OBSERVATION DATA
+function [OBS]=READ_OBS(PRM)
+% moditied 2015/11/11 by T.ITO
+%-------------------
+% format:
+% site_name lon lat EW_comp. NS_comp. UD_comp. ERR_EW ERR_NS ERR_UD 
+%-------------------
+Fid_OBS=fopen(PRM.OBS_F,'r');
+N=0;
+while 1
+  tline=fgetl(Fid_OBS);
+  if ~ischar(tline); break; end
+  str=strsplit(tline);
+  N=N+1;
+% TODO: FOR TEST READ TWO BLOCK REGION
+  if N<=194
+    OBS(1).LAT(N) =str2double(cellstr(str(3))); %LAT
+    OBS(1).LON(N) =str2double(cellstr(str(2))); %LON
+    OBS(1).HIG(N) =str2double(cellstr(str(4))); %HIG
+  else
+    OBS(2).LAT(N-194) =str2double(cellstr(str(3))); %LAT
+    OBS(2).LON(N-194) =str2double(cellstr(str(2))); %LON
+    OBS(2).HIG(N-194) =str2double(cellstr(str(4))); %HIG
+  end
+  OBS(1).NAME(N)=cellstr(str(1));
+  OBS(1).ALAT(N) =str2double(cellstr(str(3))); %LAT
+  OBS(1).ALON(N) =str2double(cellstr(str(2))); %LON
+  OBS(1).AHIG(N) =str2double(cellstr(str(4))); %HIG
+  OBS(1).EVEC(N) =str2double(cellstr(str(5))); %E-W
+  OBS(1).NVEC(N) =str2double(cellstr(str(6))); %N-S
+  OBS(1).HVEC(N) =str2double(cellstr(str(7))); %U-D
+  OBS(1).YYY(3*N-2) =str2double(cellstr(str(5))); %E-W
+  OBS(1).YYY(3*N-1) =str2double(cellstr(str(6))); %N-S
+  OBS(1).YYY(3*N)   =str2double(cellstr(str(7))); %U-D
+  OBS(1).EEE(3*N-2) =str2double(cellstr(str(8))); %E-W
+  OBS(1).EEE(3*N-1) =str2double(cellstr(str(9))); %N-S
+  OBS(1).EEE(3*N)   =str2double(cellstr(str(10))); %U-D
+end
+fprintf('==================\nNumber of observation site : %i \n',N)
 end
 %====================================================
-function [S]=down_tri(S,OBS,n_mesh)
-alat0=(mean(OBS.lat)+mean(S.lat))./2;
-alon0=(mean(OBS.lon)+mean(S.lon))./2;
-[gx,gy]=PLTXY(OBS.lat,OBS.lon,alat0,alon0);
+function [S]=DOWN_TRI(S,OBS,n_mesh)
+alat0=(mean(OBS(1).ALAT)+mean(S.lat))./2;
+alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
+[gx,gy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,alat0,alon0);
 [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
-gz=OBS.hight./1000;
+gz=OBS(1).AHIG./1000;
 sz=S.dep;
 Ua=zeros(length(S.tri(:,1)),1);
 for n=1:length(S.tri)
-  [U]=CalcTriDisps(gx,gy,gz,sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,1,0);
+  [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,0,1);
   Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 Ntri=length(S.tri);
@@ -59,7 +98,7 @@ while Ntri > n_mesh
   Ua=zeros(nn,1);
   for n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-     [U]=CalcTriDisps(gx,gy,gz,sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,1,0);
+     [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
     else
      Ua(n)=Ua_tmp(n);
@@ -70,15 +109,22 @@ while Ntri > n_mesh
   Fid=figure;
   plot(S.bound(:,1),S.bound(:,2),'r');
   hold on;
-  plot(OBS(:).lon,OBS(:).lat,'.g');
+  plot(OBS(1).ALON,OBS(1).ALAT,'.g');
   triplot(S.tri,S.lon,S.lat);
   title(['Number of triangels= ',num2str(Ntri)]);
   print(Fid,'-depsc ',['./figs/Mesh',num2str(Ntri)]);
   close(Fid)
+  figure(30); clf
+  plot(S.bound(:,1),S.bound(:,2),'r');
+  hold on;
+  plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+  triplot(S.tri,S.lon,S.lat);
+  title(['Number of triangels= ',num2str(Ntri)]);
+  pause(.1)
 end
 end
 %====================================================
-function [s]=init_interface_tri(sub_f,bound_f,int_mesh)
+function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,int_mesh)
 %====================================================
 Fid=fopen(sub_f);
 dep_sub=textscan(Fid,'%f%f%f');
@@ -93,7 +139,7 @@ bound=cell2mat(bound);
 F=scatteredInterpolant(dep_sub(:,1),dep_sub(:,2),dep_sub(:,3),'natural');
 min_lon=min(bound(:,1)); max_lon=max(bound(:,1));
 min_lat=min(bound(:,2)); max_lat=max(bound(:,2));
-figure(10)
+figure(10); clf
 plot(bound(:,1),bound(:,2),'r')
 hold on
 n=0;
@@ -127,7 +173,7 @@ for n=1:ntri
     s.tri(nn,:)=tri(n,:);
   end  
 end
-figure(20)
+figure(20); clf
 plot(bound(:,1),bound(:,2),'r')
 hold on
 triplot(s.tri,s.lon,s.lat)
