@@ -1,7 +1,9 @@
 function make_interface_tri
-[OBS.lat, OBS.lon]=meshgrid(20:30,130:140);
+[OBS.lat, OBS.lon]=meshgrid(31:0.5:37,132:0.5:139);
+OBS.lat=OBS.lat(:);
+OBS.lon=OBS.lon(:);
 OBS.hight=ones(size(OBS.lat));
-sub_f='./subfault.txt';
+sub_f='./plate_phs.txt';
 bound_f='./bound.txt';
 %
 n_mesh=1000;
@@ -16,34 +18,63 @@ alon0=(mean(OBS.lon)+mean(S.lon))./2;
 [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
 gz=OBS.hight./1000;
 sz=S.dep;
-Ua=zeros(length(S.tri),1);
+Ua=zeros(length(S.tri(:,1)),1);
 for n=1:length(S.tri)
-  [U]=CalcTriDisps(gx,gy,gz,sx(S.tri(n)),sy(S.tri(n)),sz(S.tri(n)),0.25,0,1,0);
-  Ua(n)=sqrt(U.x.^2+U.y.^2+U.z.^2);
+  [U]=CalcTriDisps(gx,gy,gz,sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,1,0);
+  Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 Ntri=length(S.tri);
 while Ntri > n_mesh
-  r_index=ones(length(S.lat,1));
+  r_index=ones(length(S.lat),1);
   [~,index]=min(Ua);
-  min_tri=S.tri(index);
-  f_tri=zeros(length(f_tri),1);
+  min_tri=S.tri(index,:);
+  f_tri=zeros(3,1);
   for n=1:3
     f_tri(n)=sum(find(S.tri,min_tri(n)));
   end
   [~,index]=max(f_tri);
   r_index(min_tri(index))=0;
+  r_index=logical(r_index);
   S.lat=S.lat(r_index);
   S.lon=S.lon(r_index);
   S.dep=S.dep(r_index);
   S.tri=delaunay(S.lon,S.lat);
   [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
   sz=S.dep;
-  Ua=zeros(length(S.tri),1);
-  for n=1:length(S.tri)
-    [U]=CalcTriDisps(gx,gy,gz,sx(S.tri(n)),sy(S.tri(n)),sz(S.tri(n)),0.25,0,1,0);
-    Ua(n)=sqrt(U.x.^2+U.y.^2+U.z.^2);
+%---------
+  ntri=length(S.tri);
+  nn=0;
+  Stri=[];
+  for n=1:ntri
+    glon=mean(S.lon(S.tri(n,:)));  
+    glat=mean(S.lat(S.tri(n,:)));
+    ID=inpolygon(glon,glat,S.bound(:,1),S.bound(:,2));
+    if ID==1
+      nn=nn+1;
+      Stri(nn,:)=S.tri(n,:);
+    end  
   end
-  n_mesh=length(S.tri);
+%---------
+  Ua_tmp=Ua;
+  Ua=zeros(nn,1);
+  for n=1:nn
+    if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
+     [U]=CalcTriDisps(gx,gy,gz,sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,1,0);
+     Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+    else
+     Ua(n)=Ua_tmp(n);
+    end
+  end
+  S.tri=Stri;
+  Ntri=length([S.tri]);
+  Fid=figure;
+  plot(S.bound(:,1),S.bound(:,2),'r');
+  hold on;
+  plot(OBS(:).lon,OBS(:).lat,'.g');
+  triplot(S.tri,S.lon,S.lat);
+  title(['Number of triangels= ',num2str(Ntri)]);
+  print(Fid,'-depsc ',['./figs/Mesh',num2str(Ntri)]);
+  close(Fid)
 end
 end
 %====================================================
@@ -62,7 +93,7 @@ bound=cell2mat(bound);
 F=scatteredInterpolant(dep_sub(:,1),dep_sub(:,2),dep_sub(:,3),'natural');
 min_lon=min(bound(:,1)); max_lon=max(bound(:,1));
 min_lat=min(bound(:,2)); max_lat=max(bound(:,2));
-figure
+figure(10)
 plot(bound(:,1),bound(:,2),'r')
 hold on
 n=0;
@@ -96,10 +127,13 @@ for n=1:ntri
     s.tri(nn,:)=tri(n,:);
   end  
 end
-figure
+figure(20)
 plot(bound(:,1),bound(:,2),'r')
 hold on
-triplot(s.tri,s.lon,s.lat);
+triplot(s.tri,s.lon,s.lat)
+pause(.1)
+s.bound=bound;
+s.dep_sub=dep_sub;
 end
 %====================================================
 function [U] = CalcTriDisps(sx, sy, sz, x, y, z, pr, ss, ts, ds)
