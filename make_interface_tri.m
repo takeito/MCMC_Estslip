@@ -1,5 +1,6 @@
 function make_interface_tri
-PRM.OBS_F='./data_set.txt';
+% PRM.OBS_F='./data_set.txt';
+PRM.OBS_F='./geonet_jcg_nu.txt'
 PRM.SUB_F='./plate_phs.txt';
 PRM.BOU_F='./bound.txt';
 PRM.NMESH=100;
