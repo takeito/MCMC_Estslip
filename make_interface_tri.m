@@ -2,7 +2,7 @@ function make_interface_tri
 PRM.OBS_F='./data_set.txt';
 PRM.SUB_F='./plate_phs.txt';
 PRM.BOU_F='./bound.txt';
-PRM.NMESH=1000;
+PRM.NMESH=100;
 %
 OBS=READ_OBS(PRM);
 s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
