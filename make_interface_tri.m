@@ -3,7 +3,7 @@ function make_interface_tri
 PRM.OBS_F='./geonet_jcg_nu.txt'
 PRM.SUB_F='./plate_phs.txt';
 PRM.BOU_F='./bound.txt';
-PRM.NMESH=200;
+PRM.NMESH=300;
 %
 OBS=READ_OBS(PRM);
 s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
@@ -166,8 +166,8 @@ tri = delaunay(s.lon,s.lat);
 %====================================================
 ntri=length(tri);
 nn=0;
-parfor n=1:ntri
-% for n=1:ntri
+% parfor n=1:ntri
+for n=1:ntri
   glon=mean(s.lon(tri(n,:)));  
   glat=mean(s.lat(tri(n,:)));
   ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
