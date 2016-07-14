@@ -3,12 +3,12 @@ function make_interface_tri
 PRM.OBS_F='./geonet_jcg_nu.txt'
 PRM.SUB_F='./plate_phs.txt';
 PRM.BOU_F='./bound.txt';
-PRM.NMESH=100;
+PRM.NMESH=200;
 %
 OBS=READ_OBS(PRM);
 s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
 s=DOWN_TRI(s,OBS,PRM.NMESH);
-save('plate_phs',s)
+save('plate_phs','s')
 end
 %% READ OBSERVATION DATA
 function [OBS]=READ_OBS(PRM)
@@ -97,7 +97,8 @@ while Ntri > n_mesh
 %---------
   Ua_tmp=Ua;
   Ua=zeros(nn,1);
-  for n=1:nn
+  parfor n=1:nn
+%   for n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
@@ -165,7 +166,8 @@ tri = delaunay(s.lon,s.lat);
 %====================================================
 ntri=length(tri);
 nn=0;
-for n=1:ntri
+parfor n=1:ntri
+% for n=1:ntri
   glon=mean(s.lon(tri(n,:)));  
   glat=mean(s.lat(tri(n,:)));
   ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
