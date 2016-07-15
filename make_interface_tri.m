@@ -97,8 +97,8 @@ while Ntri > n_mesh
 %---------
   Ua_tmp=Ua;
   Ua=zeros(nn,1);
-  parfor n=1:nn
-%   for n=1:nn
+%   parfor n=1:nn
+  for n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
@@ -167,15 +167,25 @@ tri = delaunay(s.lon,s.lat);
 ntri=length(tri);
 nn=0;
 % parfor n=1:ntri
-for n=1:ntri
-  glon=mean(s.lon(tri(n,:)));  
-  glat=mean(s.lat(tri(n,:)));
-  ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
-  if ID==1
-    nn=nn+1;
-    s.tri(nn,:)=tri(n,:);
-  end  
-end
+% for n=1:ntri
+%   glon=mean(s.lon(tri(n,:)));  
+%   glat=mean(s.lat(tri(n,:)));
+%   ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
+%   if ID==1
+%     nn=nn+1;
+%     s.tri(nn,:)=tri(n,:);
+%   end  
+% end
+
+n=1:ntri;
+glon=mean(s.lon(tri(n,:)),2);
+glat=mean(s.lat(tri(n,:)),2);
+ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
+nn1=size(ID==1);
+nn=nn1(1,1);
+s.tri=tri(find(ID==1),:);
+
+
 figure(20); clf
 plot(bound(:,1),bound(:,2),'r')
 hold on
