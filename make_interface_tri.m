@@ -3,7 +3,7 @@ function make_interface_tri
 PRM.OBS_F='./geonet_jcg_nu.txt'
 PRM.SUB_F='./plate_phs.txt';
 PRM.BOU_F='./bound.txt';
-PRM.NMESH=300;
+PRM.NMESH=100;
 %
 OBS=READ_OBS(PRM);
 s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
@@ -26,27 +26,46 @@ while 1
   N=N+1;
 % TODO: FOR TEST READ TWO BLOCK REGION
   if N<=194
+%     OBS(1).LAT(N) =str2double(cellstr(str(3))); %LAT
+%     OBS(1).LON(N) =str2double(cellstr(str(2))); %LON
+%     OBS(1).HIG(N) =str2double(cellstr(str(4))); %HIG
     OBS(1).LAT(N) =str2double(cellstr(str(3))); %LAT
     OBS(1).LON(N) =str2double(cellstr(str(2))); %LON
     OBS(1).HIG(N) =str2double(cellstr(str(4))); %HIG
+
   else
-    OBS(2).LAT(N-194) =str2double(cellstr(str(3))); %LAT
-    OBS(2).LON(N-194) =str2double(cellstr(str(2))); %LON
-    OBS(2).HIG(N-194) =str2double(cellstr(str(4))); %HIG
+%     OBS(2).LAT(N-194) =str2double(cellstr(str(3))); %LAT
+%     OBS(2).LON(N-194) =str2double(cellstr(str(2))); %LON
+%     OBS(2).HIG(N-194) =str2double(cellstr(str(4))); %HIG
+    OBS(2).LAT(N-194) =single(str2double(cellstr(str(3)))); %LAT
+    OBS(2).LON(N-194) =single(str2double(cellstr(str(2)))); %LON
+    OBS(2).HIG(N-194) =single(str2double(cellstr(str(4)))); %HIG
   end
-  OBS(1).NAME(N)=cellstr(str(1));
-  OBS(1).ALAT(N) =str2double(cellstr(str(3))); %LAT
-  OBS(1).ALON(N) =str2double(cellstr(str(2))); %LON
-  OBS(1).AHIG(N) =str2double(cellstr(str(4))); %HIG
-  OBS(1).EVEC(N) =str2double(cellstr(str(5))); %E-W
-  OBS(1).NVEC(N) =str2double(cellstr(str(6))); %N-S
-  OBS(1).HVEC(N) =str2double(cellstr(str(7))); %U-D
-  OBS(1).YYY(3*N-2) =str2double(cellstr(str(5))); %E-W
-  OBS(1).YYY(3*N-1) =str2double(cellstr(str(6))); %N-S
-  OBS(1).YYY(3*N)   =str2double(cellstr(str(7))); %U-D
-  OBS(1).EEE(3*N-2) =str2double(cellstr(str(8))); %E-W
-  OBS(1).EEE(3*N-1) =str2double(cellstr(str(9))); %N-S
-  OBS(1).EEE(3*N)   =str2double(cellstr(str(10))); %U-D
+%   OBS(1).NAME(N)=cellstr(str(1));
+%   OBS(1).ALAT(N) =str2double(cellstr(str(3))); %LAT
+%   OBS(1).ALON(N) =str2double(cellstr(str(2))); %LON
+%   OBS(1).AHIG(N) =str2double(cellstr(str(4))); %HIG
+%   OBS(1).EVEC(N) =str2double(cellstr(str(5))); %E-W
+%   OBS(1).NVEC(N) =str2double(cellstr(str(6))); %N-S
+%   OBS(1).HVEC(N) =str2double(cellstr(str(7))); %U-D
+%   OBS(1).YYY(3*N-2) =str2double(cellstr(str(5))); %E-W
+%   OBS(1).YYY(3*N-1) =str2double(cellstr(str(6))); %N-S
+%   OBS(1).YYY(3*N)   =str2double(cellstr(str(7))); %U-D
+%   OBS(1).EEE(3*N-2) =str2double(cellstr(str(8))); %E-W
+%   OBS(1).EEE(3*N-1) =str2double(cellstr(str(9))); %N-S
+%   OBS(1).EEE(3*N)   =str2double(cellstr(str(10))); %U-D
+  OBS(1).ALAT(N) =single(str2double(cellstr(str(3)))); %LAT
+  OBS(1).ALON(N) =single(str2double(cellstr(str(2)))); %LON
+  OBS(1).AHIG(N) =single(str2double(cellstr(str(4)))); %HIG
+  OBS(1).EVEC(N) =single(str2double(cellstr(str(5)))); %E-W
+  OBS(1).NVEC(N) =single(str2double(cellstr(str(6)))); %N-S
+  OBS(1).HVEC(N) =single(str2double(cellstr(str(7)))); %U-D
+  OBS(1).YYY(3*N-2) =single(str2double(cellstr(str(5)))); %E-W
+  OBS(1).YYY(3*N-1) =single(str2double(cellstr(str(6)))); %N-S
+  OBS(1).YYY(3*N)   =single(str2double(cellstr(str(7)))); %U-D
+  OBS(1).EEE(3*N-2) =single(str2double(cellstr(str(8)))); %E-W
+  OBS(1).EEE(3*N-1) =single(str2double(cellstr(str(9)))); %N-S
+  OBS(1).EEE(3*N)   =single(str2double(cellstr(str(10)))); %U-D
 end
 fprintf('==================\nNumber of observation site : %i \n',N)
 end
@@ -72,6 +91,7 @@ while Ntri > n_mesh
   for n=1:3
     f_tri(n)=sum(find(S.tri,min_tri(n)));
   end
+  
   [~,index]=max(f_tri);
   r_index(min_tri(index))=0;
   r_index=logical(r_index);
@@ -85,27 +105,63 @@ while Ntri > n_mesh
   ntri=length(S.tri);
   nn=0;
   Stri=[];
-  for n=1:ntri
-    glon=mean(S.lon(S.tri(n,:)));  
-    glat=mean(S.lat(S.tri(n,:)));
-    ID=inpolygon(glon,glat,S.bound(:,1),S.bound(:,2));
-    if ID==1
-      nn=nn+1;
-      Stri(nn,:)=S.tri(n,:);
-    end  
-  end
+%   for n=1:ntri
+%     glon=mean(S.lon(S.tri(n,:)));  
+%     glat=mean(S.lat(S.tri(n,:)));
+%     ID=inpolygon(glon,glat,S.bound(:,1),S.bound(:,2));
+%     if ID==1
+%       nn=nn+1;
+%       Stri(nn,:)=S.tri(n,:);
+%     end  
+%   end
+    
+  nn=0;
+  n=1:ntri;
+  glon=mean(S.lon(S.tri(n,:)),2);
+  glat=mean(S.lat(S.tri(n,:)),2);
+  ID=inpolygon(glon,glat,S.bound(:,1),S.bound(:,2));
+  ID1ind=find(ID==1);
+  nn1=size(ID1ind);nn=nn1(1,1);
+  Stri=S.tri(ID1ind,:);
+  clear n
+
+  
 %---------
   Ua_tmp=Ua;
   Ua=zeros(nn,1);
 %   parfor n=1:nn
-  for n=1:nn
+
+
+% nn=0;
+% n=1:ntri;
+% glon=mean(s.lon(tri(n,:)),2);
+% glat=mean(s.lat(tri(n,:)),2);
+% ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
+% ID1ind=find(ID==1);
+% nn1=size(ID1ind);nn=nn1(1,1);
+% s.tri=tri(ID1ind,:);
+% clear n
+
+%   n=1:nn;
+%   nc = find(Stri(n,1)~=S.tri(n,1) | Stri(n,2)~=S.tri(n,2) | Stri(n,3)~=S.tri(n,3));
+%   test1=sx(Stri(nc,:));test2=sy(Stri(nc,:));
+%   [U]=CalcTriDisps(gx',gy',gz',sx(Stri(nc,:)),sy(Stri(nc,:)),sz(Stri(nc,:)),0.25,0,0,1);
+%   
+  
+  
+  
+  parfor n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+     kuzu(n)=n;
     else
      Ua(n)=Ua_tmp(n);
     end
   end
+  
+  
+  
   S.tri=Stri;
   Ntri=length([S.tri]);
   Fid=figure;
@@ -165,8 +221,8 @@ plot3(s.lon,s.lat,s.dep,'.')
 tri = delaunay(s.lon,s.lat);
 %====================================================
 ntri=length(tri);
-nn=0;
-% parfor n=1:ntri
+% nn=0;
+% parfor n=1:ntri                               % parallel roop
 % for n=1:ntri
 %   glon=mean(s.lon(tri(n,:)));  
 %   glat=mean(s.lat(tri(n,:)));
@@ -176,14 +232,17 @@ nn=0;
 %     s.tri(nn,:)=tri(n,:);
 %   end  
 % end
+% clear n
 
+nn=0;
 n=1:ntri;
 glon=mean(s.lon(tri(n,:)),2);
 glat=mean(s.lat(tri(n,:)),2);
 ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
-nn1=size(ID==1);
-nn=nn1(1,1);
-s.tri=tri(find(ID==1),:);
+ID1ind=find(ID==1);
+nn1=size(ID1ind);nn=nn1(1,1);
+s.tri=tri(ID1ind,:);
+clear n
 
 
 figure(20); clf
