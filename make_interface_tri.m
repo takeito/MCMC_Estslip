@@ -1,13 +1,23 @@
 function make_interface_tri
 % PRM.OBS_F='./data_set.txt';
-PRM.OBS_F='./geonet_jcg_nu.txt'
+PRM.OBS_F='./geonet_jcg_nu.txt';
 PRM.SUB_F='./plate_phs.txt';
 PRM.BOU_F='./bound.txt';
-PRM.NMESH=100;
+%use ramdisk
+%ramdloc='/media/ramdisk/ramd/';
+savefolder='./figs/Mesh';
+%check ramdisk exist and make folder
+%if exist(savefolder,'dir')==0;
+%    mkdir(savefolder);
+%end
+
+PRM.NMESH=750;
 %
 OBS=READ_OBS(PRM);
-s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
-s=DOWN_TRI(s,OBS,PRM.NMESH);
+% s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
+s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*5);
+s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder);
+
 save('plate_phs','s')
 end
 %% READ OBSERVATION DATA
@@ -25,22 +35,15 @@ while 1
   str=strsplit(tline);
   N=N+1;
 % TODO: FOR TEST READ TWO BLOCK REGION
-  if N<=194
+%   if N<=194
 %     OBS(1).LAT(N) =str2double(cellstr(str(3))); %LAT
 %     OBS(1).LON(N) =str2double(cellstr(str(2))); %LON
 %     OBS(1).HIG(N) =str2double(cellstr(str(4))); %HIG
-    OBS(1).LAT(N) =str2double(cellstr(str(3))); %LAT
-    OBS(1).LON(N) =str2double(cellstr(str(2))); %LON
-    OBS(1).HIG(N) =str2double(cellstr(str(4))); %HIG
-
-  else
+%   else
 %     OBS(2).LAT(N-194) =str2double(cellstr(str(3))); %LAT
 %     OBS(2).LON(N-194) =str2double(cellstr(str(2))); %LON
 %     OBS(2).HIG(N-194) =str2double(cellstr(str(4))); %HIG
-    OBS(2).LAT(N-194) =single(str2double(cellstr(str(3)))); %LAT
-    OBS(2).LON(N-194) =single(str2double(cellstr(str(2)))); %LON
-    OBS(2).HIG(N-194) =single(str2double(cellstr(str(4)))); %HIG
-  end
+%   end
 %   OBS(1).NAME(N)=cellstr(str(1));
 %   OBS(1).ALAT(N) =str2double(cellstr(str(3))); %LAT
 %   OBS(1).ALON(N) =str2double(cellstr(str(2))); %LON
@@ -70,7 +73,7 @@ end
 fprintf('==================\nNumber of observation site : %i \n',N)
 end
 %====================================================
-function [S]=DOWN_TRI(S,OBS,n_mesh)
+function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc)
 alat0=(mean(OBS(1).ALAT)+mean(S.lat))./2;
 alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
 [gx,gy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,alat0,alon0);
@@ -78,7 +81,8 @@ alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
 gz=OBS(1).AHIG./1000;
 sz=S.dep;
 Ua=zeros(length(S.tri(:,1)),1);
-for n=1:length(S.tri)
+parfor n=1:length(S.tri)
+% for n=1:length(S.tri)
   [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,0,1);
   Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
@@ -103,7 +107,7 @@ while Ntri > n_mesh
   sz=S.dep;
 %---------
   ntri=length(S.tri);
-  nn=0;
+%   nn=0;
   Stri=[];
 %   for n=1:ntri
 %     glon=mean(S.lon(S.tri(n,:)));  
@@ -123,15 +127,12 @@ while Ntri > n_mesh
   ID1ind=find(ID==1);
   nn1=size(ID1ind);nn=nn1(1,1);
   Stri=S.tri(ID1ind,:);
-  clear n
+%   clear n
 
   
 %---------
   Ua_tmp=Ua;
   Ua=zeros(nn,1);
-%   parfor n=1:nn
-
-
 % nn=0;
 % n=1:ntri;
 % glon=mean(s.lon(tri(n,:)),2);
@@ -148,29 +149,30 @@ while Ntri > n_mesh
 %   [U]=CalcTriDisps(gx',gy',gz',sx(Stri(nc,:)),sy(Stri(nc,:)),sz(Stri(nc,:)),0.25,0,0,1);
 %   
   
-  
-  
+% try
   parfor n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-     kuzu(n)=n;
     else
      Ua(n)=Ua_tmp(n);
     end
   end
-  
-  
-  
+% catch
+%     keyboard
+% end
+ 
   S.tri=Stri;
   Ntri=length([S.tri]);
-  Fid=figure;
+  
+  Fid=figure('visible','off');
   plot(S.bound(:,1),S.bound(:,2),'r');
   hold on;
   plot(OBS(1).ALON,OBS(1).ALAT,'.g');
   triplot(S.tri,S.lon,S.lat);
   title(['Number of triangels= ',num2str(Ntri)]);
-  print(Fid,'-depsc ',['./figs/Mesh',num2str(Ntri)]);
+  fprintf('Number of triangels=%4.0f \n ',Ntri)
+  print(Fid,'-depsc ',[saveloc,num2str(Ntri)]);
   close(Fid)
   figure(30); clf
   plot(S.bound(:,1),S.bound(:,2),'r');
@@ -200,8 +202,10 @@ min_lat=min(bound(:,2)); max_lat=max(bound(:,2));
 figure(10); clf
 plot(bound(:,1),bound(:,2),'r')
 hold on
+% int_mesh1=int_mesh*10
 n=0;
 while n<int_mesh
+% while n<int_mesh1
   slat=(max_lat-min_lat).*rand(1)+min_lat;
   slon=(max_lon-min_lon).*rand(1)+min_lon;
   ID=inpolygon(slon,slat,bound(:,1),bound(:,2));
@@ -242,7 +246,7 @@ ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
 ID1ind=find(ID==1);
 nn1=size(ID1ind);nn=nn1(1,1);
 s.tri=tri(ID1ind,:);
-clear n
+% clear n
 
 
 figure(20); clf
@@ -331,8 +335,9 @@ z(4)                         = z(1);
 for iTri = 1:3
    % Calculate strike and dip of current leg
    strike                   = 180/pi*(atan2(y(iTri+1)-y(iTri), x(iTri+1)-x(iTri)));
-   segMapLength             = sqrt((x(iTri)-x(iTri+1))^2 + (y(iTri)-y(iTri+1))^2);
-   [rx,ry]                  = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
+%    segMapLength             = sqrt((x(iTri)-x(iTri+1))^2 + (y(iTri)-y(iTri+1))^2);
+   [rx,~]                  = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
+%    [rx,ry]                  = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
    dip                      = 180/pi*(atan2(z(iTri+1)-z(iTri), rx));
 %   
    if dip >= 0
@@ -442,6 +447,8 @@ R2bar             = y1.*y1 + y2.*y2 + y3bar.*y3bar;
 Rbar              = sqrt(R2bar);
 F                 = -atan2(y2, y1) + atan2(y2, z1) + atan2(y2.*R.*sinbeta, y1.*z1+(y2.*y2).*cosbeta);
 Fbar              = -atan2(y2, y1) + atan2(y2, z1bar) + atan2(y2.*Rbar.*sinbeta, y1.*z1bar+(y2.*y2).*cosbeta);
+denom1            = 8.*pi.*(1-nu);   %add by Kimura(test)
+denom2            = denom1./2;   %add by Kimura(test)
 
 % Case I: Burgers vector (B1,0,0)
 v1InfB1           = 2.*(1-nu).*(F+Fbar) - y1.*y2.*(1./(R.*(R-y3)) + 1./(Rbar.*(Rbar+y3bar))) - ...
@@ -449,9 +456,13 @@ v1InfB1           = 2.*(1-nu).*(F+Fbar) - y1.*y2.*(1./(R.*(R-y3)) + 1./(Rbar.*(R
 v2InfB1           = (1-2.*nu).*(log(R-y3)+log(Rbar+y3bar) - cosbeta.*(log(R-z3)+log(Rbar+z3bar))) - ...
                     y2.*y2.*(1./(R.*(R-y3))+1./(Rbar.*(Rbar+y3bar)) - cosbeta.*(1./(R.*(R-z3))+1./(Rbar.*(Rbar+z3bar))));
 v3InfB1           = y2 .* (1./R - 1./Rbar - cosbeta.*((R.*cosbeta-y3)./(R.*(R-z3)) - (Rbar.*cosbeta+y3bar)./(Rbar.*(Rbar+z3bar))));
-v1InfB1           = v1InfB1 ./ (8.*pi.*(1-nu));
-v2InfB1           = v2InfB1 ./ (8.*pi.*(1-nu));
-v3InfB1           = v3InfB1 ./ (8.*pi.*(1-nu));
+% v1InfB1           = v1InfB1 ./ (8.*pi.*(1-nu));
+% v2InfB1           = v2InfB1 ./ (8.*pi.*(1-nu));
+% v3InfB1           = v3InfB1 ./ (8.*pi.*(1-nu));
+v1InfB1           = v1InfB1 ./ denom1;
+v2InfB1           = v2InfB1 ./ denom1;
+v3InfB1           = v3InfB1 ./ denom1;
+
 
 v1CB1             = -2.*(1-nu).*(1-2.*nu).*Fbar.*(cotbeta.*cotbeta) + (1-2.*nu).*y2./(Rbar+y3bar) .* ((1-2.*nu-a./Rbar).*cotbeta - y1./(Rbar+y3bar).*(nu+a./Rbar)) + ...
                     (1-2.*nu).*y2.*cosbeta.*cotbeta./(Rbar+z3bar).*(cosbeta+a./Rbar) + a.*y2.*(y3bar-a).*cotbeta./(Rbar.*Rbar.*Rbar) + ...
@@ -467,9 +478,13 @@ v3CB1             = 2.*(1-nu).*(((1-2.*nu).*Fbar.*cotbeta) + (y2./(Rbar+y3bar).*
                     y2.*(y3bar-a)./Rbar.*(2.*nu./(Rbar+y3bar)+a./(Rbar.*Rbar)) + ...
                     y2.*(y3bar-a).*cosbeta./(Rbar.*(Rbar+z3bar)).*(1-2.*nu-(Rbar.*cosbeta+y3bar)./(Rbar+z3bar).*(cosbeta + a./Rbar) - a.*y3bar./(Rbar.*Rbar));
 
-v1CB1             = v1CB1 ./ (4.*pi.*(1-nu));
-v2CB1             = v2CB1 ./ (4.*pi.*(1-nu));
-v3CB1             = v3CB1 ./ (4.*pi.*(1-nu));
+% v1CB1             = v1CB1 ./ (4.*pi.*(1-nu));
+% v2CB1             = v2CB1 ./ (4.*pi.*(1-nu));
+% v3CB1             = v3CB1 ./ (4.*pi.*(1-nu));
+v1CB1             = v1CB1 ./ denom2;
+v2CB1             = v2CB1 ./ denom2;
+v3CB1             = v3CB1 ./ denom2;
+
 
 v1B1              = v1InfB1 + v1CB1;
 v2B1              = v2InfB1 + v2CB1;
@@ -481,9 +496,12 @@ v1InfB2           = -(1-2.*nu).*(log(R-y3) + log(Rbar+y3bar)-cosbeta.*(log(R-z3)
                     y1.*y1.*(1./(R.*(R-y3))+1./(Rbar.*(Rbar+y3bar))) + z1.*(R.*sinbeta-y1)./(R.*(R-z3)) + z1bar.*(Rbar.*sinbeta-y1)./(Rbar.*(Rbar+z3bar));
 v2InfB2           = 2.*(1-nu).*(F+Fbar) + y1.*y2.*(1./(R.*(R-y3))+1./(Rbar.*(Rbar+y3bar))) - y2.*(z1./(R.*(R-z3))+z1bar./(Rbar.*(Rbar+z3bar)));
 v3InfB2           = -(1-2.*nu).*sinbeta.*(log(R-z3)-log(Rbar+z3bar)) - y1.*(1./R-1./Rbar) + z1.*(R.*cosbeta-y3)./(R.*(R-z3)) - z1bar.*(Rbar.*cosbeta+y3bar)./(Rbar.*(Rbar+z3bar));
-v1InfB2           = v1InfB2 ./ (8.*pi.*(1-nu));
-v2InfB2           = v2InfB2 ./ (8.*pi.*(1-nu));
-v3InfB2           = v3InfB2 ./ (8.*pi.*(1-nu));
+% v1InfB2           = v1InfB2 ./ (8.*pi.*(1-nu));
+% v2InfB2           = v2InfB2 ./ (8.*pi.*(1-nu));
+% v3InfB2           = v3InfB2 ./ (8.*pi.*(1-nu));
+v1InfB2           = v1InfB2 ./ denom1;
+v2InfB2           = v2InfB2 ./ denom1;
+v3InfB2           = v3InfB2 ./ denom1;
 
 v1CB2             = (1-2.*nu).*((2.*(1-nu).*(cotbeta.*cotbeta)+nu).*log(Rbar+y3bar) - (2.*(1-nu).*(cotbeta.*cotbeta)+1).*cosbeta.*log(Rbar+z3bar)) + ...
                     (1-2.*nu)./(Rbar+y3bar).* (-(1-2.*nu).*y1.*cotbeta+nu.*y3bar-a+a.*y1.*cotbeta./Rbar + (y1.*y1)./(Rbar+y3bar).*(nu+a./Rbar)) - ...
@@ -498,9 +516,12 @@ v3CB2             = -2.*(1-nu).*(1-2.*nu).*cotbeta .* (log(Rbar+y3bar)-cosbeta.*
                     2.*(1-nu).*y1./(Rbar+y3bar).*(2.*nu+a./Rbar) + 2.*(1-nu).*z1bar./(Rbar+z3bar).*(cosbeta+a./Rbar) + ...
                    (y3bar-a)./Rbar.*((1-2.*nu).*cotbeta-2.*nu.*y1./(Rbar+y3bar)-a.*y1./(Rbar.*Rbar)) - ...
                    (y3bar-a)./(Rbar+z3bar).*(cosbeta.*sinbeta + (Rbar.*cosbeta+y3bar).*cotbeta./Rbar.*(2.*(1-nu).*cosbeta - (Rbar.*cosbeta+y3bar)./(Rbar+z3bar)) + a./Rbar.*(sinbeta - y3bar.*z1bar./(Rbar.*Rbar) - z1bar.*(Rbar.*cosbeta+y3bar)./(Rbar.*(Rbar+z3bar))));
-v1CB2             = v1CB2 ./ (4.*pi.*(1-nu));
-v2CB2             = v2CB2 ./ (4.*pi.*(1-nu));
-v3CB2             = v3CB2 ./ (4.*pi.*(1-nu));
+% v1CB2             = v1CB2 ./ (4.*pi.*(1-nu));
+% v2CB2             = v2CB2 ./ (4.*pi.*(1-nu));
+% v3CB2             = v3CB2 ./ (4.*pi.*(1-nu));
+v1CB2             = v1CB2 ./ denom2;
+v2CB2             = v2CB2 ./ denom2;
+v3CB2             = v3CB2 ./ denom2;
 
 v1B2              = v1InfB2 + v1CB2;
 v2B2              = v2InfB2 + v2CB2;
@@ -511,9 +532,13 @@ v3B2              = v3InfB2 + v3CB2;
 v1InfB3           = y2.*sinbeta.*((R.*sinbeta-y1)./(R.*(R-z3))+(Rbar.*sinbeta-y1)./(Rbar.*(Rbar+z3bar)));
 v2InfB3           = (1-2.*nu).*sinbeta.*(log(R-z3)+log(Rbar+z3bar)) - (y2.*y2).*sinbeta.*(1./(R.*(R-z3))+1./(Rbar.*(Rbar+z3bar)));
 v3InfB3           = 2.*(1-nu).*(F-Fbar) + y2.*sinbeta.*((R.*cosbeta-y3)./(R.*(R-z3))-(Rbar.*cosbeta+y3bar)./(Rbar.*(Rbar+z3bar)));
-v1InfB3           = v1InfB3 ./ (8.*pi.*(1-nu));
-v2InfB3           = v2InfB3 ./ (8.*pi.*(1-nu));
-v3InfB3           = v3InfB3 ./ (8.*pi.*(1-nu));
+% v1InfB3           = v1InfB3 ./ (8.*pi.*(1-nu));
+% v2InfB3           = v2InfB3 ./ (8.*pi.*(1-nu));
+% v3InfB3           = v3InfB3 ./ (8.*pi.*(1-nu));
+v1InfB3           = v1InfB3 ./ denom1;
+v2InfB3           = v2InfB3 ./ denom1;
+v3InfB3           = v3InfB3 ./ denom1;
+
 
 v1CB3             = (1-2.*nu).*(y2./(Rbar+y3bar).*(1+a./Rbar) - y2.*cosbeta./(Rbar+z3bar).*(cosbeta+a./Rbar)) - ...
                     y2.*(y3bar-a)./Rbar.*(a./(Rbar.*Rbar) + 1./(Rbar+y3bar)) + ...
@@ -524,9 +549,13 @@ v2CB3             = (1-2.*nu).*(-sinbeta.*log(Rbar+z3bar) - y1./(Rbar+y3bar).*(1
                     1./(Rbar.*(Rbar+z3bar)).*((y2.*y2).*cosbeta.*sinbeta - a.*z1bar./Rbar.*(Rbar.*cosbeta+y3bar)));
 v3CB3             = 2.*(1-nu).*Fbar + 2.*(1-nu).*(y2.*sinbeta./(Rbar+z3bar).*(cosbeta + a./Rbar)) + ...
                     y2.*(y3bar-a).*sinbeta./(Rbar.*(Rbar+z3bar)).*(1 + (Rbar.*cosbeta+y3bar)./(Rbar+z3bar).*(cosbeta+a./Rbar) + a.*y3bar./(Rbar.*Rbar));
-v1CB3             = v1CB3 ./ (4.*pi.*(1-nu));
-v2CB3             = v2CB3 ./ (4.*pi.*(1-nu));
-v3CB3             = v3CB3 ./ (4.*pi.*(1-nu));
+% v1CB3             = v1CB3 ./ (4.*pi.*(1-nu));
+% v2CB3             = v2CB3 ./ (4.*pi.*(1-nu));
+% v3CB3             = v3CB3 ./ (4.*pi.*(1-nu));
+v1CB3             = v1CB3 ./ denom2;
+v2CB3             = v2CB3 ./ denom2;
+v3CB3             = v3CB3 ./ denom2;
+
 
 v1B3              = v1InfB3 + v1CB3;
 v2B3              = v2InfB3 + v2CB3;
