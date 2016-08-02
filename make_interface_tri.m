@@ -7,18 +7,19 @@ PRM.BOU_F='./phcont.txt';
 %use ramdisk
 %ramdloc='/media/ramdisk/ramd/';
 savefolder='./figs/Mesh';
+anim_savefile='./figs/tri_anim.gif';
 %check ramdisk exist and make folder
 %if exist(savefolder,'dir')==0;
 %    mkdir(savefolder);
 %end
 
-PRM.NMESH=50;
-Reducerate=0.1;
+PRM.NMESH=1000;
+Reducerate=0.001; % Reduce rate of triangles
 %
 OBS=READ_OBS(PRM);
 % s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
 s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*5);
-s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,Reducerate);
+s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate);
 
 save('plate_phs','s')
 end
@@ -75,7 +76,7 @@ end
 fprintf('==================\nNumber of observation site : %i \n',N)
 end
 %====================================================
-function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,Redu_rate)
+function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,animfile,Redu_rate)
 alat0=(mean(OBS(1).ALAT)+mean(S.lat))./2;
 alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
 [gx,gy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,alat0,alon0);
@@ -89,9 +90,10 @@ parfor n=1:length(S.tri)
   Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 Ntri=length(S.tri);
+
+ffanim=0;
 while Ntri > n_mesh
-    Ntri
-    Redu_tri=ceil(Ntri*Redu_rate)
+    Redu_tri=ceil(Ntri*Redu_rate);
     
   r_index=ones(length(S.lat),1);
 %   [~,index]=min(Ua);  
@@ -110,7 +112,6 @@ while Ntri > n_mesh
   
   for mm=1:Redu_tri
       for n=1:3
-          ftrisum=find(S.tri,min_tri(mm,n)); %%
           f_tri(n,mm)=sum(find(S.tri,min_tri(mm,n)));
       end
       [~,index]=max(f_tri(:,mm));
@@ -189,24 +190,67 @@ end
  
   S.tri=Stri;
   Ntri=length([S.tri]);
-  
-  Fid=figure('visible','off');
+
+  ffanim=ffanim+1;
+% figure view and save each down_tri roop ------------
+%     Fid=figure('visible','off');
+%     plot(S.bound(:,1),S.bound(:,2),'r');
+%     hold on;
+%     plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+%     triplot(S.tri,S.lon,S.lat);
+%     title(['Number of triangels= ',num2str(Ntri)]);
+%     fprintf('Number of triangels=%4.0f \n ',Ntri)
+%     print(Fid,'-depsc ',[saveloc,num2str(Ntri)]);
+%     close(Fid)
+
+% figure view only each down_tri roop ----------
+%   figure(30); clf
+%   plot(S.bound(:,1),S.bound(:,2),'r');
+%   hold on;
+%   plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+%   triplot(S.tri,S.lon,S.lat);
+%   title(['Number of triangels= ',num2str(Ntri)]);
+%   pause(.1)
+
+% GIF animation test -----------
+  if ffanim==1
+      fig30=figure;
+  else
+      fig30=figure('visible','off');
+  end
   plot(S.bound(:,1),S.bound(:,2),'r');
   hold on;
   plot(OBS(1).ALON,OBS(1).ALAT,'.g');
   triplot(S.tri,S.lon,S.lat);
   title(['Number of triangels= ',num2str(Ntri)]);
-  fprintf('Number of triangels=%4.0f \n ',Ntri)
-  print(Fid,'-depsc ',[saveloc,num2str(Ntri)]);
-  close(Fid)
-  figure(30); clf
-  plot(S.bound(:,1),S.bound(:,2),'r');
-  hold on;
-  plot(OBS(1).ALON,OBS(1).ALAT,'.g');
-  triplot(S.tri,S.lon,S.lat);
-  title(['Number of triangels= ',num2str(Ntri)]);
-  pause(.1)
+  if ffanim == 1;
+      print('-depsc',[saveloc,num2str(Ntri)]);
+  end  
+  fprintf('Number of triangels=%4.0f \n',Ntri)
+  frame=getframe(fig30);
+  im=frame2im(frame);
+  [A,map]=rgb2ind(im,256);
+  	if ffanim == 1;
+		imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
+	else
+		imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
+    end
+    hold off;
+  clf;  
 end
+% save figure at the number of n-mesh
+close(fig30)
+
+Fid=figure('visible','off');
+plot(S.bound(:,1),S.bound(:,2),'r');
+hold on;
+plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+triplot(S.tri,S.lon,S.lat);
+title(['Number of triangels= ',num2str(Ntri)]);
+fprintf('Number of triangels=%4.0f \n ',Ntri)
+print(Fid,'-depsc ',[saveloc,num2str(Ntri)]);
+close(Fid)
+
 end
 %====================================================
 function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,int_mesh)
