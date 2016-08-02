@@ -2,7 +2,8 @@ function make_interface_tri
 % PRM.OBS_F='./data_set.txt';
 PRM.OBS_F='./geonet_jcg_nu.txt';
 PRM.SUB_F='./plate_phs.txt';
-PRM.BOU_F='./bound.txt';
+% PRM.BOU_F='./bound.txt';
+PRM.BOU_F='./phcont.txt';
 %use ramdisk
 %ramdloc='/media/ramdisk/ramd/';
 savefolder='./figs/Mesh';
@@ -11,12 +12,13 @@ savefolder='./figs/Mesh';
 %    mkdir(savefolder);
 %end
 
-PRM.NMESH=750;
+PRM.NMESH=50;
+Reducerate=0.1;
 %
 OBS=READ_OBS(PRM);
 % s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
 s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*5);
-s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder);
+s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,Reducerate);
 
 save('plate_phs','s')
 end
@@ -73,7 +75,7 @@ end
 fprintf('==================\nNumber of observation site : %i \n',N)
 end
 %====================================================
-function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc)
+function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,Redu_rate)
 alat0=(mean(OBS(1).ALAT)+mean(S.lat))./2;
 alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
 [gx,gy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,alat0,alon0);
@@ -88,17 +90,40 @@ parfor n=1:length(S.tri)
 end
 Ntri=length(S.tri);
 while Ntri > n_mesh
+    Ntri
+    Redu_tri=ceil(Ntri*Redu_rate)
+    
   r_index=ones(length(S.lat),1);
-  [~,index]=min(Ua);
-  min_tri=S.tri(index,:);
-  f_tri=zeros(3,1);
-  for n=1:3
-    f_tri(n)=sum(find(S.tri,min_tri(n)));
+%   [~,index]=min(Ua);  
+%   min_tri=S.tri(index,:);
+%   f_tri=zeros(3,1);
+%   for n=1:3
+%       ftrisum=find(S.tri,min_tri(n)); %%
+%       f_tri(n)=sum(find(S.tri,min_tri(n)));
+%   end
+  
+  %   Uasort=sort(Ua);
+  [~,Uasortindex]=sort(Ua);
+  f_tri=zeros(3,Redu_tri);
+  Uasortindex_redu=Uasortindex(1:Redu_tri);
+  min_tri=S.tri(Uasortindex_redu,:);
+  
+  for mm=1:Redu_tri
+      for n=1:3
+          ftrisum=find(S.tri,min_tri(mm,n)); %%
+          f_tri(n,mm)=sum(find(S.tri,min_tri(mm,n)));
+      end
+      [~,index]=max(f_tri(:,mm));
+      r_index(min_tri(mm,index))=0;
+      %   r_index(min_tri(Uasortindex))=0;
+      r_index=logical(r_index);
   end
   
-  [~,index]=max(f_tri);
-  r_index(min_tri(index))=0;
-  r_index=logical(r_index);
+%   f_tri=find(S.tri,min_tri)
+  
+%   [~,index]=max(f_tri);
+%   r_index(min_tri(index))=0;
+%   r_index=logical(r_index);
   S.lat=S.lat(r_index);
   S.lon=S.lon(r_index);
   S.dep=S.dep(r_index);
@@ -149,7 +174,7 @@ while Ntri > n_mesh
 %   [U]=CalcTriDisps(gx',gy',gz',sx(Stri(nc,:)),sy(Stri(nc,:)),sz(Stri(nc,:)),0.25,0,0,1);
 %   
   
-% try
+try
   parfor n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
@@ -158,9 +183,9 @@ while Ntri > n_mesh
      Ua(n)=Ua_tmp(n);
     end
   end
-% catch
-%     keyboard
-% end
+catch
+    keyboard
+end
  
   S.tri=Stri;
   Ntri=length([S.tri]);
