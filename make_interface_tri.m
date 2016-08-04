@@ -4,24 +4,20 @@ PRM.OBS_F='./geonet_jcg_nu.txt';
 PRM.SUB_F='./plate_phs.txt';
 % PRM.BOU_F='./bound.txt';
 PRM.BOU_F='./phcont.txt';
-%use ramdisk
-%ramdloc='/media/ramdisk/ramd/';
+PRM.INIP_F='./initial_point.txt';
 savefolder='./figs/Mesh';
 anim_savefile='./figs/tri_anim.gif';
-%check ramdisk exist and make folder
-%if exist(savefolder,'dir')==0;
-%    mkdir(savefolder);
-%end
 
-PRM.NMESH=1000;
-Reducerate=0.001; % Reduce rate of triangles
-%
+PRM.NMESH=100;
+Reducerate=0.01; % Reduce rate of triangles
+
 OBS=READ_OBS(PRM);
-% s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*10);
-s=INIT_INTERFACE_TRI(PRM.SUB_F,PRM.BOU_F,PRM.NMESH.*5);
+s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*5);
 s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate);
 
-save('plate_phs','s')
+% save('plate_phs','s')
+save(['./figs/plate_phs',num2str(PRM.NMESH)],'s')
+
 end
 %% READ OBSERVATION DATA
 function [OBS]=READ_OBS(PRM)
@@ -93,9 +89,9 @@ Ntri=length(S.tri);
 
 ffanim=0;
 while Ntri > n_mesh
-    Redu_tri=ceil(Ntri*Redu_rate);
-    
+  Redu_tri=ceil(Ntri*Redu_rate);
   r_index=ones(length(S.lat),1);
+  min_tri=zeros(Redu_tri,3);
 %   [~,index]=min(Ua);  
 %   min_tri=S.tri(index,:);
 %   f_tri=zeros(3,1);
@@ -103,16 +99,27 @@ while Ntri > n_mesh
 %       ftrisum=find(S.tri,min_tri(n)); %%
 %       f_tri(n)=sum(find(S.tri,min_tri(n)));
 %   end
-  
-  %   Uasort=sort(Ua);
   [~,Uasortindex]=sort(Ua);
   f_tri=zeros(3,Redu_tri);
-  Uasortindex_redu=Uasortindex(1:Redu_tri);
-  min_tri=S.tri(Uasortindex_redu,:);
+  kk=0;
+% Choice triangles apart of triangles which consisit of initial edge point
+  while kk<Redu_tri
+      ll=kk+1;
+      kktri=S.tri(Uasortindex(ll),:);
+      eglogic=kktri(1)<=Redu_tri & kktri(2)<=Redu_tri & kktri(3)<=Redu_tri;
+    if eglogic==0
+        kk=kk+1;
+        min_tri(kk,:)=S.tri(Uasortindex(kk),:);
+    end
+  end
   
   for mm=1:Redu_tri
       for n=1:3
-          f_tri(n,mm)=sum(find(S.tri,min_tri(mm,n)));
+          if min_tri(mm,n)<=Redu_tri
+              f_tri(n,mm)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
+          else
+              f_tri(n,mm)=sum(find(S.tri,min_tri(mm,n)));
+          end
       end
       [~,index]=max(f_tri(:,mm));
       r_index(min_tri(mm,index))=0;
@@ -159,21 +166,6 @@ while Ntri > n_mesh
 %---------
   Ua_tmp=Ua;
   Ua=zeros(nn,1);
-% nn=0;
-% n=1:ntri;
-% glon=mean(s.lon(tri(n,:)),2);
-% glat=mean(s.lat(tri(n,:)),2);
-% ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
-% ID1ind=find(ID==1);
-% nn1=size(ID1ind);nn=nn1(1,1);
-% s.tri=tri(ID1ind,:);
-% clear n
-
-%   n=1:nn;
-%   nc = find(Stri(n,1)~=S.tri(n,1) | Stri(n,2)~=S.tri(n,2) | Stri(n,3)~=S.tri(n,3));
-%   test1=sx(Stri(nc,:));test2=sy(Stri(nc,:));
-%   [U]=CalcTriDisps(gx',gy',gz',sx(Stri(nc,:)),sy(Stri(nc,:)),sz(Stri(nc,:)),0.25,0,0,1);
-%   
   
 try
   parfor n=1:nn
@@ -235,9 +227,8 @@ end
 	else
 		imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
     end
-    hold off;
-  clf;  
-end
+    hold off;clf;
+  end
 % save figure at the number of n-mesh
 close(fig30)
 
@@ -253,7 +244,7 @@ close(Fid)
 
 end
 %====================================================
-function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,int_mesh)
+function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,inip_f,int_mesh)
 %====================================================
 Fid=fopen(sub_f);
 dep_sub=textscan(Fid,'%f%f%f');
@@ -265,16 +256,26 @@ bound=textscan(Fid,'%f%f%f');
 fclose(Fid);
 bound=cell2mat(bound);
 %====================================================
+Fid=fopen(inip_f);
+ini_point=textscan(Fid,'%f%f%f');
+fclose(Fid);
+ini_point=cell2mat(ini_point);
+%====================================================
 F=scatteredInterpolant(dep_sub(:,1),dep_sub(:,2),dep_sub(:,3),'natural');
 min_lon=min(bound(:,1)); max_lon=max(bound(:,1));
 min_lat=min(bound(:,2)); max_lat=max(bound(:,2));
 figure(10); clf
 plot(bound(:,1),bound(:,2),'r')
 hold on
-% int_mesh1=int_mesh*10
-n=0;
+% initial straint point-------
+s.lon=ini_point(:,1);
+s.lat=ini_point(:,2);
+s.dep=ini_point(:,3);
+[ini_size,~]=size(ini_point);
+%-----------------------------
+% n=0;
+n=ini_size;
 while n<int_mesh
-% while n<int_mesh1
   slat=(max_lat-min_lat).*rand(1)+min_lat;
   slon=(max_lon-min_lon).*rand(1)+min_lon;
   ID=inpolygon(slon,slat,bound(:,1),bound(:,2));
