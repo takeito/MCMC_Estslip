@@ -11,6 +11,10 @@ anim_savefile='./figs/tri_anim.gif';
 PRM.NMESH=100;
 Reducerate=0.01; % Reduce rate of triangles
 
+% PRM of POLE (REVEL's Amur Plate)------------------
+% POLE.lon=;POLE.lat=;POLE.dep=0;POlE.omeg=;
+% --------------------------------------------------
+
 OBS=READ_OBS(PRM);
 s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*5);
 s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate);
@@ -75,14 +79,19 @@ end
 function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,animfile,Redu_rate)
 alat0=(mean(OBS(1).ALAT)+mean(S.lat))./2;
 alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
+% alat0=0;alon0=0; % test : Equator 
+tg.lon=mean(S.lon(S.tri),2); tg.lat=mean(S.lat(S.tri),2);
+[PM]=platemotion(tg.lon,tg.lat,alon0,alat0);
+
 [gx,gy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,alat0,alon0);
 [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
+% [px,py]=PLTXY(tg.lat,tg.lon,alat0,alon0);            % XY coordinates of AM plate Pole
 gz=OBS(1).AHIG./1000;
 sz=S.dep;
 Ua=zeros(length(S.tri(:,1)),1);
-parfor n=1:length(S.tri)
-% for n=1:length(S.tri)
-  [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,0,1);
+% parfor n=1:length(S.tri)
+for n=1:length(S.tri)
+  [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,0,1,PM.X(n),PM.Y(n),PM.Z(n));
   Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 Ntri=length(S.tri);
@@ -136,6 +145,8 @@ while Ntri > n_mesh
   S.lon=S.lon(r_index);
   S.dep=S.dep(r_index);
   S.tri=delaunay(S.lon,S.lat);
+  tg.lon=mean(S.lon(S.tri),2); tg.lat=mean(S.lat(S.tri),2);
+  [PM]=platemotion(tg.lon,tg.lat,alon0,alat0);
   [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
   sz=S.dep;
 %---------
@@ -170,7 +181,8 @@ while Ntri > n_mesh
 try
   parfor n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-     [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+%      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+     [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1,PM.X(n),PM.Y(n),PM.Z(n));
      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
     else
      Ua(n)=Ua_tmp(n);
@@ -328,7 +340,7 @@ s.bound=bound;
 s.dep_sub=dep_sub;
 end
 %====================================================
-function [U] = CalcTriDisps(sx, sy, sz, x, y, z, pr, ss, ts, ds)
+function [U] = CalcTriDisps(sx, sy, sz, x, y, z, pr, ss, ts, ds, xs, ys, zs)
 % CalcTriDisps.m
 %
 % Calculates displacements due to slip on a triangular dislocation in an
@@ -391,7 +403,8 @@ if (normVec(3) < 0) % Enforce clockwise circulation
 end
 strikeVec                    = [-sin(atan2(normVec(2),normVec(1))) cos(atan2(normVec(2),normVec(1))) 0];
 dipVec                       = cross(normVec, strikeVec);
-slipComp                     = [ss ds ts];
+% slipComp                     = [ss ds ts];
+slipComp                     = [xs ys zs];
 slipVec                      = [strikeVec(:) dipVec(:) normVec(:)] * slipComp(:);
 % Solution vectors
 U.x                          = zeros(size(sx));
