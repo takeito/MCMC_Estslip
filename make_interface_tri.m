@@ -8,21 +8,24 @@ PRM.INIP_F='./initial_point.txt';
 savefolder='./figs/Mesh';
 anim_savefile='./figs/tri_anim.gif';
 
-PRM.NMESH=100;
-Reducerate=0.01; % Reduce rate of triangles
-
-% PRM of POLE (REVEL's Amur Plate)------------------
-% POLE.lon=;POLE.lat=;POLE.dep=0;POlE.omeg=;
+% ------------------Parameter---------------------
+PRM.NMESH=1000;
+Reducerate=0.001; % Reduce rate of triangles
+pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative to AM plate(REVEL)
 % --------------------------------------------------
 
 OBS=READ_OBS(PRM);
-s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*5);
-s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate);
+ini_size=FIX_POINT(PRM.INIP_F);
+s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*5,ini_size);
+save('./figs/plate_phs_initial','s')
+
+s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate,ini_size,pole);
 
 % save('plate_phs','s')
 save(['./figs/plate_phs',num2str(PRM.NMESH)],'s')
 
 end
+
 %% READ OBSERVATION DATA
 function [OBS]=READ_OBS(PRM)
 % moditied 2015/11/11 by T.ITO
@@ -76,23 +79,42 @@ end
 fprintf('==================\nNumber of observation site : %i \n',N)
 end
 %====================================================
-function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,animfile,Redu_rate)
+function ininum = FIX_POINT(inip_f)
+
+% COUNT THE NUMBER OF INITIAL FIXED POINTS
+
+Fid=fopen(inip_f);
+ini_point=textscan(Fid,'%f%f%f');
+fclose(Fid);
+ini_point=cell2mat(ini_point);
+[ininum,~]=size(ini_point);
+
+end
+%====================================================
+function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,animfile,Redu_rate,initial,POLE)
 alat0=(mean(OBS(1).ALAT)+mean(S.lat))./2;
 alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
-% alat0=0;alon0=0; % test : Equator 
-tg.lon=mean(S.lon(S.tri),2); tg.lat=mean(S.lat(S.tri),2);
-[PM]=platemotion(tg.lon,tg.lat,alon0,alat0);
-
+tg.lon=mean(S.lon(S.tri),2);
+tg.lat=mean(S.lat(S.tri),2);
+tg.dep=mean(S.dep(S.tri),2);
+[sxyz]=enu2xyz(S.lon,S.lat,S.dep);
+% [tgxyz]=enu2xyz(tg.lon,tg.lat,tg.dep);
+[PM]=platemotion(tg.lon,tg.lat,POLE.lon,POLE.lat,POLE.omega);
 [gx,gy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,alat0,alon0);
 [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
-% [px,py]=PLTXY(tg.lat,tg.lon,alat0,alon0);            % XY coordinates of AM plate Pole
 gz=OBS(1).AHIG./1000;
 sz=S.dep;
 Ua=zeros(length(S.tri(:,1)),1);
-% parfor n=1:length(S.tri)
-for n=1:length(S.tri)
-  [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,0,1,PM.X(n),PM.Y(n),PM.Z(n));
-  Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+parfor n=1:length(S.tri)
+% for n=1:length(S.tri)
+    [SDT]=SDTvec(sxyz.X(S.tri(n,:)),sxyz.Y(S.tri(n,:)),sxyz.Z(S.tri(n,:)),tg.lon(n),tg.lat(n));
+    [pmxy]=xyz2XYplane(PM.X(n),PM.Y(n),PM.Z(n),tg.lon(n),tg.lat(n));
+    [pmXY]=[pmxy.X pmxy.Y 0];
+    pmcom=pmXY*SDT;
+    pmcom=pmcom./norm(pmcom);
+%     [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,0,0,1);
+    [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,pmcom(1),pmcom(3),pmcom(2));
+    Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 Ntri=length(S.tri);
 
@@ -111,33 +133,31 @@ while Ntri > n_mesh
   [~,Uasortindex]=sort(Ua);
   f_tri=zeros(3,Redu_tri);
   kk=0;
-% Choice triangles apart of triangles which consisit of initial edge point
+  ll=1;
+% Choice triangles apart of triangles which consisit of only initial edge point
   while kk<Redu_tri
-      ll=kk+1;
-      kktri=S.tri(Uasortindex(ll),:);
-      eglogic=kktri(1)<=Redu_tri & kktri(2)<=Redu_tri & kktri(3)<=Redu_tri;
-    if eglogic==0
-        kk=kk+1;
-        min_tri(kk,:)=S.tri(Uasortindex(kk),:);
-    end
+      eglogic=S.tri(Uasortindex(ll),1)<=initial & S.tri(Uasortindex(ll),2)<=initial & S.tri(Uasortindex(ll),3)<=initial;
+      if eglogic==0
+          kk=kk+1;
+          min_tri(kk,:)=S.tri(Uasortindex(kk),:);
+      end
+      ll=ll+1;
   end
   
   for mm=1:Redu_tri
       for n=1:3
-          if min_tri(mm,n)<=Redu_tri
+          if min_tri(mm,n)<=initial
               f_tri(n,mm)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
           else
-              f_tri(n,mm)=sum(find(S.tri,min_tri(mm,n)));
+              [f_tri(n,mm),~]=size(find(S.tri==min_tri(mm,n)));
           end
       end
       [~,index]=max(f_tri(:,mm));
       r_index(min_tri(mm,index))=0;
-      %   r_index(min_tri(Uasortindex))=0;
       r_index=logical(r_index);
   end
   
-%   f_tri=find(S.tri,min_tri)
-  
+%   f_tri=find(S.tri,min_tri)  
 %   [~,index]=max(f_tri);
 %   r_index(min_tri(index))=0;
 %   r_index=logical(r_index);
@@ -145,14 +165,12 @@ while Ntri > n_mesh
   S.lon=S.lon(r_index);
   S.dep=S.dep(r_index);
   S.tri=delaunay(S.lon,S.lat);
-  tg.lon=mean(S.lon(S.tri),2); tg.lat=mean(S.lat(S.tri),2);
-  [PM]=platemotion(tg.lon,tg.lat,alon0,alat0);
   [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
   sz=S.dep;
 %---------
   ntri=length(S.tri);
-%   nn=0;
   Stri=[];
+%   nn=0;
 %   for n=1:ntri
 %     glon=mean(S.lon(S.tri(n,:)));  
 %     glat=mean(S.lat(S.tri(n,:)));
@@ -162,39 +180,44 @@ while Ntri > n_mesh
 %       Stri(nn,:)=S.tri(n,:);
 %     end  
 %   end
-    
-  nn=0;
-  n=1:ntri;
-  glon=mean(S.lon(S.tri(n,:)),2);
-  glat=mean(S.lat(S.tri(n,:)),2);
+  glon=mean(S.lon(S.tri),2);
+  glat=mean(S.lat(S.tri),2);
   ID=inpolygon(glon,glat,S.bound(:,1),S.bound(:,2));
   ID1ind=find(ID==1);
-  nn1=size(ID1ind);nn=nn1(1,1);
+  [nn,~]=size(ID1ind);
   Stri=S.tri(ID1ind,:);
-%   clear n
-
-  
+  tg.lon=mean(S.lon(Stri),2);
+  tg.lat=mean(S.lat(Stri),2);
+  [sxyz]=enu2xyz(S.lon,S.lat,S.dep);
+  [PM]=platemotion(tg.lon,tg.lat,POLE.lon,POLE.lat,POLE.omega);
 %---------
   Ua_tmp=Ua;
-  Ua=zeros(nn,1);
-  
+  Ua=zeros(nn,1);   
 try
-  parfor n=1:nn
-    if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-%      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
-     [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1,PM.X(n),PM.Y(n),PM.Z(n));
-     Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-    else
-     Ua(n)=Ua_tmp(n);
+    parfor n=1:nn
+        if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
+            [SDT]=SDTvec(sxyz.X(Stri(n,:)),sxyz.Y(Stri(n,:)),sxyz.Z(Stri(n,:)),tg.lon(n),tg.lat(n));
+            [pmxy]=xyz2XYplane(PM.X(n),PM.Y(n),PM.Z(n),tg.lon(n),tg.lat(n));
+            [pmXY]=[pmxy.X pmxy.Y 0];
+%             [SDT]=SDTvec(S.lon(S.tri(n,:)),S.lat(S.tri(n,:)),S.dep(S.tri(n,:)));
+%             [SDT]=SDTvec(S.lon(Stri(n,:)),S.lat(Stri(n,:)),S.dep(Stri(n,:)));
+%             pmcom=PM(n,:)*SDT;
+            pmcom=pmXY*SDT;
+            pmcom=pmcom./norm(pmcom);            
+            %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+            [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,pmcom(1),pmcom(3),pmcom(2));
+            Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+        else
+            Ua(n)=Ua_tmp(n);
+        end
     end
-  end
 catch
     keyboard
 end
  
   S.tri=Stri;
   Ntri=length([S.tri]);
-
+  
   ffanim=ffanim+1;
 % figure view and save each down_tri roop ------------
 %     Fid=figure('visible','off');
@@ -240,7 +263,7 @@ end
 		imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
     end
     hold off;clf;
-  end
+end
 % save figure at the number of n-mesh
 close(fig30)
 
@@ -256,7 +279,7 @@ close(Fid)
 
 end
 %====================================================
-function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,inip_f,int_mesh)
+function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,inip_f,int_mesh,ini_size)
 %====================================================
 Fid=fopen(sub_f);
 dep_sub=textscan(Fid,'%f%f%f');
@@ -283,7 +306,6 @@ hold on
 s.lon=ini_point(:,1);
 s.lat=ini_point(:,2);
 s.dep=ini_point(:,3);
-[ini_size,~]=size(ini_point);
 %-----------------------------
 % n=0;
 n=ini_size;
@@ -306,9 +328,8 @@ plot3(s.lon,s.lat,s.dep,'.')
 %====================================================
 tri = delaunay(s.lon,s.lat);
 %====================================================
-ntri=length(tri);
+% ntri=length(tri);
 % nn=0;
-% parfor n=1:ntri                               % parallel roop
 % for n=1:ntri
 %   glon=mean(s.lon(tri(n,:)));  
 %   glat=mean(s.lat(tri(n,:)));
@@ -319,17 +340,11 @@ ntri=length(tri);
 %   end  
 % end
 % clear n
-
-nn=0;
-n=1:ntri;
-glon=mean(s.lon(tri(n,:)),2);
-glat=mean(s.lat(tri(n,:)),2);
+glon=mean(s.lon(tri),2);
+glat=mean(s.lat(tri),2);
 ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
 ID1ind=find(ID==1);
-nn1=size(ID1ind);nn=nn1(1,1);
 s.tri=tri(ID1ind,:);
-% clear n
-
 
 figure(20); clf
 plot(bound(:,1),bound(:,2),'r')
@@ -340,7 +355,7 @@ s.bound=bound;
 s.dep_sub=dep_sub;
 end
 %====================================================
-function [U] = CalcTriDisps(sx, sy, sz, x, y, z, pr, ss, ts, ds, xs, ys, zs)
+function [U] = CalcTriDisps(sx, sy, sz, x, y, z, pr, ss, ts, ds)
 % CalcTriDisps.m
 %
 % Calculates displacements due to slip on a triangular dislocation in an
@@ -403,8 +418,7 @@ if (normVec(3) < 0) % Enforce clockwise circulation
 end
 strikeVec                    = [-sin(atan2(normVec(2),normVec(1))) cos(atan2(normVec(2),normVec(1))) 0];
 dipVec                       = cross(normVec, strikeVec);
-% slipComp                     = [ss ds ts];
-slipComp                     = [xs ys zs];
+slipComp                     = [ss ds ts];
 slipVec                      = [strikeVec(:) dipVec(:) normVec(:)] * slipComp(:);
 % Solution vectors
 U.x                          = zeros(size(sx));
@@ -418,9 +432,9 @@ z(4)                         = z(1);
 for iTri = 1:3
    % Calculate strike and dip of current leg
    strike                   = 180/pi*(atan2(y(iTri+1)-y(iTri), x(iTri+1)-x(iTri)));
-%    segMapLength             = sqrt((x(iTri)-x(iTri+1))^2 + (y(iTri)-y(iTri+1))^2);
+   segMapLength             = sqrt((x(iTri)-x(iTri+1))^2 + (y(iTri)-y(iTri+1))^2);
    [rx,~]                  = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
-%    [rx,ry]                  = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
+   [rx,ry]                  = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
    dip                      = 180/pi*(atan2(z(iTri+1)-z(iTri), rx));
 %   
    if dip >= 0
@@ -649,6 +663,146 @@ v3B3              = v3InfB3 + v3CB3;
 v1                = B1.*v1B1 + B2.*v1B2 + B3.*v1B3;
 v2                = B1.*v2B1 + B2.*v2B2 + B3.*v2B3;
 v3                = B1.*v3B1 + B2.*v3B2 + B3.*v3B3;
+end
+%====================================================
+function [PM] = platemotion(triglon,triglat,plon,plat,omega)
+
+% Input-------------------------------------------------
+%   plon, plat            :Pole position
+%   omega                 :Angular velocity
+%   triglon, triglat      :center of triangles
+% Output------------------------------------------------
+%   PM.X, PM.Y, PM.Z      :plate motion(XYZ-coordinate)[km/yr]
+% ------------------------------------------------------
+
+% Parameter
+amean=6371D3;                 % radius of the Earth
+
+% Transformation from degree to radian
+plon=deg2rad(plon);
+plat=deg2rad(plat);
+omega=deg2rad(omega);
+triglon=deg2rad(triglon);
+triglat=deg2rad(triglat);
+
+% Transformation from pole coord. to XYZ
+[polexyz]=([cos(plat).*cos(plon) cos(plat).*sin(plon) sin(plat)].*omega)';
+[trigxyz]=([cos(triglat).*cos(triglon) cos(triglat).*sin(triglon) sin(triglat)].*amean)';
+
+% Plate motion
+[~,trigsize]=size(trigxyz);
+pm=zeros(3,trigsize);
+for ii=1:trigsize
+    pm(:,ii)=cross(polexyz,trigxyz(:,ii)).*1.0D-6;
+end
+% PM=PM';
+PM.X=pm(1,:);
+PM.Y=pm(2,:);
+PM.Z=pm(3,:);
+
+
+end
+%====================================================
+function [SDT] = SDTvec(tvx,tvy,tvz,clon,clat)
+
+% Calculate Strike, Dip, Tensile vectors of triangle
+% Input-----------------------------   
+%  tvx  : x-coordinate of triangle vertices.
+%  tvy  : y-coordinate of triangle vertices.
+%  tvz  : z-coordinate of triangle vertices.
+% Output---------------------------
+%  SDT  : xyz-coordinates(XY-plane) of strike, dip, tensile vectors of triangle.
+% ---------------------------------
+
+% parameter
+amean=6371D3;      % equater of the Earth [m]
+
+% degree to radian
+clon=deg2rad(clon);
+clat=deg2rad(clat);
+
+% Rotation matrix
+Rot1=[cos(clon+pi./2) sin(clon+pi./2) 0; -sin(clon+pi./2) cos(clon+pi./2) 0; 0 0 1];
+Rot2=[1 0 0; 0 cos(pi./2-clat) sin(pi./2-clat); 0 -sin(pi./2-clat) cos(pi./2-clat)];
+
+% Transformation coordinate (xyz to XYplane)
+tXY=Rot2*Rot1*[tvx';tvy';tvz'];
+tvx=tXY(1,:);
+tvy=tXY(2,:);
+tvz=tXY(3,:);tvz=tvz-amean;     % set 0m at surface
+
+% Strike, Dip, Tensile vectors on xyz-coordinate
+normVec        = cross([tvx(2);tvy(2);tvz(2)]-[tvx(1);tvy(1);tvz(1)], [tvx(3);tvy(3);tvz(3)]-[tvx(1);tvy(1);tvz(1)]);
+normVec        = normVec./norm(normVec);
+if (normVec(3) < 0) % Enforce clockwise circulation
+   normVec     = -normVec;
+   [tvx(2),tvx(3)] = swap(tvx(2), tvx(3));
+   [tvy(2),tvy(3)] = swap(tvy(2), tvy(3));
+   [tvz(2),tvz(3)] = swap(tvz(2), tvz(3));
+end
+strikeVec      = [-sin(atan2(normVec(2),normVec(1))) cos(atan2(normVec(2),normVec(1))) 0];
+dipVec         = cross(normVec, strikeVec);
+
+SDT=[strikeVec(:) dipVec(:) normVec(:)];
+
+end
+%====================================================
+function [XYZ]=enu2xyz(tvlon,tvlat,tvdep)
+
+% parameter
+amean=6371D3;      % equater of the Earth [m]
+
+% degree to radian
+tvlon=deg2rad(tvlon);
+tvlat=deg2rad(tvlat);
+tvdep=tvdep+amean;
+
+% lonlat to xyz
+tvx=cos(tvlat).*cos(tvlon).*tvdep;
+tvy=cos(tvlat).*sin(tvlon).*tvdep;
+tvz=sin(tvlat).*tvdep;
+
+XYZ.X=tvx;
+XYZ.Y=tvy;
+XYZ.Z=tvz;
+% XYZ=[tvx(:) tvy(:) tvz(:)];
+
+end
+%====================================================
+function [XYplane]=xyz2XYplane(x,y,z,clon,clat)
+
+% Transformation coordinate from xyz-coord. to XYplane-coord. which center is clon,clat
+% Input-----------------------------   
+%  x    : x-coordinate of triangle vertices.
+%  y    : y-coordinate of triangle vertices.
+%  z    : z-coordinate of triangle vertices.
+%  clon : center longitude of triangle.
+%  clat : center latgitude of triangle.
+% Output---------------------------
+%  XYplane  : xyz-coordinates(XY-plane) of strike, dip, tensile vectors of triangle.
+% ---------------------------------
+
+% parameter
+amean=6371D3;      % equater of the Earth [m]
+
+% degree to radian
+clon=deg2rad(clon);
+clat=deg2rad(clat);
+
+% Rotation matrix
+Rot1=[cos(clon+pi./2) sin(clon+pi./2) 0; -sin(clon+pi./2) cos(clon+pi./2) 0; 0 0 1];
+Rot2=[1 0 0; 0 cos(pi./2-clat) sin(pi./2-clat); 0 -sin(pi./2-clat) cos(pi./2-clat)];
+
+% Transformation coordinate (xyz to XYplane)
+tXY=Rot2*Rot1*[x;y;z];
+tvx=tXY(1,:);
+tvy=tXY(2,:);
+tvz=tXY(3,:);tvz=tvz-amean;     % set 0m at surface
+
+XYplane.X=tvx;
+XYplane.Y=tvy;
+XYplane.Z=tvz;
+
 end
 %====================================================
 function [X,Y]=PLTXY(ALAT,ALON,ALAT0,ALON0)
