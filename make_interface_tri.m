@@ -113,13 +113,15 @@ for n=1:length(S.tri)        % <<--------- use in debug test
     [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
     Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
+clear n;
 Ntri=length(S.tri);
 
 ffanim=0;
 while Ntri > n_mesh
   Redu_tri=ceil(Ntri*Redu_rate);
   r_index=ones(length(S.lat),1);
-  min_tri=zeros(Redu_tri,3);
+%   min_tri=zeros(Redu_tri,3);
+  min_tri=[]
 %   [~,index]=min(Ua);  
 %   min_tri=S.tri(index,:);
 %   f_tri=zeros(3,1);
@@ -128,31 +130,45 @@ while Ntri > n_mesh
 %       f_tri(n)=sum(find(S.tri,min_tri(n)));
 %   end
   [~,Uasortindex]=sort(Ua);
-  f_tri=zeros(3,Redu_tri);
-  kk=0;
-  ll=1;
+%   f_tri=zeros(3,Redu_tri);
+  f_tri=zeros(Redu_tri,3);
+%   kk=0;
+%   ll=1;
 % Choice triangles apart of triangles which consisit of only initial edge point
-  while kk<Redu_tri
-      eglogic=S.tri(Uasortindex(ll),1)<=initial & S.tri(Uasortindex(ll),2)<=initial & S.tri(Uasortindex(ll),3)<=initial;
-      if eglogic==0
-          kk=kk+1;
-          min_tri(kk,:)=S.tri(Uasortindex(kk),:);
-      end
-      ll=ll+1;
-  end
+  Ualogic = S.tri(Uasortindex,1)>initial | S.tri(Uasortindex,2)>initial | S.tri(Uasortindex,3)>initial;
+  Uasortindex=Uasortindex(Ualogic);
+  
+%   min_tri(1:Redu_tri,:)=S.tri(Uasortindex(1:Redu_tri),:);
+  min_tri=S.tri(Uasortindex(1:Redu_tri),:);
+
+  
+%   while kk<Redu_tri
+%       eglogic=S.tri(Uasortindex(ll),1)<=initial & S.tri(Uasortindex(ll),2)<=initial & S.tri(Uasortindex(ll),3)<=initial;
+%       if eglogic==0
+%           kk=kk+1;
+%           min_tri2(kk,:)=S.tri(Uasortindex(kk),:);
+%       end
+%       ll=ll+1;
+%   end
   
   for mm=1:Redu_tri
       for n=1:3
           if min_tri(mm,n)<=initial
-              f_tri(n,mm)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
+%               f_tri(n,mm)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
+              f_tri(mm,n)=0;
           else
-              [f_tri(n,mm),~]=size(find(S.tri==min_tri(mm,n)));
+%               [f_tri(n,mm),~]=size(find(S.tri==min_tri(mm,n)));
+              [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
           end
       end
-      [~,index]=max(f_tri(:,mm));
+      clear n;
+%       [~,index]=max(f_tri(:,mm));
+      [~,index]=max(f_tri(mm,:));
       r_index(min_tri(mm,index))=0;
-      r_index=logical(r_index);
+%       r_index=logical(r_index);
   end
+  clear mm;
+  r_index=logical(r_index);
   
 %   f_tri=find(S.tri,min_tri)  
 %   [~,index]=max(f_tri);
@@ -206,6 +222,7 @@ parfor n=1:nn
         Ua(n)=Ua_tmp(n);
     end
 end
+clear n;
 % catch
 %     keyboard
 % end
