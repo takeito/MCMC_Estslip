@@ -121,7 +121,7 @@ while Ntri > n_mesh
   Redu_tri=ceil(Ntri*Redu_rate);
   r_index=ones(length(S.lat),1);
 %   min_tri=zeros(Redu_tri,3);
-  min_tri=[]
+  min_tri=[];
 %   [~,index]=min(Ua);  
 %   min_tri=S.tri(index,:);
 %   f_tri=zeros(3,1);
@@ -269,15 +269,16 @@ clear n;
   frame=getframe(fig30);
   im=frame2im(frame);
   [A,map]=rgb2ind(im,256);
-  	if ffanim == 1;
-		imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
-	else
-		imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
-    end
-    hold off;clf;
+  if ffanim == 1;
+      imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
+  else
+      imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
+  end
+  hold off;clf;
 end
 % save figure at the number of n-mesh
 close(fig30)
+clear ffanim;
 
 Fid=figure('visible','off');
 plot(S.bound(:,1),S.bound(:,2),'r');
