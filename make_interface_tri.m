@@ -11,6 +11,8 @@ anim_savefile='./figs/tri_anim.gif';
 % ------------------Parameter---------------------
 PRM.NMESH=100;
 Reducerate=0.01; % Reduce rate of triangles
+ARR=0.4;                                      % Reduce badangle triangle rate in each roop
+ARS=0.6;                                      % Reduce badangle when roop reached to PRM.NMESH*AngRedStart
 pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative to AM plate(REVEL)
 % --------------------------------------------------
 
@@ -19,10 +21,15 @@ ini_size=FIX_POINT(PRM.INIP_F);
 s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*5,ini_size);
 save('./figs/plate_phs_initial','s')
 
-s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate,ini_size,pole);
+s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate,ini_size,pole,ARS,ARR);
 
+% [tarea,tcenter]=calc_tri_area(s);
+% save(['./figs2/area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
 % save('plate_phs','s')
 save(['./figs/plate_phs',num2str(PRM.NMESH)],'s')
+[tarea,tcenter]=calc_tri_area(s);
+save(['./figs2/area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
+
 
 end
 
@@ -91,7 +98,7 @@ ini_point=cell2mat(ini_point);
 
 end
 %====================================================
-function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,animfile,Redu_rate,initial,POLE)
+function [S]=DOWN_TRI(S,OBS,n_mesh,saveloc,animfile,Redu_rate,initial,POLE,ars,arr)
 alat0=(mean(OBS(1).ALAT)+mean(S.lat))./2;
 alon0=(mean(OBS(1).ALON)+mean(S.lon))./2;
 tg.lon=mean(S.lon(S.tri),2);
@@ -105,22 +112,27 @@ tg.dep=mean(S.dep(S.tri),2);
 gz=OBS(1).AHIG./1000;
 sz=S.dep;
 Ua=zeros(length(S.tri(:,1)),1);
-% parfor n=1:length(S.tri)
-for n=1:length(S.tri)        % <<--------- use in debug test
+minAng=zeros(length(S.tri),1);
+tri_Ang=zeros(length(S.tri),3);
+parfor n=1:length(S.tri)
+% for n=1:length(S.tri)        % <<--------- use in debug test
     [SDT]=SDTvec(sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)));
     PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
     PMcom=PMcom./norm(PMcom);
+    [Ang]=triangle_angles([sx(S.tri(n,:)) sy(S.tri(n,:)) sz(S.tri(n,:))],'d');
+    tri_Ang(n,:)=Ang(:);
+    minAng(n,1)=min(Ang);    
     [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
     Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 clear n;
 Ntri=length(S.tri);
+Ntriini=Ntri;
 
 ffanim=0;
 while Ntri > n_mesh
   Redu_tri=ceil(Ntri*Redu_rate);
   r_index=ones(length(S.lat),1);
-%   min_tri=zeros(Redu_tri,3);
   min_tri=[];
 %   [~,index]=min(Ua);  
 %   min_tri=S.tri(index,:);
@@ -130,45 +142,77 @@ while Ntri > n_mesh
 %       f_tri(n)=sum(find(S.tri,min_tri(n)));
 %   end
   [~,Uasortindex]=sort(Ua);
-%   f_tri=zeros(3,Redu_tri);
   f_tri=zeros(Redu_tri,3);
-%   kk=0;
-%   ll=1;
+  
 % Choice triangles apart of triangles which consisit of only initial edge point
   Ualogic = S.tri(Uasortindex,1)>initial | S.tri(Uasortindex,2)>initial | S.tri(Uasortindex,3)>initial;
   Uasortindex=Uasortindex(Ualogic);
   
-%   min_tri(1:Redu_tri,:)=S.tri(Uasortindex(1:Redu_tri),:);
-  min_tri=S.tri(Uasortindex(1:Redu_tri),:);
-
-  
-%   while kk<Redu_tri
-%       eglogic=S.tri(Uasortindex(ll),1)<=initial & S.tri(Uasortindex(ll),2)<=initial & S.tri(Uasortindex(ll),3)<=initial;
-%       if eglogic==0
-%           kk=kk+1;
-%           min_tri2(kk,:)=S.tri(Uasortindex(kk),:);
-%       end
-%       ll=ll+1;
-%   end
-  
-  for mm=1:Redu_tri
-      for n=1:3
-          if min_tri(mm,n)<=initial
-%               f_tri(n,mm)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
-              f_tri(mm,n)=0;
-          else
-%               [f_tri(n,mm),~]=size(find(S.tri==min_tri(mm,n)));
-              [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
+  if Ntri > Ntriini*ars
+      min_tri=S.tri(Uasortindex(1:Redu_tri),:);
+      for mm=1:Redu_tri
+          for n=1:3
+              if min_tri(mm,n)<=initial
+                  f_tri(mm,n)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
+              else
+                  [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
+              end
           end
+          clear n;
+          [~,index]=max(f_tri(mm,:));
+          r_index(min_tri(mm,index))=0;
       end
-      clear n;
-%       [~,index]=max(f_tri(:,mm));
-      [~,index]=max(f_tri(mm,:));
-      r_index(min_tri(mm,index))=0;
-%       r_index=logical(r_index);
+  else
+      [~,Angsortindex]=sort(minAng);
+      Anglogic=S.tri(Angsortindex,1)>initial | S.tri(Angsortindex,2)>initial | S.tri(Angsortindex,3)>initial;
+      Angsortindex=Angsortindex(Anglogic);
+      min_tri=S.tri(Uasortindex(1:ceil(Redu_tri*arr)),:);
+%       min_tri=S.tri(Angsortindex(1:ceil(Redu_tri*angredurate)),:);
+      ang_tri=S.tri(Angsortindex(1:Redu_tri-ceil(Redu_tri*arr)),:);
+%       min_tri(ceil(Redu_tri*arr)+1:Redu_tri,:)=S.tri(Uasortindex(1:Redu_tri-ceil(Redu_tri*angredurate)),:);
+      for mm=1:ceil(Redu_tri*arr)
+          for n=1:3
+              if min_tri(mm,n)<=initial
+                  f_tri(mm,n)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
+              else
+                  [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
+              end
+          end
+          clear n;
+          [~,index]=max(f_tri(mm,:));
+          r_index(min_tri(mm,index))=0;
+      end
+      for mm=1:Redu_tri-ceil(Redu_tri*arr)
+          for n=1:3
+              if ang_tri(mm,n)<=initial
+                  f_tri(mm,n)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
+              else
+                  f_tri(mm,n)=tri_Ang(Angsortindex(mm),n);
+              end
+          end
+          clear n;
+          [~,index]=max(f_tri(mm,:));
+          r_index(ang_tri(mm,index))=0;
+      end
   end
   clear mm;
   r_index=logical(r_index);
+%   min_tri=S.tri(Uasortindex(1:Redu_tri),:);
+  
+%   for mm=1:Redu_tri
+%       for n=1:3
+%           if min_tri(mm,n)<=initial
+%               f_tri(mm,n)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
+%           else
+%               [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
+%           end
+%       end
+%       clear n;
+%       [~,index]=max(f_tri(mm,:));
+%       r_index(min_tri(mm,index))=0;
+%   end
+%   clear mm;
+%   r_index=logical(r_index);
   
 %   f_tri=find(S.tri,min_tri)  
 %   [~,index]=max(f_tri);
@@ -207,26 +251,48 @@ while Ntri > n_mesh
   
 %---------
   Ua_tmp=Ua;
-  Ua=zeros(nn,1);   
-% try
-%     for n=1:nn   %    <<----------------- use in debug test
-parfor n=1:nn
-    if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-        [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
-        PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
-        PMcom=PMcom./norm(PMcom);
-        %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
-        [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
-        Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-    else
-        Ua(n)=Ua_tmp(n);
-    end
-end
-clear n;
-% catch
-%     keyboard
-% end
- 
+  Ua=zeros(nn,1);
+  
+  if Ntri>Ntriini*ars+2*Redu_tri
+      parfor n=1:nn
+          %     for n=1:nn   %    <<----------------- use in debug test
+          if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
+              [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
+              PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
+              PMcom=PMcom./norm(PMcom);
+              %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+              [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+              Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+          else
+              Ua(n)=Ua_tmp(n);
+          end
+      end
+  else
+      tri_Ang_tmp=tri_Ang;
+      minAng_tmp=minAng;
+      minAng=zeros(length(Stri),1);
+      tri_Ang=zeros(length(Stri),3);
+      parfor n=1:nn
+          %     for n=1:nn   %    <<----------------- use in debug test
+          if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
+              [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
+              PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
+              PMcom=PMcom./norm(PMcom);
+              [Ang]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
+              tri_Ang(n,:)=Ang(:);
+              minAng(n,1)=min(Ang);
+              %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+              [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+              Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+          else
+              Ua(n)=Ua_tmp(n);
+              tri_Ang(n,:)=tri_Ang_tmp(n,:);
+              minAng(n,1)=minAng_tmp(n,1);
+          end
+      end
+  end
+  clear n;
+
   S.tri=Stri;
   Ntri=length([S.tri]);
   
@@ -276,6 +342,12 @@ clear n;
   end
   hold off;clf;
 end
+
+% export when exit roop
+S.x=sx;
+S.y=sy;
+S.z=sz;
+
 % save figure at the number of n-mesh
 close(fig30)
 clear ffanim;
@@ -730,6 +802,131 @@ xyz.x=tvx;
 xyz.y=tvy;
 xyz.z=tvz;
 % XYZ=[tvx(:) tvy(:) tvz(:)];
+
+end
+%====================================================
+function [area,center]=calc_tri_area(s)
+
+% Export area of triangles using function triangle_area.m
+% --------------------------------------------
+% input
+% s         : data of triangle subfault
+% 
+% output
+% center    : center coordinate of triangle (lom lat dep)
+% area      : area of triangle
+% --------------------------------------------
+
+tg.lon=mean(s.lon(s.tri),2);
+tg.lat=mean(s.lat(s.tri),2);
+tg.dep=mean(s.dep(s.tri),2);
+% center=[tg.lon(:) tg.lat(:) tg.dep(:)];
+tri.x=s.x(s.tri);
+tri.y=s.y(s.tri);
+tri.z=s.z(s.tri);
+
+area=zeros(length(s.tri),1);
+for nn=1:length(s.tri)
+    triver=[(tri.x(nn,:))' (tri.y(nn,:))' (tri.z(nn,:))'];
+    area(nn)=triangle_area(triver);
+end
+
+% sort in area order <<---- option (to know min and max of area)
+[~,sortindex]=sort(area);
+area=area(sortindex);
+center=[tg.lon(sortindex) tg.lat(sortindex) tg.dep(sortindex)];
+
+% save(['area_tri_',num2str(nmesh)],'center','area');
+
+end
+%====================================================
+function [area]=triangle_area(P,method)
+% This function gives the area of a triangle
+%
+% [area]=triangle_area(Points, Method)
+%
+% Points: The Points should be a numeric array, of size 3xn, 
+%         thus the points can be 2D, 3D... nD
+% Method: Can be 'h' area calculation with Heron's formula 
+%         or can be 'q' Orthogonal-triangular decomposition (default)
+%
+% Example: 
+% P1=[0 0]; P2=[1 0.5]; P3=[0.5 1];
+% area = triangle_area([P1;P2;P3])
+%
+% Version 1.1 updated on 2007-09-21 
+% Added 'Orthogonal-triangular decomposition' after a usefull review of John D'Errico 
+
+% Default output format
+if(exist('method','var')==0), method='q'; end
+
+% Check input
+if((method~='h')&&(method~='q')), error('Unknown area calculation method'); end
+[k,m]=size(P); if(k~=3), error('Points are not a 3xn array'); end
+
+if(method=='h')
+    % Length of edges
+    L=[sqrt(sum((P(1,:)-P(2,:)).^2)) sqrt(sum((P(2,:)-P(3,:)).^2)) sqrt(sum((P(3,:)-P(1,:)).^2))];
+    
+    % Area calculation with Heron's formula
+    s = ((L(1)+L(2)+L(3))/2); 
+    area = sqrt(s*(s-L(1))*(s-L(2))*(s-L(3)));
+else
+    % Area calculation with Orthogonal-triangular decomposition
+    [q,r] = qr((P(2:3,:) - repmat(P(1,:),2,1))');
+    area=abs(prod(diag(r)))/2;
+end
+    
+end
+%====================================================
+function [angles]=triangle_angles(P,format)
+% This function gives the angles of a triangle
+%
+% This function splits a triangle in two triangles with a corner of 90
+% degrees (Heron's formula), and than uses a sine to calculate te angles
+%
+% [angles]=triangle_angles(Points, Format)
+%
+% Points: The Points should be a numeric array, of size 3xn, 
+%         thus the points can be 2D, 3D... nD
+% Format: Can be 'd' degrees or 'r' radians (default)
+% 
+%
+% Example: 
+% P1=[0 0]; P2=[0.88 0.5]; P3=[0 1];
+% [angles]=triangle_angles([P1;P2;P3],'d')
+%
+% Version 1.3 updated on 2007-11-08
+
+% Default output format
+if(exist('format','var')==0), format='r'; end
+
+% Check input
+if((format~='r')&&(format~='d')), error('Unknown Output Format'); end
+[k,m]=size(P); if(k~=3), error('Points are not a 3xn array'); end
+
+% Length of edges
+L=[sqrt(sum((P(1,:)-P(2,:)).^2)) sqrt(sum((P(2,:)-P(3,:)).^2)) sqrt(sum((P(3,:)-P(1,:)).^2))];
+        
+% Edge length when split in two 90 degrees triangles
+s = ((L(1)+L(2)+L(3))/2); 
+h = (2/L(3))*sqrt(s*(s-L(1))*(s-L(2))*(s-L(3)));
+x = (L(1)^2-L(2)^2+L(3)^2)/(2*L(3));
+
+% Angle calculations
+if (format=='d')
+    angles(1)=asind(h/L(1));
+    if(x<0), angles(1)=180-angles(1); end
+    angles(3)=asind(h/L(2));
+    if(x>L(3)), angles(3)=180-angles(3); end
+    angles(2)=180-angles(3)-angles(1);
+else
+    angles(1)=asin(h/L(1));
+    if(x<0), angles(1)=pi-angles(1); end
+    angles(3)=asin(h/L(2));
+    if(x>L(3)), angles(3)=pi-angles(3); end
+    angles(2)=pi-angles(3)-angles(1);
+end
 
 end
 %====================================================
