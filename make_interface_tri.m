@@ -23,12 +23,12 @@ save('./figs/plate_phs_initial','s')
 
 s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate,ini_size,pole,ARS,ARR);
 
-% [tarea,tcenter]=calc_tri_area(s);
-% save(['./figs2/area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
+[tarea,tcenter]=calc_tri_area(s);
+save(['./figs/area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
 % save('plate_phs','s')
 save(['./figs/plate_phs',num2str(PRM.NMESH)],'s')
-[tarea,tcenter]=calc_tri_area(s);
-save(['./figs2/area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
+% [tarea,tcenter]=calc_tri_area(s);
+% save(['./figs/area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
 
 
 end
