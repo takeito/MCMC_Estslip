@@ -9,10 +9,10 @@ savefolder='./figs/Mesh';
 anim_savefile='./figs/tri_anim.gif';
 
 % ------------------Parameter---------------------
-PRM.NMESH=100;
-Reducerate=0.01; % Reduce rate of triangles
+PRM.NMESH=1000;
+Reducerate=0.001; % Reduce rate of triangles
 ARR=0.4;                                      % Reduce badangle triangle rate in each roop
-ARS=0.6;                                      % Reduce badangle when roop reached to PRM.NMESH*AngRedStart
+ARS=0.5;                                      % Reduce badangle when roop reached to PRM.NMESH*AngRedStart
 pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative to AM plate(REVEL)
 % --------------------------------------------------
 
@@ -155,7 +155,8 @@ while Ntri > n_mesh
               if min_tri(mm,n)<=initial
                   f_tri(mm,n)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
               else
-                  [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
+                  f_tri(mm,n)=tri_Ang(Uasortindex(mm),n);
+%                   [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
               end
           end
           clear n;
@@ -175,7 +176,8 @@ while Ntri > n_mesh
               if min_tri(mm,n)<=initial
                   f_tri(mm,n)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
               else
-                  [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
+                  f_tri(mm,n)=tri_Ang(Uasortindex(mm),n);
+%                   [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
               end
           end
           clear n;
@@ -253,44 +255,29 @@ while Ntri > n_mesh
   Ua_tmp=Ua;
   Ua=zeros(nn,1);
   
-  if Ntri>Ntriini*ars+2*Redu_tri
-      parfor n=1:nn
-          %     for n=1:nn   %    <<----------------- use in debug test
-          if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-              [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
-              PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
-              PMcom=PMcom./norm(PMcom);
-              %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
-              [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
-              Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-          else
-              Ua(n)=Ua_tmp(n);
-          end
-      end
-  else
-      tri_Ang_tmp=tri_Ang;
-      minAng_tmp=minAng;
-      minAng=zeros(length(Stri),1);
-      tri_Ang=zeros(length(Stri),3);
-      parfor n=1:nn
-          %     for n=1:nn   %    <<----------------- use in debug test
-          if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-              [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
-              PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
-              PMcom=PMcom./norm(PMcom);
-              [Ang]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
-              tri_Ang(n,:)=Ang(:);
-              minAng(n,1)=min(Ang);
-              %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
-              [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
-              Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-          else
-              Ua(n)=Ua_tmp(n);
-              tri_Ang(n,:)=tri_Ang_tmp(n,:);
-              minAng(n,1)=minAng_tmp(n,1);
-          end
+  tri_Ang_tmp=tri_Ang;
+  minAng_tmp=minAng;
+  minAng=zeros(length(Stri),1);
+  tri_Ang=zeros(length(Stri),3);
+  parfor n=1:nn
+      %     for n=1:nn   %    <<----------------- use in debug test
+      if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
+          [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
+          PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
+          PMcom=PMcom./norm(PMcom);
+          [Ang]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
+          tri_Ang(n,:)=Ang(:);
+          minAng(n,1)=min(Ang);
+          %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+          [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+          Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+      else
+          Ua(n)=Ua_tmp(n);
+          tri_Ang(n,:)=tri_Ang_tmp(n,:);
+          minAng(n,1)=minAng_tmp(n,1);
       end
   end
+
   clear n;
 
   S.tri=Stri;
