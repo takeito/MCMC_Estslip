@@ -8,6 +8,8 @@ PRM.INIP_F='./initial_point.txt';
 savefolder='./figs/Mesh';
 anim_savefile='./figs/tri_anim.gif';
 
+% test
+
 % ------------------Parameter---------------------
 PRM.NMESH=1000;
 Reducerate=0.001; % Reduce rate of triangles
