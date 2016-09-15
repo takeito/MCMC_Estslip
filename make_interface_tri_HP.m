@@ -26,9 +26,6 @@ s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate,ini_size,pole,HP)
 save([sfolder,'area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
 % save('plate_phs','s')
 save([sfolder,'plate_phs',num2str(PRM.NMESH)],'s')
-% [tarea,tcenter]=calc_tri_area(s);
-% save(['./figs/area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
-
 
 end
 
@@ -269,6 +266,8 @@ end
 S.x=sx;
 S.y=sy;
 S.z=sz;
+S.U=Ua;
+S.F=Fobs;
 
 % save figure at the number of n-mesh
 close(fig30)
