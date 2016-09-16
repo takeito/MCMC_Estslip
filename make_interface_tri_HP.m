@@ -11,7 +11,7 @@ anim_savefile=[sfolder,'tri_anim.gif'];
 % ------------------Parameter---------------------
 PRM.NMESH=pMESH;
 % Reducerate=0.01;                                      % Reduce rate of triangles
-% HP=1.0E2;                                             % Hyper Parameter of Fobs(object function).
+HP=10^HP;                                             % Hyper Parameter of Fobs(object function).
 pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative to AM plate(REVEL)
 % --------------------------------------------------
 
