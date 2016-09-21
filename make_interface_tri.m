@@ -334,7 +334,6 @@ end
 S.x=sx;
 S.y=sy;
 S.z=sz;
-S.U=Ua;
 
 % save figure at the number of n-mesh
 close(fig30)
