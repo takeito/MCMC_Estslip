@@ -326,7 +326,7 @@ PR=0.25;
 NF=0;
 % TODO: READ MULTIPLE BLOCK VELOCITY
 load PRM.TRI_F
-
+%
 while 1
   NF=NF+1;
   loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
