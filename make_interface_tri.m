@@ -74,13 +74,13 @@ Ntri=length(S.tri);
 min_Ang=zeros(Ntri,1);
 tri_Ang=zeros(Ntri,3);
 parfor n=1:Ntri
-  [SDT]=SDTvec(sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)));
+  SDT=SDTvec(sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)));
   PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
   PMcom=PMcom./norm(PMcom);
-  [Ang]=triangle_angles([sx(S.tri(n,:)) sy(S.tri(n,:)) sz(S.tri(n,:))],'d');
+  Ang=triangle_angles([sx(S.tri(n,:)) sy(S.tri(n,:)) sz(S.tri(n,:))],'d');
   tri_Ang(n,:)=Ang(:);
   min_Ang(n,1)=min(Ang);  
-  [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+  U=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
   Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 clear n;
@@ -176,14 +176,17 @@ while Ntri > n_mesh
       minAng(n,1)=min(Ang);
       U=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
       Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-      else
-          Ua(n)=Ua_tmp(n);
-          tri_Ang(n,:)=tri_Ang_tmp(n,:);
-          minAng(n,1)=minAng_tmp(n,1);
-      end
+    else
+      Ua(n)=Ua_tmp(n);
+      tri_Ang(n,:)=tri_Ang_tmp(n,:);
+      minAng(n,1)=minAng_tmp(n,1);
+    end
   end
-  
- % GIF animation test -----------
+  clear n;
+  S.tri=Stri;
+  Ntri=length([S.tri]);  
+% GIF animation test -----------
+  ffanim=ffanim+1;
   if ffanim==1
       fig30=figure;
   else
