@@ -103,7 +103,6 @@ while Ntri > n_mesh
           f_tri(mm,n)=0;              % If the vertex of triangle is initial edge point, don'n remove this point.
         else
           f_tri(mm,n)=tri_Ang(Uasortindex(mm),n);
-%             [f_tri(mm,n),~]=size(find(S.tri==min_tri(mm,n)));
         end
       end
       clear n;
@@ -142,9 +141,6 @@ while Ntri > n_mesh
     end
   end
   clear mm;
-  
-  [~,index]=max(f_tri);
-  r_index(min_tri(index))=0;
   r_index=logical(r_index);
   S.lat=S.lat(r_index);
   S.lon=S.lon(r_index);
@@ -153,47 +149,85 @@ while Ntri > n_mesh
   [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
   sz=S.dep;
 %---------
-  ntri=length(S.tri);
-  nn=0;
-  Stri=[];
-  for n=1:ntri
-    glon=mean(S.lon(S.tri(n,:)));  
-    glat=mean(S.lat(S.tri(n,:)));
-    ID=inpolygon(glon,glat,S.bound(:,1),S.bound(:,2));
-    if ID==1
-      nn=nn+1;
-      Stri(nn,:)=S.tri(n,:);
-    end  
-  end
-%---------
+  glon=mean(S.lon(S.tri),2);
+  glat=mean(S.lat(S.tri),2);
+  ID=inpolygon(glon,glat,S.bound(:,1),S.bound(:,2));
+  ID1ind=find(ID==1);
+  [nn,~]=size(ID1ind);
+  Stri=S.tri(ID1ind,:);
+  tg.lon=mean(S.lon(Stri),2);
+  tg.lat=mean(S.lat(Stri),2);
+  [tgxyz]=enu2xyz(tg.lon,tg.lat,6371D0);
+  [PMEN]=platemotion(tgxyz.x,tgxyz.y,tgxyz.z,tg.lon,tg.lat,pxyz.x,pxyz.y,pxyz.z);
+%  
   Ua_tmp=Ua;
   Ua=zeros(nn,1);
-  for n=1:nn
+  tri_Ang_tmp=tri_Ang;
+  minAng_tmp=minAng;
+  minAng=zeros(length(Stri),1);
+  tri_Ang=zeros(length(Stri),3);
+  parfor n=1:nn
     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-     [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1); 
-     Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-    else
-     Ua(n)=Ua_tmp(n);
-    end
+      [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
+      PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
+      PMcom=PMcom./norm(PMcom);
+      [Ang]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
+      tri_Ang(n,:)=Ang(:);
+      minAng(n,1)=min(Ang);
+      U=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+      else
+          Ua(n)=Ua_tmp(n);
+          tri_Ang(n,:)=tri_Ang_tmp(n,:);
+          minAng(n,1)=minAng_tmp(n,1);
+      end
   end
-  S.tri=Stri;
-  Ntri=length([S.tri]);
-  Fid=figure;
+  
+ % GIF animation test -----------
+  if ffanim==1
+      fig30=figure;
+  else
+      fig30=figure('visible','off');
+  end
   plot(S.bound(:,1),S.bound(:,2),'r');
   hold on;
   plot(OBS(1).ALON,OBS(1).ALAT,'.g');
   triplot(S.tri,S.lon,S.lat);
   title(['Number of triangels= ',num2str(Ntri)]);
-  print(Fid,'-depsc ',['./figs/Mesh',num2str(Ntri)]);
-  close(Fid)
-  figure(30); clf
-  plot(S.bound(:,1),S.bound(:,2),'r');
-  hold on;
-  plot(OBS(1).ALON,OBS(1).ALAT,'.g');
-  triplot(S.tri,S.lon,S.lat);
-  title(['Number of triangels= ',num2str(Ntri)]);
-  pause(.1)
+  if ffanim == 1;
+      print('-depsc',[saveloc,num2str(Ntri)]);
+  end  
+  fprintf('Number of triangels=%4.0f \n',Ntri)
+  frame=getframe(fig30);
+  im=frame2im(frame);
+  [A,map]=rgb2ind(im,256);
+  if ffanim == 1;
+      imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
+  else
+      imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
+  end
+  hold off;clf;
 end
+
+% export when exit roop
+S.x=sx;
+S.y=sy;
+S.z=sz;
+
+% save figure at the number of n-mesh
+close(fig30)
+clear ffanim;
+
+Fid=figure('visible','off');
+plot(S.bound(:,1),S.bound(:,2),'r');
+hold on;
+plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+triplot(S.tri,S.lon,S.lat);
+title(['Number of triangels= ',num2str(Ntri)]);
+fprintf('Number of triangels=%4.0f \n ',Ntri)
+print(Fid,'-depsc ',[saveloc,num2str(Ntri)]);
+close(Fid)
+
 end
 %% Initial sub-fault
 function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,inip_f,int_mesh)
@@ -546,31 +580,84 @@ v2                = B1.*v2B1 + B2.*v2B2 + B3.*v2B3;
 v3                = B1.*v3B1 + B2.*v3B2 + B3.*v3B3;
 end
 %====================================================
-function [X,Y]=PLTXY(ALAT,ALON,ALAT0,ALON0)
-%-------------------
-%  PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y)
-%  WHEN ICORD.NE.0  PLTXY MAKES NO CHANGE IN 
-%  TRANSFORMATION BETWEEN (X,Y) AND (ALAT,ALONG).
-%-------------------
-A=6.378160e3;
-E2=6.6944541e-3;
-E12=6.7395719e-3;
-D=5.72958e1;
-RD=1.0/D;
-RLAT = RD.*ALAT;
-SLAT = sin(RLAT);
-CLAT = cos(RLAT);
-V2   = 1.0 + E12.*CLAT.^2;
-AL   = ALON-ALON0;
-PH1  = ALAT + (V2.*AL.^2.*SLAT.*CLAT)./(2.0*D);
-RPH1 = PH1.*RD;
-RPH2 = (PH1 + ALAT0).*0.5.*RD;
-R    = A.*(1.0-E2)./sqrt((1.0-E2.*sin(RPH2).^2).^3);
-AN   = A./sqrt(1.0-E2.*sin(RPH1).^2);
-C1   = D./R;
-C2   = D./AN;
-Y    = (PH1-ALAT0)./C1;
-X    = (AL.*CLAT)./C2+(AL.^3.*CLAT.*cos(2.0.*RLAT))./(6.0.*C2.*D.^2);
+function [VEN] = platemotion(trigx,trigy,trigz,tlon,tlat,px,py,pz)
+
+% Input-------------------------------------------------
+%   trigx,trigy,trigz     :Center of triangle position
+%   tlon,tlat             :Longitude and Latitude of center of triangle
+%   px,py,pz              :Pole
+% Output------------------------------------------------
+%   V.EW, V.NS            :plate motion[km/yr] (Positive directions are E and N)
+% ------------------------------------------------------
+
+tlon=deg2rad(tlon);
+tlat=deg2rad(tlat);
+
+% Transformation from pole coord. to XYZ
+[polexyz]=[px; py; pz];
+[trigxyz]=[trigx'; trigy'; trigz'];
+
+% Calculate plate motion
+[~,trigsize]=size(trigxyz);
+pm=zeros(3,trigsize);
+for ii=1:trigsize
+    pm(:,ii)=cross(polexyz,trigxyz(:,ii)).*1.0D-6;
+end
+% PM=PM';
+Vx=pm(1,:);
+Vy=pm(2,:);
+Vz=pm(3,:);
+
+% Export to E-N direction Velocity
+VEN.EW=           -sin(tlon).*Vx' +            cos(tlon).*Vy';
+VEN.NS=-sin(tlat).*cos(tlon).*Vx' - sin(tlat).*sin(tlon).*Vy' + cos(tlat).*Vz';
+VEN.UD= cos(tlat).*cos(tlon).*Vx' + cos(tlat).*sin(tlon).*Vy' + sin(tlat).*Vz';    % not need
+
+end
+%====================================================
+function [SDT] = SDTvec(tvx,tvy,tvz)
+
+% Calculate Strike, Dip, Tensile vectors of triangle
+% Input-----------------------------   
+%  tvx  : x-coordinate(X) of triangle vertices. 
+%  tvy  : y-coordinate(Y) of triangle vertices. 
+%  tvz  : z-coordinate(dep) of triangle vertices. 
+% Output---------------------------
+%  SDT  : xyz-coordinates(XY-plane) of strike, dip, tensile vectors of triangle.
+% ---------------------------------
+
+% Strike, Dip, Tensile vectors on xyz-coordinate
+normVec        = cross([tvx(2);tvy(2);tvz(2)]-[tvx(1);tvy(1);tvz(1)], [tvx(3);tvy(3);tvz(3)]-[tvx(1);tvy(1);tvz(1)]);
+normVec        = normVec./norm(normVec);
+if (normVec(3) < 0) % Enforce clockwise circulation
+   normVec     = -normVec;
+   [tvx(2),tvx(3)] = swap(tvx(2), tvx(3));
+   [tvy(2),tvy(3)] = swap(tvy(2), tvy(3));
+   [tvz(2),tvz(3)] = swap(tvz(2), tvz(3));
+end
+strikeVec      = [-sin(atan2(normVec(2),normVec(1))) cos(atan2(normVec(2),normVec(1))) 0];
+dipVec         = cross(normVec, strikeVec);
+
+SDT=[strikeVec(:) dipVec(:) zeros(3,1)];
+
+end
+%====================================================
+function [xyz]=enu2xyz(tvlon,tvlat,abs)
+
+% degree to radian
+tvlon=deg2rad(tvlon);
+tvlat=deg2rad(tvlat);
+
+% lonlat to xyz
+tvx=cos(tvlat).*cos(tvlon).*abs;
+tvy=cos(tvlat).*sin(tvlon).*abs;
+tvz=sin(tvlat).*abs;
+
+xyz.x=tvx;
+xyz.y=tvy;
+xyz.z=tvz;
+% XYZ=[tvx(:) tvy(:) tvz(:)];
+
 end
 %====================================================
 function [area,center]=calc_tri_area(s)
@@ -698,83 +785,30 @@ end
 
 end
 %====================================================
-function [VEN] = platemotion(trigx,trigy,trigz,tlon,tlat,px,py,pz)
-
-% Input-------------------------------------------------
-%   trigx,trigy,trigz     :Center of triangle position
-%   tlon,tlat             :Longitude and Latitude of center of triangle
-%   px,py,pz              :Pole
-% Output------------------------------------------------
-%   V.EW, V.NS            :plate motion[km/yr] (Positive directions are E and N)
-% ------------------------------------------------------
-
-tlon=deg2rad(tlon);
-tlat=deg2rad(tlat);
-
-% Transformation from pole coord. to XYZ
-[polexyz]=[px; py; pz];
-[trigxyz]=[trigx'; trigy'; trigz'];
-
-% Calculate plate motion
-[~,trigsize]=size(trigxyz);
-pm=zeros(3,trigsize);
-for ii=1:trigsize
-    pm(:,ii)=cross(polexyz,trigxyz(:,ii)).*1.0D-6;
-end
-% PM=PM';
-Vx=pm(1,:);
-Vy=pm(2,:);
-Vz=pm(3,:);
-
-% Export to E-N direction Velocity
-VEN.EW=           -sin(tlon).*Vx' +            cos(tlon).*Vy';
-VEN.NS=-sin(tlat).*cos(tlon).*Vx' - sin(tlat).*sin(tlon).*Vy' + cos(tlat).*Vz';
-VEN.UD= cos(tlat).*cos(tlon).*Vx' + cos(tlat).*sin(tlon).*Vy' + sin(tlat).*Vz';    % not need
-
-end
-%====================================================
-function [SDT] = SDTvec(tvx,tvy,tvz)
-
-% Calculate Strike, Dip, Tensile vectors of triangle
-% Input-----------------------------   
-%  tvx  : x-coordinate(X) of triangle vertices. 
-%  tvy  : y-coordinate(Y) of triangle vertices. 
-%  tvz  : z-coordinate(dep) of triangle vertices. 
-% Output---------------------------
-%  SDT  : xyz-coordinates(XY-plane) of strike, dip, tensile vectors of triangle.
-% ---------------------------------
-
-% Strike, Dip, Tensile vectors on xyz-coordinate
-normVec        = cross([tvx(2);tvy(2);tvz(2)]-[tvx(1);tvy(1);tvz(1)], [tvx(3);tvy(3);tvz(3)]-[tvx(1);tvy(1);tvz(1)]);
-normVec        = normVec./norm(normVec);
-if (normVec(3) < 0) % Enforce clockwise circulation
-   normVec     = -normVec;
-   [tvx(2),tvx(3)] = swap(tvx(2), tvx(3));
-   [tvy(2),tvy(3)] = swap(tvy(2), tvy(3));
-   [tvz(2),tvz(3)] = swap(tvz(2), tvz(3));
-end
-strikeVec      = [-sin(atan2(normVec(2),normVec(1))) cos(atan2(normVec(2),normVec(1))) 0];
-dipVec         = cross(normVec, strikeVec);
-
-SDT=[strikeVec(:) dipVec(:) zeros(3,1)];
-
-end
-%====================================================
-function [xyz]=enu2xyz(tvlon,tvlat,abs)
-
-% degree to radian
-tvlon=deg2rad(tvlon);
-tvlat=deg2rad(tvlat);
-
-% lonlat to xyz
-tvx=cos(tvlat).*cos(tvlon).*abs;
-tvy=cos(tvlat).*sin(tvlon).*abs;
-tvz=sin(tvlat).*abs;
-
-xyz.x=tvx;
-xyz.y=tvy;
-xyz.z=tvz;
-% XYZ=[tvx(:) tvy(:) tvz(:)];
-
+function [X,Y]=PLTXY(ALAT,ALON,ALAT0,ALON0)
+%-------------------
+%  PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y)
+%  WHEN ICORD.NE.0  PLTXY MAKES NO CHANGE IN 
+%  TRANSFORMATION BETWEEN (X,Y) AND (ALAT,ALONG).
+%-------------------
+A=6.378160e3;
+E2=6.6944541e-3;
+E12=6.7395719e-3;
+D=5.72958e1;
+RD=1.0/D;
+RLAT = RD.*ALAT;
+SLAT = sin(RLAT);
+CLAT = cos(RLAT);
+V2   = 1.0 + E12.*CLAT.^2;
+AL   = ALON-ALON0;
+PH1  = ALAT + (V2.*AL.^2.*SLAT.*CLAT)./(2.0*D);
+RPH1 = PH1.*RD;
+RPH2 = (PH1 + ALAT0).*0.5.*RD;
+R    = A.*(1.0-E2)./sqrt((1.0-E2.*sin(RPH2).^2).^3);
+AN   = A./sqrt(1.0-E2.*sin(RPH1).^2);
+C1   = D./R;
+C2   = D./AN;
+Y    = (PH1-ALAT0)./C1;
+X    = (AL.*CLAT)./C2+(AL.^3.*CLAT.*cos(2.0.*RLAT))./(6.0.*C2.*D.^2);
 end
 %====================================================
