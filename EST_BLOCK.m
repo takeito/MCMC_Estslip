@@ -3,17 +3,8 @@ function EST_BLOCK
 % Code by T.ITO 2016/03/02
 %
 warning('off','all')
-FileOBS='./colombia_data_set/GNSS_ITRF2008_Colombia_matlab.txt';
-%DIRBlock='./colombia_data_set/BLOCK_PB2003/';
-%DIRBlock='./colombia_data_set/BLOCK_8/';
-%DIRBlock='./colombia_data_set/BLOCK_9/';
-%DIRBlock='./colombia_data_set/BLOCK_12/';
-%DIRBlock='./colombia_data_set/BLOCK_12_rev2/';
-DIRBlock='./colombia_data_set/BLOCK_12_rev3/';
-%DIRBlock='./colombia_data_set/BLOCK_14/';
-%DIRBlock='./colombia_data_set/BLOCK_15/';
-%DIRBlock='./colombia_data_set/BLOCK_16/';
-%DIRBlock='./colombia_data_set/BLOCK_rev2/';
+FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
+DIRBlock='./BLOCK/';
 % READ OBSERVATION FILE
 OBS=READ_OBS(FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY 

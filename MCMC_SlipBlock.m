@@ -1,5 +1,5 @@
 %% MCMC Inversion for Geodetic 
-function MCMCInv_SlipBlock(INPUT_FILE)
+function MCMC_SlipBlock(INPUT_FILE)
 % Coded    by Takeo Ito 2011/11/08 (ver 1.0)
 % Modified by Takeo Ito 2012/10/26 (ver 1.1)
 % Modified by Takeo Ito 2015/11/11 (ver 1.2)
@@ -11,8 +11,8 @@ OBS=READ_OBS(PRM);
 TRI=READ_FAULTS_GREEN_TRI(PRM,OBS);
 %% READ FAULTS AND MAKE GREEN FUNCTION FOR RECT
 RECT=READ_FAULTS_GREEN_RECT(PRM,OBS);
-save GG.mat
-load GG.mat
+%save GG.mat
+%load GG.mat
 %% MCMC COMPUTATION 
 [MCRE]=GPU_CALC_MCMC_XYr(PRM,OBS,TRI,RECT,1);
 %% MCMC OUT_PUT
@@ -603,8 +603,8 @@ while 1
   OBS(1).EEE(3*N-2) =str2double(cellstr(str(8))); %E-W
   OBS(1).EEE(3*N-1) =str2double(cellstr(str(9))); %N-S
   OBS(1).EEE(3*N)   =str2double(cellstr(str(10))); %U-D
-  OBS(1).BLK(N)  =str2double(cellstr(str(11))); %BLK
 end
+plot(OBS(1).ALON,OBS(1).ALAT,'.')
 % TODO: FOR TEST READ TWO BLOCK REGION
 MB=zeros(max(OBS(1).BLK),1);
 for NOBS=1:N
