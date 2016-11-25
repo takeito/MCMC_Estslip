@@ -25,6 +25,8 @@ OBS=READ_OBS(FileOBS);
 [BLK,OBS]=READ_BLOCK_BOUND(DIRBlock,OBS);
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBlock_Interface);
+% CALC. GREEN FUNCTION
+[TRI]=GREEN_TRI(BLK,OBS);
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -36,184 +38,117 @@ end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
 %
+NF=0;
 int_lat=0.25;
 int_lon=0.25;
 dep_limit=150;
 dep_limit_low=10;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
-    sub_f=fullfile(DIRBLK,['B_',num2str(NB1),'_',num2str(NB2),'.txt']);
-    Fid=fopen(sub_f,'r');
+    pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
+    Fid=fopen(pre_tri_f,'r');
     if Fid >= 0
-      dep_blk=textscan(Fid,'%f%f%f'); fclose(Fid);
-      dep_blk=cell2mat(dep_blk);
-      F=scatteredInterpolant(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3),'natural');
-      BO_f=fullfile(DIRBLK,['BO_',num2str(NB1),'_',num2str(NB2),'.txt']);
-      Fid=fopen(BO_f,'r');
+      while 1
+        NF=NF+1;
+        loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
+        [~] = fgetl(Fid);
+        BLK(1).BOUND(NB1,NB2).clon(NF,:)=loc_f(1,:);%Lon
+        BLK(1).BOUND(NB1,NB2).clat(NF,:)=loc_f(2,:);%Lat
+        BLK(1).BOUND(NB1,NB2).cdep(NF,:)=loc_f(3,:);%Hight
+        tline = fgetl(Fid); if ~ischar(tline); break; end
+      end
+      fclose(Fid);
+    else
+      sub_f=fullfile(DIRBLK,['B_',num2str(NB1),'_',num2str(NB2),'.txt']);
+      Fid=fopen(sub_f,'r');
       if Fid >= 0
-        bound_blk=textscan(Fid,'%f%f'); fclose(Fid);     
-        bound_blk=cell2mat(bound_blk);
+        dep_blk=textscan(Fid,'%f%f%f'); fclose(Fid);
+        dep_blk=cell2mat(dep_blk);
+        F=scatteredInterpolant(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3),'natural');
+        BO_f=fullfile(DIRBLK,['BO_',num2str(NB1),'_',num2str(NB2),'.txt']);
+        Fid=fopen(BO_f,'r');
+        if Fid >= 0
+          bound_blk=textscan(Fid,'%f%f'); fclose(Fid);     
+          bound_blk=cell2mat(bound_blk);
+        else
+          IDB=boundary(dep_blk(:,1),dep_blk(:,2));
+          bound_blk=dep_blk(IDB,:);
+        end
         min_lon=min(bound_blk(:,1)); max_lon=max(bound_blk(:,1));
         min_lat=min(bound_blk(:,2)); max_lat=max(bound_blk(:,2));
         [slon,slat]=meshgrid(min_lon:int_lon:max_lon,min_lat:int_lat:max_lat);
         ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
+        slon=slon(ID); slat=slat(ID); sdep=F(slon,slat);
+        ID=find(sdep<dep_limit);
+        BOUND(NB1,NB2).slon=slon(ID);
+        BOUND(NB1,NB2).slat=slat(ID);
+        BOUND(NB1,NB2).sdep=F(slon,slat);
+        BOUND(NB1,NB2).stri=delaunay(slon,slat);
       else
-        IDB=boundary(dep_blk(:,1),dep_blk(:,2));
-        min_lon=min(dep_blk(:,1)); max_lon=max(dep_blk(:,1));
-        min_lat=min(dep_blk(:,2)); max_lat=max(dep_blk(:,2));              
-        [slon,slat]=meshgrid(min_lon:int_lon:max_lon,min_lat:int_lat:max_lat);
-        ID=inpolygon(slon,slat,dep_blk(IDB,1),dep_blk(IDB,2));
+        LENG=length(BLK(1).BOUND(NB1,NB2).LON);
+        BOUND(NB1,NB2).slon=[BOUND(NB1,NB2).LON BOUND(NB1,NB2).LON];
+        BOUND(NB1,NB2).slat=[BOUND(NB1,NB2).LAT BOUND(NB1,NB2).LAT];
+        BOUND(NB1,NB2).sdep=[zeros(size(BOUND(NB1,NB2).LAT)) dep_limit_low.*ones(BOUND(NB1,NB2).LAT)];
+        BOUND(NB1,NB2).stri(   1:LENG-1    ,1:3)=[     1:  (LENG-1); 2:LENG; LENG+1:2*LENG-1];
+        BOUND(NB1,NB2).stri(LENG:2*(LENG-1),1:3)=[LENG+1:2*(LENG-1); 2:LENG; LENG+2:2*LENG-1];      
       end
-      slon=slon(ID);
-      slat=slat(ID);
-      sdep=F(slon,slat);
-      ID=find(sdep<dep_limit);
-      slon=slon(ID);
-      slat=slat(ID);
-      sdep=F(slon,slat);
-      BLK(1).BOUND(NB1,NB2).slon=slon;
-      BLK(1).BOUND(NB1,NB2).slat=slat;
-      BLK(1).BOUND(NB1,NB2).sdep=sdep;
-      BLK(1).BOUND(NB1,NB2).tri =delaunay(slon,slat);
-    else
-      LENG=length(BLK(1).BOUND(NB1,NB2).LON);
-      BLK(1).BOUND(NB1,NB2).slon=[BLK(1).BOUND(NB1,NB2).LON BLK(1).BOUND(NB1,NB2).LON];
-      BLK(1).BOUND(NB1,NB2).slat=[BLK(1).BOUND(NB1,NB2).LAT BLK(1).BOUND(NB1,NB2).LAT];
-      BLK(1).BOUND(NB1,NB2).sdep=[zeros(size(BLK(1).BOUND(NB1,NB2).LAT)) dep_limit_low.*ones(BLK(1).BOUND(NB1,NB2).LAT)];
-      BLK(1).BOUND(NB1,NB2).tri(   1:LENG-1    ,1:3)=[     1:  (LENG-1); 2:LENG; LENG+1:2*LENG-1];
-      BLK(1).BOUND(NB1,NB2).tri(LENG:2*(LENG-1),1:3)=[LENG+1:2*(LENG-1); 2:LENG; LENG+2:2*LENG-1];      
+      BLK(1).BOUND(NB1,NB2).clat=BOUND(NB1,NB2).slat(BOUND(NB1,NB2).stri);
+      BLK(1).BOUND(NB1,NB2).clon=BOUND(NB1,NB2).slon(BOUND(NB1,NB2).stri);
+      BLK(1).BOUND(NB1,NB2).cdep=BOUND(NB1,NB2).sdep(BOUND(NB1,NB2).stri);
     end
   end
 end
-%====================================================
-dep_sub=textscan(Fid,'%f%f%f');
-fclose(Fid);
-dep_sub=cell2mat(dep_sub);
-%====================================================
-Fid=fopen(bound_f);
-bound=textscan(Fid,'%f%f%f');
-fclose(Fid);
-bound=cell2mat(bound);
-%====================================================
-Fid=fopen(inip_f);
-ini_point=textscan(Fid,'%f%f%f');
-fclose(Fid);
-ini_point=cell2mat(ini_point);
-[int_size,~]=size(ini_point);
-%====================================================
-F=scatteredInterpolant(dep_sub(:,1),dep_sub(:,2),dep_sub(:,3),'natural');
-min_lon=min(bound(:,1)); max_lon=max(bound(:,1));
-min_lat=min(bound(:,2)); max_lat=max(bound(:,2));
-figure(10); clf
-plot(bound(:,1),bound(:,2),'r')
-hold on
-%====================================================
-% initial Fixed points -------
-s.lon=ini_point(:,1);
-s.lat=ini_point(:,2);
-s.dep=ini_point(:,3);
-%====================================================
-n=int_size;
-while n<int_mesh
-  slat=(max_lat-min_lat).*rand(1)+min_lat;
-  slon=(max_lon-min_lon).*rand(1)+min_lon;
-  ID=inpolygon(slon,slat,bound(:,1),bound(:,2));
-  if ID==1
-    n=n+1;
-    s.lat(n)=slat;
-    s.lon(n)=slon;
-    s.dep(n)=F(slon,slat);
-    if rem(n,round(int_mesh/10))==1;
-      plot3(s.lon,s.lat,s.dep,'.')
-      pause(.1)
-    end
-  end
-end
-plot3(s.lon,s.lat,s.dep,'.')
-%====================================================
-tri = delaunay(s.lon,s.lat);
-%====================================================
-glon=mean(s.lon(tri),2);
-glat=mean(s.lat(tri),2);
-ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
-s.tri=tri(ID==1,:);
-%
-figure(20); clf
-plot(bound(:,1),bound(:,2),'r')
-hold on
-triplot(s.tri,s.lon,s.lat)
-pause(.1)
-s.bound=bound;
-s.dep_sub=dep_sub;
 end
 %% MAKE GREEN FUNCTION
-function [TRI]=READ_FAULTS_GREEN_TRI(BLK,OBS)
+function [TRI]=GREEN_TRI(BLK,OBS)
 % Coded by Takeo Ito 2015/11/11 (ver 1.0)
 PR=0.25;
-NF=0;
-% TODO: READ MULTIPLE BLOCK VELOCITY
-load PRM.TRI_F
-%
-for NB1=1:BLK(1).NBlock
-  for NB2=NB1+1:BLK(1).NBlock
-    BLK(1).BOUND(NB1,NB2).BLAT
-    BLK(1).BOUND(NB1,NB2).BLON
-    BLK(1).BOUND(NB1,NB2).BDEP
-    BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
-    
-  end
-end
-
-while 1
-  NF=NF+1;
-  loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
-  [~] = fgetl(Fid);
-  TRI(1).LON(NF,:)=loc_f(1,:);%Lon
-  TRI(1).LAT(NF,:)=loc_f(2,:);%Lat
-  TRI(1).HIG(NF,:)=loc_f(3,:);%Hight
-  tline = fgetl(Fid); if ~ischar(tline); break; end
-end
-fclose(Fid);
-%
 ND=size(OBS(1).ALAT,2);
-TRI(1).GSTR=zeros(3*ND,NF);
-TRI(1).GDIP=zeros(3*ND,NF);
-%
-fprintf('==================\nNumber of TRI sub-faults : %i \n',NF)
 %
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 OBSz=OBS(1).AHIG;
 %
-for N=1:NF
-  [TRIx,TRIy]=PLTXY(TRI(1).LAT(N,:),TRI(1).LON(N,:),ALAT,ALON);
-  TRIz=-1.*TRI(1).HIG(N,:);
-  F_LOC=[TRI(1).LAT(N,:);TRI(1).LON(N,:);TRI(1).HIG(N,:)]';
-  [F,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
-  TRI(1).CLAT(N)=F(1);
-  TRI(1).CLON(N)=F(2);
-  TRI(1).CHIG(N)=F(3);
-  TRI(1).DA(N)=DA;
-  TRI(1).STR(N)=STR;
-  TRI(1).DIP(N)=DIP;
-  TRI(1).NV(N,:)=NV;
-  TRI(1).ST(N,:)=ST;
-  TRI(1).DP(N,:)=DP;
-  U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,1,0,0);
-  TRI(1).GSTR(1:3:3*ND,N)=U.x; %E
-  TRI(1).GSTR(2:3:3*ND,N)=U.y; %N
-  TRI(1).GSTR(3:3:3*ND,N)=U.z; %D
-  U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,1,0);
-  TRI(1).GTNS(1:3:3*ND,N)=U.x; %E
-  TRI(1).GTNS(2:3:3*ND,N)=U.y; %N
-  TRI(1).GTNS(3:3:3*ND,N)=U.z; %D 
-  U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,0,1);
-  TRI(1).GDIP(1:3:3*ND,N)=U.x; %E
-  TRI(1).GDIP(2:3:3*ND,N)=U.y; %N
-  TRI(1).GDIP(3:3:3*ND,N)=U.z; %D 
-  if mod(N,ceil(NF/5)) == 1
-    fprintf('MAKE GREEN at TRI sub-faults : %i / %i \n',N,NF)
+for NB1=1:BLK(1).NBlock
+  for NB2=1:BLK(1).NBlock
+    NF=size(BOUND(NB1,NB2).slon,1);
+    TRI(1).BOUND(NB1,NB2).GSTR=zeros(3*ND,NF);
+    TRI(1).BOUND(NB1,NB2).GDIP=zeros(3*ND,NF);
+    TRI(1).BOUND(NB1,NB2).GTNS=zeros(3*ND,NF);
+%
+    fprintf('==================\n block %i : Block %i \n Number of TRI sub-faults : %i \n',NB1,NB2,NF)
+%
+    for N=1:NF
+      [TRIx,TRIy]=PLTXY(TRI(1).LAT(N,:),TRI(1).LON(N,:),ALAT,ALON);
+      TRIz=-1.*TRI(1).HIG(N,:);
+      F_LOC=[TRI(1).LAT(N,:);TRI(1).LON(N,:);TRI(1).HIG(N,:)]';
+      [F,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
+      TRI(1).BOUND(NB1,NB2).clat(N)=F(1);
+      TRI(1).BOUND(NB1,NB2).clon(N)=F(2);
+      TRI(1).BOUND(NB1,NB2).cdep(N)=F(3);
+      TRI(1).BOUND(NB1,NB2).DA(N)=DA;
+      TRI(1).BOUND(NB1,NB2).STR(N)=STR;
+      TRI(1).BOUND(NB1,NB2).DIP(N)=DIP;
+      TRI(1).BOUND(NB1,NB2).NV(N,:)=NV;
+      TRI(1).BOUND(NB1,NB2).ST(N,:)=ST;
+      TRI(1).BOUND(NB1,NB2).DP(N,:)=DP;
+      U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,1,0,0);
+      TRI(1).BOUND(NB1,NB2).GSTR(1:3:3*ND,N)=U.x; %E
+      TRI(1).BOUND(NB1,NB2).GSTR(2:3:3*ND,N)=U.y; %N
+      TRI(1).BOUND(NB1,NB2).GSTR(3:3:3*ND,N)=U.z; %D
+      U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,1,0);
+      TRI(1).BOUND(NB1,NB2).GTNS(1:3:3*ND,N)=U.x; %E
+      TRI(1).BOUND(NB1,NB2).GTNS(2:3:3*ND,N)=U.y; %N
+      TRI(1).BOUND(NB1,NB2).GTNS(3:3:3*ND,N)=U.z; %D 
+      U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,0,1);
+      TRI(1).BOUND(NB1,NB2).GDIP(1:3:3*ND,N)=U.x; %E
+      TRI(1).BOUND(NB1,NB2).GDIP(2:3:3*ND,N)=U.y; %N
+      TRI(1).BOUND(NB1,NB2).GDIP(3:3:3*ND,N)=U.z; %D 
+      if mod(N,ceil(NF/5)) == 1
+        fprintf('MAKE GREEN at TRI sub-faults : %i / %i \n',N,NF)
+      end
+    end
   end
 end
 fprintf('Size of Green Matrix : %i x %i \n',...
