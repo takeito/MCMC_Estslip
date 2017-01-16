@@ -162,51 +162,48 @@ fprintf('Residual=%9.3f \n',RR);
 %reset(g);
 %
 RWD=PRM.RWD;
-%
-GEE=single(repmat(1./D(1).ERR',1,PRM.NPL));%gpuArray
-GYY=single(repmat(   D(1).OBS',1,PRM.NPL));%gpuArray
-%
+PRM.NPL=1;
 LDIM=PRM.NPL.*PRM.KEP;
-% TODO: DETERMINED NP (NUMBER OF ESTIMATED POLE)
-NEP=3;
+%
 Mc.INT=1e-2;
 Mp.INT=1e-10;
 La.INT=1e+1;
-Mc(1).NFLT=size(G(1).C,2);
-Mp(1).NFLT=size(G(1).P,2);
-La(1).NFLT=size();
+Mc.N=size(G(1).C,2);
+Mp.N=size(G(1).P,2);
+La.N=size(G(1).C,2);
 %
-Mc.STD=Mc.INT.*ones(Mc(1).NFLT,PRM.NPL,'single');
-Mp.STD=Mp.INT.*ones(Mp(1).NFLT,PRM.NPL,'single');
-La.STD=La.INT.*ones(La(1).NFLT,PRM.NPL,'single');
-Mc.OLD=0.5.*ones(Mc(1).NFLT,PRM.NPL,'single');
-Mp.OLD=    zeros(Mp(1).NFLT,PRM.NPL,'single');
-La.OLD=    zeros(La(1).NFLT,PRM.NPL,'single');
-Mc.CHA=zeros(Mc(1).NFLT,LDIM,'single');
-Mp.CHA=zeros(Mp(1).NFLT,LDIM,'single');
-La.CHA=zeros(La(1).NFLT,LDIM,'single');
+Mc.STD=Mc.INT.*ones(Mc.N,PRM.NPL,'single');
+Mp.STD=Mp.INT.*ones(Mp.N,PRM.NPL,'single');
+La.STD=La.INT.*ones(La.N,PRM.NPL,'single');
+Mc.OLD=   0.5.*ones(Mc.N,PRM.NPL,'single');
+Mp.OLD=       zeros(Mp.N,PRM.NPL,'single');
+La.OLD=       zeros(La.N,PRM.NPL,'single');
+Mc.CHA=       zeros(Mc.N,LDIM,'single');
+Mp.CHA=       zeros(Mp.N,LDIM,'single');
+La.CHA=       zeros(La.N,LDIM,'single');
 %
 RES.OLD=inf(1,PRM.NPL,'single');%gpuArray
 PRI.OLD=inf(1,PRM.NPL,'single');%gpuArray
 %
 RT=0;
 COUNT=0;
-fprintf('USE GPU Max Chain=%4d PP=%5d Nitr=%2d M=%3d \n',...
-           PRM.CHA,PRM.NPL,PRM.ITR,MC(1).NFLT);
+fprintf('USE GPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
+           PRM.CHA,PRM.NPL,PRM.ITR,Mc.N,Mp.N);
 %
-LO_LIMIT=0;
-UP_LIMIT=1;
+LO_Mc=-1;
+UP_Mc= 1;
+PDF_Mc=1./(UP_Mc-LO_Mc);
 while not(COUNT==2)
-  RT=RT+1;
+  RT  =RT+1;
   NACC=0;tic
-  U = log(rand(PRM.CHA,1));
+  U   =log(rand(LDIM,1));
   for iT=1:PRM.CHA
 % SAMPLE SECTION
-    Mc.SMP=Mc.OLD+Mc(1).RWD.*Mc.STD.*(rand(Mc(1).NFLT,PRM.NPL,'single')-0.5);
-    Mp.SMP=Mp.OLD+Mp(1).RWD.*Mp.STD.*(rand(Mp(1).NFLT,PRM.NPL,'single')-0.5);
-    La.SMP=La.OLD+La(1).RWD.*La.STD.*(rand(La(1).NFLT,PRM.NPL,'single')-0.5);
+    Mc.SMP=Mc.OLD+Mc(1).RWD.*Mc.STD.*(rand(Mc.N,PRM.NPL,'single')-0.5);
+    Mp.SMP=Mp.OLD+Mp(1).RWD.*Mp.STD.*(rand(Mp.N,PRM.NPL,'single')-0.5);
+    La.SMP=La.OLD+La(1).RWD.*La.STD.*(rand(La.N,PRM.NPL,'single')-0.5);
 % RESAMPLE SECTION
-    IND_S=find(Mc.SMP<LO_LIMIT | Mc.SMP>UP_LIMIT);
+    IND_S=find(Mc.SMP<LO_Mc | Mc.SMP>UP_Mc);
     while isempty(IND_S)==0
       Mc.SMP(IND_S)=Mc.OLD(IND_S)+RWD.*Mc.STD(IND_S).*(rand(length(IND_S),1,'single')-0.5);
       IND_S=find(Mc.SMP<LO_LIMIT | Mc.SMP>UP_LIMIT);
