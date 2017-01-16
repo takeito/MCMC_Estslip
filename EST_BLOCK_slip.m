@@ -199,9 +199,9 @@ while not(COUNT==2)
   U   =log(rand(LDIM,1));
   for iT=1:PRM.CHA
 % SAMPLE SECTION
-    Mc.SMP=Mc.OLD+Mc(1).RWD.*Mc.STD.*(rand(Mc.N,PRM.NPL,'single')-0.5);
-    Mp.SMP=Mp.OLD+Mp(1).RWD.*Mp.STD.*(rand(Mp.N,PRM.NPL,'single')-0.5);
-    La.SMP=La.OLD+La(1).RWD.*La.STD.*(rand(La.N,PRM.NPL,'single')-0.5);
+    Mc.SMP=Mc.OLD+RWD.*Mc.STD.*(rand(Mc.N,PRM.NPL,'single')-0.5);
+    Mp.SMP=Mp.OLD+RWD.*Mp.STD.*(rand(Mp.N,PRM.NPL,'single')-0.5);
+    La.SMP=La.OLD+RWD.*La.STD.*(rand(La.N,PRM.NPL,'single')-0.5);
 % RESAMPLE SECTION
     IND_S=find(Mc.SMP<LO_Mc | Mc.SMP>UP_Mc);
     while isempty(IND_S)==0
@@ -624,6 +624,7 @@ for NB=1:BLK(1).NBlock
   BLK(NB).LON=tmp(:,1);
   BLK(NB).LAT=tmp(:,2);
 end
+fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     [~,ialon,~]=intersect(BLK(NB1).LON,BLK(NB2).LON);
@@ -632,6 +633,9 @@ for NB1=1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
     BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
     BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    if sum(Ca) > 0 
+      fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
+    end
   end
 end
 for N=1:BLK(1).NBlock
