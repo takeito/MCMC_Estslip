@@ -3,40 +3,359 @@ function EST_BLOCK_slip
 % Code by T.ITO 2016/03/02
 %
 warning('off','all')
-FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
+INPUT_SET='parameter.txt';
+% READ PARAMETER FOR MCMC Inversion 
+[PRM]=READ_PARAMETERS(INPUT_SET);
+% READ OBSERVATION FILE
+[OBS]=READ_OBS(PRM.FileOBS);
+% READ BLOCK BOUNDARY FILE in DIRECTORY
+[BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
+% READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
+[BLK]=READ_BLOCK_INTERFACE(BLK,PRM.DIRBlock_Interface);
+% CALC. GREEN FUNCTION
+[TRI]=GREEN_TRI(BLK,OBS);
+% Combain to Green function
+[D,G]=COMB_GREEN(BLK,OBS,TRI);
+% CAL Markov chain Monte Calro
+[X]=MH_MCMC(D,G,PRM);
+% CALC. ABIC AND BLOCK MOTION
+%[BLK,OBS]=CALC_AIC(BLK,OBS);
+% BLOCK MOTION BETWEEN TWO BLOCKS
+%[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
+% MAKE FIGURES
+MAKE_FIGS(BLK,OBS);
+%
+end
+%% READ PARAMETER FOR MCMC Inversion 
+function [PRM]=READ_PARAMETERS(INPUT_SET)
+% MCMC Inversion for Geodetic 
+% Coded    by Takeo Ito 2011/11/08 (ver 1.0)
+% Modified by Takeo Ito 2012/10/26 (ver 1.1)
+% Modified by Takeo Ito 2015/11/11 (ver 1.2)
+% Modified by Takeo Ito 2016/07/06 (ver 1.3)
+%
+PRM.FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
 %DIRBlock='./colombia_data_set/BLOCK_PB2003/';
 %DIRBlock='./colombia_data_set/BLOCK_8/';
 %DIRBlock='./colombia_data_set/BLOCK_9/';
 %DIRBlock='./colombia_data_set/BLOCK_12/';
 %DIRBlock='./colombia_data_set/BLOCK_12_rev2/';
-DIRBlock='./BLOCK/';
+PRM.DIRBlock='./BLOCK/';
 %DIRBlock='./colombia_data_set/BLOCK_14/';
 %DIRBlock='./colombia_data_set/BLOCK_15/';
 %DIRBlock='./colombia_data_set/BLOCK_16/';
 %DIRBlock='./colombia_data_set/BLOCK_rev2/';
-DIRBlock_Interface='./BLOCK_Int/';
+PRM.DIRBlock_Interface='./BLOCK_Int/';
 %DIRBlock='./colombia_data_set/BLOCK_14/';
 %DIRBlock='./colombia_data_set/BLOCK_15/';
 %DIRBlock='./colombia_data_set/BLOCK_16/';
 %DIRBlock='./colombia_data_set/BLOCK_rev2/';
-% READ OBSERVATION FILE
-OBS=READ_OBS(FileOBS);
-% READ BLOCK BOUNDARY FILE in DIRECTORY
-[BLK,OBS]=READ_BLOCK_BOUND(DIRBlock,OBS);
-% READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
-[BLK]=READ_BLOCK_INTERFACE(BLK,DIRBlock_Interface);
-% CALC. GREEN FUNCTION
-[TRI]=GREEN_TRI(BLK,OBS);
-% CALC. ABIC AND BLOCK MOTION
-[BLK,OBS]=CALC_AIC(BLK,OBS);
-% BLOCK MOTION BETWEEN TWO BLOCKS
-[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
-% MAKE FIGURES
-MAKE_FIGS(BLK,OBS);
+Fid=fopen(INPUT_SET,'r');
+PRM.HOME_D=pwd;
+TRI_F=fscanf(Fid,'%s \n',[1,1]);
+PRM.TRI_F=fullfile(PRM.HOME_D,TRI_F);
+[~]=fgetl(Fid);
+RECT_F=fscanf(Fid,'%s \n',[1,1]);
+PRM.RECT_F=fullfile(PRM.HOME_D,RECT_F);
+[~]=fgetl(Fid);
+OBS_F=fscanf(Fid,'%s \n',[1,1]);
+PRM.OBS_F=fullfile(PRM.HOME_D,OBS_F);
+[~]=fgetl(Fid);
 %
+PRM.NPL=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.ITR=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.CHA=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.KEP=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.RWD=fscanf(Fid,'%f \n',[1,1]);
+fclose(Fid);
+%====================================================
+fprintf('==================\nINPUT PARAMETERS\n==================\n') 
+fprintf('HOME_D       : %s \n',PRM.HOME_D) 
+fprintf('TRI_F        : %s \n',PRM.TRI_F) 
+fprintf('RECT_F       : %s \n',PRM.RECT_F)
+fprintf('OBS_F        : %s \n',PRM.OBS_F) 
+fprintf('PP           : %i \n',PRM.NPL) 
+fprintf('Max_Nitr     : %i \n',PRM.ITR) 
+fprintf('Chain        : %i \n',PRM.CHA) 
+fprintf('KEEP         : %i \n'   ,PRM.KEP) 
+fprintf('Walk_dis     : %4.2f \n',PRM.RWD) 
+fprintf('==================\n') 
+%====================================================
+disp('PASS READ_PARAMETERS')
+end
+%% MAKE MATRIX
+function [D,G]=COMB_GREEN(BLK,OBS,TRI)
+% Coded by Takeo Ito 2017/01/02 (ver 1.1)
+NOBS=length(OBS(1).EVEC);
+D(1).OBS(1:3:3*NOBS)=OBS(1).EVEC;
+D(1).OBS(2:3:3*NOBS)=OBS(1).NVEC;
+D(1).OBS(3:3:3*NOBS)=OBS(1).HVEC;
+D(1).ERR(1:3:3*NOBS)=OBS(1).EERR;
+D(1).ERR(2:3:3*NOBS)=OBS(1).NERR;
+D(1).ERR(3:3:3*NOBS)=OBS(1).HERR;
+%
+% (G(1).C * ( Mc .* ( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp ) ) + G(1).P * Mp
+%
+G(1).P=zeros(3*NOBS,3.*BLK(1).NBlock);
+G(1).T=zeros(3*TRI(1).TNF,2*TRI(1).TNF);
+G(1).B=zeros(2*TRI(1).TNF,2*TRI(1).TNF);
+MC=1;
+MT=1;
+for NB1=1:BLK(1).NBlock
+  for NB2=NB1+1:BLK(1).NBlock
+    NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
+    if NF~=0
+      G(1).C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
+      G(1).C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
+      G(1).C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
+      G(1).T(MC   :MC+  NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,1));
+      G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1));
+      G(1).T(MC   :MC+  NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,2));
+      G(1).T(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2));
+      G(1).B(MT   :MT+  NF-1,3*NB1-2)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
+      G(1).B(MT   :MT+  NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
+      G(1).B(MT   :MT+  NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
+                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B(MT+NF:MT+2*NF-1,3*NB1-2)= TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
+                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2);
+      G(1).B(MT+NF:MT+2*NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
+                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B(MT+NF:MT+2*NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
+                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B(MT   :MT+  NF-1,3*NB2-2)=-G(1).B(MT   :MT+  NF-1,3*NB1-2);
+      G(1).B(MT   :MT+  NF-1,3*NB2-1)=-G(1).B(MT   :MT+  NF-1,3*NB1-1);
+      G(1).B(MT   :MT+  NF-1,3*NB2  )=-G(1).B(MT   :MT+  NF-1,3*NB1  );
+      G(1).B(MT+NF:MT+2*NF-1,3*NB2-2)=-G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
+      G(1).B(MT+NF:MT+2*NF-1,3*NB2-1)=-G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
+      G(1).B(MT+NF:MT+2*NF-1,3*NB2  )=-G(1).B(MT+NF:MT+2*NF-1,3*NB1  );           
+      MC=MC+3*NF;
+      MT=MT+2*NF;
+    end
+  end
+  IND=OBS(1).ABLK==NB1;
+  NIND=[IND;zeros(size(IND));zeros(size(IND))]; NIND=logical(reshape(NIND',3*NOBS,1));
+  EIND=[zeros(size(IND));IND;zeros(size(IND))]; EIND=logical(reshape(EIND',3*NOBS,1));
+  G(1).P(EIND,3*NB1-2)=-OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3);
+  G(1).P(EIND,3*NB1-1)=-OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3);
+  G(1).P(EIND,3*NB1  )= OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,2)                    +OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,1);
+  G(1).P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
+  G(1).P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
+  G(1).P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
+end
+end
+%% Markov chain Monte Calro
+function [X]=MH_MCMC(D,G,PRM)
+% Markov chain Monte Calro
+RR=(D(1).OBS./D(1).ERR)*(D(1).OBS./D(1).ERR)';
+fprintf('Residual=%9.3f \n',RR);
+%
+% TODO: CHECK GPU etc.
+% GPU Initialize 
+%
+%g=gpuDevice(devGPU);
+% TODO: CHECK GPU MEMORY
+%g_men=g.TotalMemory; %byte
+%reset(g);
+%
+RWD=PRM.RWD;
+%
+GEE=single(repmat(1./D(1).ERR',1,PRM.NPL));%gpuArray
+GYY=single(repmat(   D(1).OBS',1,PRM.NPL));%gpuArray
+%
+LDIM=PRM.NPL.*PRM.KEP;
+% TODO: DETERMINED NP (NUMBER OF ESTIMATED POLE)
+NEP=3;
+Mc.INT=1e-2;
+Mp.INT=1e-10;
+La.INT=1e+1;
+Mc(1).NFLT=size(G(1).C,2);
+Mp(1).NFLT=size(G(1).P,2);
+La(1).NFLT=size();
+%
+Mc.STD=Mc.INT.*ones(Mc(1).NFLT,PRM.NPL,'single');
+Mp.STD=Mp.INT.*ones(Mp(1).NFLT,PRM.NPL,'single');
+La.STD=La.INT.*ones(La(1).NFLT,PRM.NPL,'single');
+Mc.OLD=0.5.*ones(Mc(1).NFLT,PRM.NPL,'single');
+Mp.OLD=    zeros(Mp(1).NFLT,PRM.NPL,'single');
+La.OLD=    zeros(La(1).NFLT,PRM.NPL,'single');
+Mc.CHA=zeros(Mc(1).NFLT,LDIM,'single');
+Mp.CHA=zeros(Mp(1).NFLT,LDIM,'single');
+La.CHA=zeros(La(1).NFLT,LDIM,'single');
+%
+RES.OLD=inf(1,PRM.NPL,'single');%gpuArray
+PRI.OLD=inf(1,PRM.NPL,'single');%gpuArray
+%
+RT=0;
+COUNT=0;
+fprintf('USE GPU Max Chain=%4d PP=%5d Nitr=%2d M=%3d \n',...
+           PRM.CHA,PRM.NPL,PRM.ITR,MC(1).NFLT);
+%
+LO_LIMIT=0;
+UP_LIMIT=1;
+while not(COUNT==2)
+  RT=RT+1;
+  NACC=0;tic
+  U = log(rand(PRM.CHA,1));
+  for iT=1:PRM.CHA
+% SAMPLE SECTION
+    Mc.SMP=Mc.OLD+Mc(1).RWD.*Mc.STD.*(rand(Mc(1).NFLT,PRM.NPL,'single')-0.5);
+    Mp.SMP=Mp.OLD+Mp(1).RWD.*Mp.STD.*(rand(Mp(1).NFLT,PRM.NPL,'single')-0.5);
+    La.SMP=La.OLD+La(1).RWD.*La.STD.*(rand(La(1).NFLT,PRM.NPL,'single')-0.5);
+% RESAMPLE SECTION
+    IND_S=find(Mc.SMP<LO_LIMIT | Mc.SMP>UP_LIMIT);
+    while isempty(IND_S)==0
+      Mc.SMP(IND_S)=Mc.OLD(IND_S)+RWD.*Mc.STD(IND_S).*(rand(length(IND_S),1,'single')-0.5);
+      IND_S=find(Mc.SMP<LO_LIMIT | Mc.SMP>UP_LIMIT);
+      if isempty(IND_S)==1; break; end
+    end
+% CORRECTION FOR PDF DUE TO RESAMPLE EFFECT
+   WD=RWD.*Mc.STD;
+   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
+          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
+% CALC APRIORI AND RESIDUAL COUPLING RATE SECTION 
+   CAL.SMP=G(1).C*(Mc.SMP*(G(1).T*(G(1).B1-G(1).B2)*Mp.SMP))+G(1).P*Mp.SMP;
+% CALC RESIDUAL SECTION
+   RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
+%% MAKE Probably Density Function
+% $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$
+%%
+%  log(x(x>0));
+%   q1 = logproppdf(x0,y);
+%   q2 = logproppdf(y,x0);
+% this is a generic formula.
+%   rho = (q1+logpdf(y))-(q2+logpdf(x0));  
+%    Pdf=expm1(0.5.*(-RES.SMP+RES.OLD))+1;
+   PRI.SMP=0;
+   PRI.OLD=0;
+   Pdf = expm1(-0.5.*...
+            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
+            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
+% TODO:‚¤[‚ñ‚â‚Á‚Ï‚èƒ_ƒB
+%    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
+    IND_M=Pdf>rand(1,PRM.NPL,'single');
+% REVISE SECTION
+    Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
+    Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
+    La.OLD(:,IND_M) = La.SMP(:,IND_M);
+    RES.OLD(IND_M)  = RES.SMP(IND_M);
+    PRI.OLD(IND_M)  = PRI.SMP(IND_M);
+% KEEP SECTION
+    if iT > PRM.CHA-PRM.KEP
+      SN=(iT-(PRM.CHA-PRM.KEP)-1)*PRM.NPL+1;
+      EN=(iT-(PRM.CHA-PRM.KEP))  *PRM.NPL;
+      Mc.CHA(:,SN:EN)=Mc.SMP;
+      Mp.CHA(:,SN:EN)=Mp.SMP;
+      La.CHA(:,SN:EN)=La.SMP;
+      NACC=NACC+sum(IND_M);
+    end
+  end
+%
+  AJR=NACC./LDIM;
+%
+  Mc.STD=repmat(std(Mc.CHA,1,2),1,PRM.NPL);
+  Mp.STD=repmat(std(Mp.CHA,1,2),1,PRM.NPL);
+  La.STD=repmat(std(La.CHA,1,2),1,PRM.NPL);
+%
+  fprintf('T=%3d MaxRes=%6.3f MinRes=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
+           RT,1-max(RES.OLD)./RR,1-min(RES.OLD)./RR,100*AJR,RWD,toc)
+%TODO: NUMBER OF ESTIMATED POLE
+  fprintf('POLE=%9.2e %9.2e %9.2e %9.2e %9.2e %9.2e %9.2e %9.2e %9.2e\n',mean(POLE.OLD,2));
+  fprintf('VEL_T(E,N)=%9.2e %9.2e VEL_M(E,N)=%9.2e %9.2e \n',...
+  mean(mean(MC(1).PVEL(1:2:end,:))),mean(mean(MC(1).PVEL(2:2:end,:))),...
+  mean(mean(MC(2).PVEL(1:2:end,:))),mean(mean(MC(2).PVEL(2:2:end,:))));
+  if AJR > 0.24
+    RWD=RWD*1.1;
+    COUNT=0;
+  elseif AJR < 0.22
+    RWD=RWD*0.618;
+    COUNT=0;
+  else
+    COUNT=COUNT+1;
+  end
+  if RT > PRM.ITR; break; end;
+end
+%% FIGURES
+figure(100);clf(100)
+for NPL=1:PRM.NPL
+  quiver(OBS(1).ALON,OBS(1).ALAT,CAL(1:3:end,NPL)',CAL(2:3:end,NPL)','blue')
+  hold on
+end
+quiver(OBS(1).ALON,OBS(1).ALAT,GYY(1:3:end,1)',GYY(2:3:end,1)','red')
+hold on
+patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(SLIP.CHA(1:MC(1).NP,:),2)'    ,3,1))
+hold on
+patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(SLIP.CHA(MC(1).NP+1:end,:),2)',4,1))
+%
+figure(105);clf(105)
+for NPL=1:PRM.NPL
+  quiver(OBS(1).ALON,OBS(1).ALAT,CAL(1:3:end,NPL)',CAL(2:3:end,NPL)','blue')
+  hold on
+end
+quiver(OBS(1).ALON,OBS(1).ALAT,GYY(1:3:end,1)',GYY(2:3:end,1)','red')
+hold on
+patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(TENS.CHA(1:MC(1).NP,:),2)'    ,3,1))
+hold on
+patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(TENS.CHA(MC(1).NP+1:end,:),2)',4,1))
+%
+figure(110);clf(110)
+patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(std(SLIP.CHA(1:MC(1).NP,:),0,2)'    ,3,1))
+hold on
+patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(std(SLIP.CHA(MC(1).NP+1:end,:),0,2)',4,1))
+%
+figure(120);clf(120)
+PVEL_T=pole2velo((POLE.CHA(7:9,:)-POLE.CHA(4:6,:))',MC(1).FXYZ); %TRENCH
+PVEL_M=pole2velo((POLE.CHA(4:6,:)-POLE.CHA(1:3,:))',MC(2).FXYZ); %MTL
+patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(sqrt(PVEL_T(1:2:end,:).^2+PVEL_T(2:2:end,:).^2),2)',3,1))
+hold on
+patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(sqrt(PVEL_M(1:2:end,:).^2+PVEL_M(2:2:end,:).^2),2)',4,1))
+hold on
+quiver3(double( TRI(1).CLON),double( TRI(1).CLAT),double( TRI(1).CHIG),double(mean(PVEL_T(1:2:end,:),2)'),double(mean(PVEL_T(2:2:end,:),2)'),zeros(size( TRI(1).CHIG)))
+hold on
+quiver3(double(RECT(1).CLON),double(RECT(1).CLAT),double(RECT(1).CHIG),double(mean(PVEL_M(1:2:end,:),2)'),double(mean(PVEL_M(2:2:end,:),2)'),zeros(size(RECT(1).CHIG)))
+%
+figure(130);clf(130)
+BVEL_1=pole2velo((POLE.CHA(1:3,:))',MC(1).OXYZ);
+BVEL_2=pole2velo((POLE.CHA(4:6,:))',MC(2).OXYZ);
+for NPL=1:PRM.NPL
+  quiver(MC(1).OLON,MC(1).OLAT,BVEL_1(1:2:end,NPL)',BVEL_1(2:2:end,NPL)','blue')
+  hold on
+  quiver(MC(2).OLON,MC(2).OLAT,BVEL_2(1:2:end,NPL)',BVEL_2(2:2:end,NPL)','red')
+  hold on
+end
+%
+figure(140);clf(140)
+hist(LAMD.CHA(:),100)
+%
+%MCRE.SLIP=gather(SLIP.CHA);
+%MCRE.POLE=gather(POLE.CHA);
+%MCRE.LAMD=gather(LAMD.CHA);
+%
+MCRE.SLIP=SLIP.CHA;
+MCRE.POLE=POLE.CHA;
+MCRE.LAMD=LAMD.CHA;
+%
+%KEEP.SLIPMAX=max(MCRE.SLIP);
+%KEEP.SLIPMIN=min(MCRE.SLIP);
+%KEEP.SLIPINT=(KEEP.SLIPMAX-KEEP.SLIPMIN)./254;
+%KEEP.POLEMAX=max(MCRE.POLE);
+%KEEP.POLEMIN=min(MCRE.POLE);
+%KEEP.POLEINT=(KEEP.POLEMAX-KEEP.POLEMIN)./254;
+%KEEP.LAMDMAX=max(MCRE.LAMD);
+%KEEP.LAMDMIN=min(MCRE.LAMD);
+%KEEP.LAMDINT=(KEEP.LAMDMAX-KEEP.LAMDMIN)./254;
+%TODO: NOT CLEAN
+%KEEP.SLIP=uint8(round((MCRE.SLIP-repmat(LDIM,KEEP.SLIPMIN,1))./repmat(KEEP.SLIPINT,LDIM,1))); %CHECK
+%KEEP.POLE=uint8(round((MCRE.POLE-repmat(LDIM,KEEP.POLEMIN,1))./repmat(KEEP.POLEINT,LDIM,1))); %CHECK
+%KEEP.LAMD=uint8(round((MCRE.LAMD-repmat(LDIM,KEEP.LAMDMIN,1))./repmat(KEEP.LAMDINT,LDIM,1))); %CHECK
+fprintf('FINISH GPU_CALC_MCMC_XYr \n==================\n')
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
+% Coded by Takeo Ito 2016/12/21 (ver 1.0)
 %
 NF=0;
 int_lat=0.25;
@@ -80,28 +399,33 @@ for NB1=1:BLK(1).NBlock
         ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
         slon=slon(ID); slat=slat(ID); sdep=F(slon,slat);
         ID=find(sdep<dep_limit);
-        BOUND(NB1,NB2).slon=slon(ID);
-        BOUND(NB1,NB2).slat=slat(ID);
-        BOUND(NB1,NB2).sdep=F(slon,slat);
-        BOUND(NB1,NB2).stri=delaunay(slon,slat);
+        Bslon=slon(ID);
+        Bslat=slat(ID);
+        Bsdep=F(slon,slat);
+        Bstri=delaunay(slon,slat);
       else
+        Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
-        BOUND(NB1,NB2).slon=[BOUND(NB1,NB2).LON BOUND(NB1,NB2).LON];
-        BOUND(NB1,NB2).slat=[BOUND(NB1,NB2).LAT BOUND(NB1,NB2).LAT];
-        BOUND(NB1,NB2).sdep=[zeros(size(BOUND(NB1,NB2).LAT)) dep_limit_low.*ones(BOUND(NB1,NB2).LAT)];
-        BOUND(NB1,NB2).stri(   1:LENG-1    ,1:3)=[     1:  (LENG-1); 2:LENG; LENG+1:2*LENG-1];
-        BOUND(NB1,NB2).stri(LENG:2*(LENG-1),1:3)=[LENG+1:2*(LENG-1); 2:LENG; LENG+2:2*LENG-1];      
+        if LENG~=0
+          Bslon=[BLK(1).BOUND(NB1,NB2).LON ; BLK(1).BOUND(NB1,NB2).LON];
+          Bslat=[BLK(1).BOUND(NB1,NB2).LAT ; BLK(1).BOUND(NB1,NB2).LAT];
+          Bsdep=[zeros(size(BLK(1).BOUND(NB1,NB2).LAT)) ; dep_limit_low.*ones(size(BLK(1).BOUND(NB1,NB2).LAT))];
+          Bstri(     1:  (LENG-1),1:3)=[     1: (LENG-1); 2:LENG; LENG+1:2*LENG-1]';
+          Bstri(          LENG   ,1:3)=[            LENG; 2*LENG;        2*LENG-1]';      
+        end
       end
-      BLK(1).BOUND(NB1,NB2).clat=BOUND(NB1,NB2).slat(BOUND(NB1,NB2).stri);
-      BLK(1).BOUND(NB1,NB2).clon=BOUND(NB1,NB2).slon(BOUND(NB1,NB2).stri);
-      BLK(1).BOUND(NB1,NB2).cdep=BOUND(NB1,NB2).sdep(BOUND(NB1,NB2).stri);
+      if ~isempty(Bstri)
+        BLK(1).BOUND(NB1,NB2).blat=Bslat(Bstri);
+        BLK(1).BOUND(NB1,NB2).blon=Bslon(Bstri);
+        BLK(1).BOUND(NB1,NB2).bdep=Bsdep(Bstri);
+      end
     end
   end
 end
 end
 %% MAKE GREEN FUNCTION
 function [TRI]=GREEN_TRI(BLK,OBS)
-% Coded by Takeo Ito 2015/11/11 (ver 1.0)
+% Coded by Takeo Ito 2017/01/02 (ver 1.1)
 PR=0.25;
 ND=size(OBS(1).ALAT,2);
 %
@@ -110,50 +434,58 @@ ALON=mean(OBS(1).ALON(:));
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 OBSz=OBS(1).AHIG;
 %
+TRI(1).TNF=0;
 for NB1=1:BLK(1).NBlock
-  for NB2=1:BLK(1).NBlock
-    NF=size(BOUND(NB1,NB2).slon,1);
-    TRI(1).BOUND(NB1,NB2).GSTR=zeros(3*ND,NF);
-    TRI(1).BOUND(NB1,NB2).GDIP=zeros(3*ND,NF);
-    TRI(1).BOUND(NB1,NB2).GTNS=zeros(3*ND,NF);
+  for NB2=NB1+1:BLK(1).NBlock
+    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+    TRI(1).BOUND(NB1,NB2).clat=[];
+    TRI(1).BOUND(NB1,NB2).clon=[];
+    TRI(1).BOUND(NB1,NB2).cdep=[];
+    if NF~=0
+      TRI(1).BOUND(NB1,NB2).GSTR=zeros(3*ND,NF);
+      TRI(1).BOUND(NB1,NB2).GDIP=zeros(3*ND,NF);
+      TRI(1).BOUND(NB1,NB2).GTNS=zeros(3*ND,NF);
 %
-    fprintf('==================\n block %i : Block %i \n Number of TRI sub-faults : %i \n',NB1,NB2,NF)
+      fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
-    for N=1:NF
-      [TRIx,TRIy]=PLTXY(TRI(1).LAT(N,:),TRI(1).LON(N,:),ALAT,ALON);
-      TRIz=-1.*TRI(1).HIG(N,:);
-      F_LOC=[TRI(1).LAT(N,:);TRI(1).LON(N,:);TRI(1).HIG(N,:)]';
-      [F,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
-      TRI(1).BOUND(NB1,NB2).clat(N)=F(1);
-      TRI(1).BOUND(NB1,NB2).clon(N)=F(2);
-      TRI(1).BOUND(NB1,NB2).cdep(N)=F(3);
-      TRI(1).BOUND(NB1,NB2).DA(N)=DA;
-      TRI(1).BOUND(NB1,NB2).STR(N)=STR;
-      TRI(1).BOUND(NB1,NB2).DIP(N)=DIP;
-      TRI(1).BOUND(NB1,NB2).NV(N,:)=NV;
-      TRI(1).BOUND(NB1,NB2).ST(N,:)=ST;
-      TRI(1).BOUND(NB1,NB2).DP(N,:)=DP;
-      U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,1,0,0);
-      TRI(1).BOUND(NB1,NB2).GSTR(1:3:3*ND,N)=U.x; %E
-      TRI(1).BOUND(NB1,NB2).GSTR(2:3:3*ND,N)=U.y; %N
-      TRI(1).BOUND(NB1,NB2).GSTR(3:3:3*ND,N)=U.z; %D
-      U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,1,0);
-      TRI(1).BOUND(NB1,NB2).GTNS(1:3:3*ND,N)=U.x; %E
-      TRI(1).BOUND(NB1,NB2).GTNS(2:3:3*ND,N)=U.y; %N
-      TRI(1).BOUND(NB1,NB2).GTNS(3:3:3*ND,N)=U.z; %D 
-      U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,0,1);
-      TRI(1).BOUND(NB1,NB2).GDIP(1:3:3*ND,N)=U.x; %E
-      TRI(1).BOUND(NB1,NB2).GDIP(2:3:3*ND,N)=U.y; %N
-      TRI(1).BOUND(NB1,NB2).GDIP(3:3:3*ND,N)=U.z; %D 
-      if mod(N,ceil(NF/5)) == 1
-        fprintf('MAKE GREEN at TRI sub-faults : %i / %i \n',N,NF)
+      for N=1:NF
+        [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
+        TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
+        F_LOC=[TRIx;TRIy;TRIz];
+        [F,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
+        TRI(1).BOUND(NB1,NB2).clat(N)=F(1);
+        TRI(1).BOUND(NB1,NB2).clon(N)=F(2);
+        TRI(1).BOUND(NB1,NB2).cdep(N)=F(3);
+        TRI(1).BOUND(NB1,NB2).DA(N)=DA;
+        TRI(1).BOUND(NB1,NB2).STR(N)=STR;
+        TRI(1).BOUND(NB1,NB2).DIP(N)=DIP;
+        TRI(1).BOUND(NB1,NB2).NV(N,:)=NV;
+        TRI(1).BOUND(NB1,NB2).ST(N,:)=ST;
+        TRI(1).BOUND(NB1,NB2).DP(N,:)=DP;
+        TRI(1).BOUND(NB1,NB2).OXYZ(N,:)=conv2ell(F(1),F(2));
+        U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,1,0,0);
+        TRI(1).BOUND(NB1,NB2).GSTR(1:3:3*ND,N)=U.x; %E
+        TRI(1).BOUND(NB1,NB2).GSTR(2:3:3*ND,N)=U.y; %N
+        TRI(1).BOUND(NB1,NB2).GSTR(3:3:3*ND,N)=U.z; %D
+        U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,1,0);
+        TRI(1).BOUND(NB1,NB2).GTNS(1:3:3*ND,N)=U.x; %E
+        TRI(1).BOUND(NB1,NB2).GTNS(2:3:3*ND,N)=U.y; %N
+        TRI(1).BOUND(NB1,NB2).GTNS(3:3:3*ND,N)=U.z; %D 
+        U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,0,1);
+        TRI(1).BOUND(NB1,NB2).GDIP(1:3:3*ND,N)=U.x; %E
+        TRI(1).BOUND(NB1,NB2).GDIP(2:3:3*ND,N)=U.y; %N
+        TRI(1).BOUND(NB1,NB2).GDIP(3:3:3*ND,N)=U.z; %D
+        if mod(N,ceil(NF/3)) == 1
+          fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
+        end
       end
+      TRI(1).TNF=TRI(1).TNF+NF;
     end
   end
 end
-fprintf('Size of Green Matrix : %i x %i \n',...
-             size(TRI(1).GSTR,1),size(TRI(1).GSTR,2))
-disp('PASS READ_FAULTS_GREEN_TRI')
+disp('==================')
+disp('PASS GREEN_TRI')
+disp('==================')
 end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
 function [FLOC,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(loc_f)
@@ -336,7 +668,7 @@ while 1
   if ~ischar(tline); break; end
   str=strsplit(tline);
   N=N+1;
-  OBS(1).NAME(N)=cellstr(str(1));
+  OBS(1).NAME(N) =cellstr(str(1));
   OBS(1).ALON(N) =str2double(cellstr(str(2))); %LON
   OBS(1).ALAT(N) =str2double(cellstr(str(3))); %LAT
   OBS(1).AHIG(N) =str2double(cellstr(str(4))); %HIG
@@ -346,6 +678,7 @@ while 1
   OBS(1).EERR(N) =str2double(cellstr(str(8))); %E-W
   OBS(1).NERR(N) =str2double(cellstr(str(9))); %N-S
   OBS(1).HERR(N) =str2double(cellstr(str(10))); %U-D
+  OBS(1).AXYZ(N,:)=conv2ell(OBS(1).ALAT(N),OBS(1).ALON(N));
 end
 OBS(1).NOBS=N;
 OBS(1).ABLK=zeros(OBS(1).NOBS,1);
@@ -474,6 +807,10 @@ function [U] = CalcTriDisps(sx, sy, sz, x, y, z, pr, ss, ts, ds)
 % OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 % USE OR OTHER DEALINGS IN THE SOFTWARE.
 %
+x=x(:);sx=sx(:);
+y=y(:);sy=sy(:);
+z=z(:);sz=sz(:);
+
 % Calculate the slip vector in XYZ coordinates
 normVec                      = cross([x(2);y(2);z(2)]-[x(1);y(1);z(1)], [x(3);y(3);z(3)]-[x(1);y(1);z(1)]);
 normVec                      = normVec./norm(normVec);
@@ -499,8 +836,7 @@ z(4)                         = z(1);
 for iTri = 1:3
    % Calculate strike and dip of current leg
    strike                   = 180/pi*(atan2(y(iTri+1)-y(iTri), x(iTri+1)-x(iTri)));
-   segMapLength             = sqrt((x(iTri)-x(iTri+1))^2 + (y(iTri)-y(iTri+1))^2);
-   [rx,ry]                  = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
+   [rx,~]                   = RotateXyVec(x(iTri+1)-x(iTri), y(iTri+1)-y(iTri), -strike);
    dip                      = 180/pi*(atan2(z(iTri+1)-z(iTri), rx));
 %   
    if dip >= 0
@@ -515,7 +851,7 @@ for iTri = 1:3
       end
    end
 %
-   ssVec                    = [cos(strike/180*pi) sin(strike/180*pi) 0];
+   ssVec                    = [ cos(strike/180*pi) sin(strike/180*pi) 0];
    tsVec                    = [-sin(strike/180*pi) cos(strike/180*pi) 0];
    dsVec                    = cross(ssVec, tsVec);
    lss                      = dot(slipVec, ssVec);
@@ -525,7 +861,7 @@ for iTri = 1:3
    if (abs(beta) > 0.000001) && (abs(beta-pi) > 0.000001)
       % First angular dislocation
       [sx1,sy1]                 = RotateXyVec(sx-x(iTri), sy-y(iTri), -strike);
-      [ux1,uy1,uz1]             = adv(sx1, sy1, sz-z(iTri), z(iTri), beta, pr, lss, lts, lds);
+      [ux1,uy1,uz1]             = adv(sx1, sy1, sz-z(iTri  ), z(iTri), beta, pr, lss, lts, lds);
                                    
       % Second angular dislocation
       [sx2,sy2]                 = RotateXyVec(sx-x(iTri+1), sy-y(iTri+1), -strike); 
