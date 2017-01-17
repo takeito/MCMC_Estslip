@@ -201,7 +201,7 @@ PDF_Mc=1./(UP_Mc-LO_Mc);
 while not(COUNT==2)
   RT  =RT+1;
   NACC=0;tic
-  U   =log(rand(LDIM,1));
+  U   =log(rand(PRM.CHA,1));
   for iT=1:PRM.CHA
 % SAMPLE SECTION
     Mc.SMP=Mc.OLD+RWD.*Mc.STD.*(rand(Mc.N,PRM.NPL,'single')-0.5);
@@ -233,12 +233,14 @@ while not(COUNT==2)
 %    Pdf=expm1(0.5.*(-RES.SMP+RES.OLD))+1;
    PRI.SMP=0;
    PRI.OLD=0;
-   Pdf = expm1(-0.5.*...
-            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
-            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
+%   Pdf = expm1(-0.5.*...
+%            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
+%            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
+   Pdf = -0.5.*(RES.SMP+LAMD.SMP-(RES.OLD+LAMD.OLD));
 % TODO:‚¤[‚ñ‚â‚Á‚Ï‚èƒ_ƒB
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
-    IND_M=Pdf>rand(1,PRM.NPL,'single');
+%    IND_M=Pdf>rand(1,PRM.NPL,'single');
+    IND_M=Pdf > U(iT);
 % REVISE SECTION
     Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
     Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
