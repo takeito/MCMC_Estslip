@@ -219,7 +219,7 @@ while not(COUNT==2)
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION 
-   CAL.SMP=G.C*(Mc.SMP*(G.T*G.B*Mp.SMP))+G.P*Mp.SMP;
+   CAL.SMP=G.C*(Mc.SMP.*(G.T*G.B*Mp.SMP))+G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 %% MAKE Probably Density Function
@@ -390,9 +390,9 @@ for NB1=1:BLK(1).NBlock
         slon=mean(blon,2);
         slat=mean(blat,2);
         ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
-        blon=blon(ID);
-        blat=blat(ID);
-        bdep=bdep(ID);
+        blon=blon(ID,:);
+        blat=blat(ID,:);
+        bdep=bdep(ID,:);
       end
       BLK(1).BOUND(NB1,NB2).blon=blon;%Lon
       BLK(1).BOUND(NB1,NB2).blat=blat;%Lat
