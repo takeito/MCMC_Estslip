@@ -242,7 +242,7 @@ while not(COUNT==2)
 %    IND_M=Pdf>rand(1,PRM.NPL,'single');
     IND_M=Pdf > U(iT);
 % REVISE SECTION
-    if IND_M~=0;
+    if sum(IND_M)~=0;
       Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
       Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
       La.OLD(:,IND_M) = La.SMP(:,IND_M);
