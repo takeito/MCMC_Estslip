@@ -91,12 +91,16 @@ end
 function [D,G]=COMB_GREEN(BLK,OBS,TRI)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
 NOBS=length(OBS(1).EVEC);
-D(1).OBS(1:3:3*NOBS)=OBS(1).EVEC;
-D(1).OBS(2:3:3*NOBS)=OBS(1).NVEC;
-D(1).OBS(3:3:3*NOBS)=OBS(1).HVEC;
-D(1).ERR(1:3:3*NOBS)=OBS(1).EERR;
-D(1).ERR(2:3:3*NOBS)=OBS(1).NERR;
-D(1).ERR(3:3:3*NOBS)=OBS(1).HERR;
+TMP.OBS(1:3:3*NOBS)=OBS.EVEC;
+TMP.OBS(2:3:3*NOBS)=OBS.NVEC;
+TMP.OBS(3:3:3*NOBS)=OBS.HVEC;
+TMP.ERR(1:3:3*NOBS)=OBS.EERR;
+TMP.ERR(2:3:3*NOBS)=OBS.NERR;
+TMP.ERR(3:3:3*NOBS)=OBS.HERR;
+%
+D(1).IND=find(TMP.ERR~=0);
+D(1).OBS=TMP.OBS(D(1).IND);
+D(1).ERR=TMP.ERR(D(1).IND);
 %
 % (G(1).C * ( Mc .* ( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp ) ) + G(1).P * Mp
 %
@@ -109,9 +113,9 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
-      G(1).C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
-      G(1).C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
-      G(1).C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
+      TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
+      TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
+      TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
       G(1).T(MC   :MC+  NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,1));
       G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1));
       G(1).T(MC   :MC+  NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,2));
@@ -146,6 +150,7 @@ for NB1=1:BLK(1).NBlock
   G(1).P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   G(1).P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
 end
+G(1).C=TMP.C(D(1).IND,:);
 end
 %% Markov chain Monte Calro
 function [X]=MH_MCMC(D,G,PRM)
@@ -187,7 +192,7 @@ PRI.OLD=inf(1,PRM.NPL,'single');%gpuArray
 %
 RT=0;
 COUNT=0;
-fprintf('USE GPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
+fprintf('USE CPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
            PRM.CHA,PRM.NPL,PRM.ITR,Mc.N,Mp.N);
 %
 LO_Mc=-1;
@@ -214,7 +219,7 @@ while not(COUNT==2)
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION 
-   CAL.SMP=G(1).C*(Mc.SMP*(G(1).T*(G(1).B1-G(1).B2)*Mp.SMP))+G(1).P*Mp.SMP;
+   CAL.SMP=G.C*(Mc.SMP*(G.T*G.B*Mp.SMP))+G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 %% MAKE Probably Density Function
