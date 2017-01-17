@@ -17,7 +17,7 @@ INPUT_SET='parameter.txt';
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[X]=MH_MCMC(D,G,BLK,PRM);
+[X]=MH_MCMC(D,G,BLK,OBS,PRM);
 % CALC. ABIC AND BLOCK MOTION
 %[BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -153,7 +153,7 @@ end
 G(1).C=TMP.C(D(1).IND,:);
 end
 %% Markov chain Monte Calro
-function [X]=MH_MCMC(D,G,BLK,PRM)
+function [X]=MH_MCMC(D,G,BLK,OBS,PRM)
 % Markov chain Monte Calro
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
@@ -211,7 +211,7 @@ while not(COUNT==2)
     IND_S=find(Mc.SMP<LO_Mc | Mc.SMP>UP_Mc);
     while isempty(IND_S)==0
       Mc.SMP(IND_S)=Mc.OLD(IND_S)+RWD.*Mc.STD(IND_S).*(rand(length(IND_S),1,'single')-0.5);
-      IND_S=find(Mc.SMP<LO_LIMIT | Mc.SMP>UP_LIMIT);
+      IND_S=find(Mc.SMP<LO_Mc | Mc.SMP>UP_Mc);
       if isempty(IND_S)==1; break; end
     end
 % CORRECTION FOR PDF DUE TO RESAMPLE EFFECT
@@ -288,14 +288,19 @@ end
 %% FIGURES
 figure(100);clf(100)
 for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CAL(1:3:end,NPL)',CAL(2:3:end,NPL)','blue')
+  quiver(OBS(1).ALON,OBS(1).ALAT,CAL.SMP(1:3:end,NPL)',CAL.SMP(2:3:end,NPL)','blue')
   hold on
 end
-quiver(OBS(1).ALON,OBS(1).ALAT,GYY(1:3:end,1)',GYY(2:3:end,1)','red')
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'red')
 hold on
-patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(SLIP.CHA(1:MC(1).NP,:),2)'    ,3,1))
-hold on
-patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(SLIP.CHA(MC(1).NP+1:end,:),2)',4,1))
+for NB1=1:BLK(1).NBlock
+  for NB2=NB1+1:BLK(1).NBlock
+    patch(BLK(1).BOUND(NB1,NB2).blon,BLK(1).BOUND(NB1,NB2).blat,BLK(1).BOUND(NB1,NB2).bdep,Mc.
+    patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(SLIP.CHA(1:MC(1).NP,:),2)'    ,3,1))
+    hold on
+    patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(SLIP.CHA(MC(1).NP+1:end,:),2)',4,1))
+  end
+end
 %
 figure(105);clf(105)
 for NPL=1:PRM.NPL
