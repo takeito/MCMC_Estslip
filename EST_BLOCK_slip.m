@@ -236,17 +236,19 @@ while not(COUNT==2)
 %   Pdf = expm1(-0.5.*...
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
-   Pdf = -0.5.*(RES.SMP+LAMD.SMP-(RES.OLD+LAMD.OLD));
+   Pdf = -0.5.*(RES.SMP-RES.OLD);
 % TODO:‚¤[‚ñ‚â‚Á‚Ï‚èƒ_ƒB
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf>rand(1,PRM.NPL,'single');
     IND_M=Pdf > U(iT);
 % REVISE SECTION
-    Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
-    Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
-    La.OLD(:,IND_M) = La.SMP(:,IND_M);
-    RES.OLD(IND_M)  = RES.SMP(IND_M);
-    PRI.OLD(IND_M)  = PRI.SMP(IND_M);
+    if IND_M~=0;
+      Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
+      Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
+      La.OLD(:,IND_M) = La.SMP(:,IND_M);
+      RES.OLD(IND_M)  = RES.SMP(IND_M);
+      PRI.OLD(IND_M)  = PRI.SMP(IND_M);
+    end
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
       SN=(iT-(PRM.CHA-PRM.KEP)-1)*PRM.NPL+1;
