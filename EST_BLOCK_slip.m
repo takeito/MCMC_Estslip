@@ -105,8 +105,8 @@ D(1).ERR=TMP.ERR(D(1).IND);
 % (G(1).C * ( Mc .* ( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp ) ) + G(1).P * Mp
 %
 G(1).P=zeros(3*NOBS,3.*BLK(1).NBlock);
-G(1).T=zeros(3*TRI(1).TNF,2*TRI(1).TNF);
-G(1).B=zeros(2*TRI(1).TNF,2*TRI(1).TNF);
+G(1).T=zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
+G(1).B=zeros(2*TRI(1).TNF,3.*BLK(1).NBlock);
 MC=1;
 MT=1;
 for NB1=1:BLK(1).NBlock
