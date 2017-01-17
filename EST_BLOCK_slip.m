@@ -354,7 +354,6 @@ end
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
 % Coded by Takeo Ito 2016/12/21 (ver 1.0)
 %
-NF=0;
 int_lat=0.25;
 int_lon=0.25;
 dep_limit=150;
@@ -364,6 +363,7 @@ for NB1=1:BLK(1).NBlock
     pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
     Fid=fopen(pre_tri_f,'r');
     if Fid >= 0
+      NF=0;
       while 1
         NF=NF+1;
         loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
