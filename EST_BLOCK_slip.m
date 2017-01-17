@@ -17,7 +17,7 @@ INPUT_SET='parameter.txt';
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[X]=MH_MCMC(D,G,PRM);
+[X]=MH_MCMC(D,G,BLK,PRM);
 % CALC. ABIC AND BLOCK MOTION
 %[BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -98,9 +98,9 @@ TMP.ERR(1:3:3*NOBS)=OBS.EERR;
 TMP.ERR(2:3:3*NOBS)=OBS.NERR;
 TMP.ERR(3:3:3*NOBS)=OBS.HERR;
 %
-D(1).IND=find(TMP.ERR~=0);
-D(1).OBS=TMP.OBS(D(1).IND);
-D(1).ERR=TMP.ERR(D(1).IND);
+D(1).IND=find(TMP.ERR~=0)';
+D(1).OBS=TMP.OBS(D(1).IND)';
+D(1).ERR=TMP.ERR(D(1).IND)';
 %
 % (G(1).C * ( Mc .* ( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp ) ) + G(1).P * Mp
 %
@@ -153,9 +153,9 @@ end
 G(1).C=TMP.C(D(1).IND,:);
 end
 %% Markov chain Monte Calro
-function [X]=MH_MCMC(D,G,PRM)
+function [X]=MH_MCMC(D,G,BLK,PRM)
 % Markov chain Monte Calro
-RR=(D(1).OBS./D(1).ERR)*(D(1).OBS./D(1).ERR)';
+RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
 %
 % TODO: CHECK GPU etc.
@@ -218,7 +218,7 @@ while not(COUNT==2)
    WD=RWD.*Mc.STD;
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
-% CALC APRIORI AND RESIDUAL COUPLING RATE SECTION 
+% CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
    CAL.SMP=G.C*(Mc.SMP.*(G.T*G.B*Mp.SMP))+G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
@@ -268,11 +268,12 @@ while not(COUNT==2)
 %
   fprintf('T=%3d MaxRes=%6.3f MinRes=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
            RT,1-max(RES.OLD)./RR,1-min(RES.OLD)./RR,100*AJR,RWD,toc)
-%TODO: NUMBER OF ESTIMATED POLE
-  fprintf('POLE=%9.2e %9.2e %9.2e %9.2e %9.2e %9.2e %9.2e %9.2e %9.2e\n',mean(POLE.OLD,2));
-  fprintf('VEL_T(E,N)=%9.2e %9.2e VEL_M(E,N)=%9.2e %9.2e \n',...
-  mean(mean(MC(1).PVEL(1:2:end,:))),mean(mean(MC(1).PVEL(2:2:end,:))),...
-  mean(mean(MC(2).PVEL(1:2:end,:))),mean(mean(MC(2).PVEL(2:2:end,:))));
+%
+  for BK=1:BLK(1).NBlock
+    fprintf('POLE OF BLOCK %2i = %9.2e %9.2e %9.2e \n',...
+      BK,mean(Mp.CHA(3.*BK-2,:),2),mean(Mp.CHA(3.*BK-1,:),2),mean(Mp.CHA(3.*BK,:),2));
+  end
+%
   if AJR > 0.24
     RWD=RWD*1.1;
     COUNT=0;
