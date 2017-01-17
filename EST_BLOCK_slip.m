@@ -371,16 +371,34 @@ for NB1=1:BLK(1).NBlock
     Fid=fopen(pre_tri_f,'r');
     if Fid >= 0
       NF=0;
+      blon=zeros(1,3);blat=zeros(1,3);bdep=zeros(1,3);
       while 1
         NF=NF+1;
         loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
         [~] = fgetl(Fid);
-        BLK(1).BOUND(NB1,NB2).blon(NF,:)=loc_f(1,:);%Lon
-        BLK(1).BOUND(NB1,NB2).blat(NF,:)=loc_f(2,:);%Lat
-        BLK(1).BOUND(NB1,NB2).bdep(NF,:)=loc_f(3,:);%Hight
+        blon(NF,:)=loc_f(1,:);%Lon
+        blat(NF,:)=loc_f(2,:);%Lat
+        bdep(NF,:)=loc_f(3,:);%Hight
         tline = fgetl(Fid); if ~ischar(tline); break; end
       end
       fclose(Fid);
+      BO_tri_f=fullfile(DIRBLK,['triBO_',num2str(NB1),'_',num2str(NB2),'.txt']); 
+      Fid=fopen(BO_tri_f,'r');
+      if Fid >= 0
+        bound_blk=textscan(Fid,'%f%f'); fclose(Fid);     
+        bound_blk=cell2mat(bound_blk);
+        slon=mean(blon,2);
+        slat=mean(blat,2);
+        ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
+        blon=blon(ID);
+        blat=blat(ID);
+      end
+      fclose(Fid);
+      BLK(1).BOUND(NB1,NB2).blon=blon;%Lon
+      BLK(1).BOUND(NB1,NB2).blat=blat;%Lat
+      BLK(1).BOUND(NB1,NB2).bdep=bdep;
+      loc_f(3,:);%Hight
+      
     else
       sub_f=fullfile(DIRBLK,['B_',num2str(NB1),'_',num2str(NB2),'.txt']);
       Fid=fopen(sub_f,'r');
