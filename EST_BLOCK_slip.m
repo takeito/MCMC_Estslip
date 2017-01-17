@@ -392,7 +392,6 @@ for NB1=1:BLK(1).NBlock
         ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
         blon=blon(ID);
         blat=blat(ID);
-        fclose(Fid);
       end
       BLK(1).BOUND(NB1,NB2).blon=blon;%Lon
       BLK(1).BOUND(NB1,NB2).blat=blat;%Lat
@@ -409,7 +408,6 @@ for NB1=1:BLK(1).NBlock
         if Fid >= 0
           bound_blk=textscan(Fid,'%f%f'); fclose(Fid);     
           bound_blk=cell2mat(bound_blk);
-          fclose(Fid);
         else
           IDB=boundary(dep_blk(:,1),dep_blk(:,2));
           bound_blk=dep_blk(IDB,:);
