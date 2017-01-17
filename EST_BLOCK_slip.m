@@ -392,6 +392,7 @@ for NB1=1:BLK(1).NBlock
         ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
         blon=blon(ID);
         blat=blat(ID);
+        bdep=bdep(ID);
       end
       BLK(1).BOUND(NB1,NB2).blon=blon;%Lon
       BLK(1).BOUND(NB1,NB2).blat=blat;%Lat
