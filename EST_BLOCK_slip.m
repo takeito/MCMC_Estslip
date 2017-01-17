@@ -211,8 +211,8 @@ while not(COUNT==2)
     end
 % CORRECTION FOR PDF DUE TO RESAMPLE EFFECT
    WD=RWD.*Mc.STD;
-   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
-          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
+%   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
+%          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION 
    CAL.SMP=G(1).C*(Mc.SMP*(G(1).T*(G(1).B1-G(1).B2)*Mp.SMP))+G(1).P*Mp.SMP;
 % CALC RESIDUAL SECTION
@@ -368,9 +368,9 @@ for NB1=1:BLK(1).NBlock
         NF=NF+1;
         loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
         [~] = fgetl(Fid);
-        BLK(1).BOUND(NB1,NB2).clon(NF,:)=loc_f(1,:);%Lon
-        BLK(1).BOUND(NB1,NB2).clat(NF,:)=loc_f(2,:);%Lat
-        BLK(1).BOUND(NB1,NB2).cdep(NF,:)=loc_f(3,:);%Hight
+        BLK(1).BOUND(NB1,NB2).blon(NF,:)=loc_f(1,:);%Lon
+        BLK(1).BOUND(NB1,NB2).blat(NF,:)=loc_f(2,:);%Lat
+        BLK(1).BOUND(NB1,NB2).bdep(NF,:)=loc_f(3,:);%Hight
         tline = fgetl(Fid); if ~ischar(tline); break; end
       end
       fclose(Fid);
