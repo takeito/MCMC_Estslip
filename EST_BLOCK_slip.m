@@ -230,17 +230,17 @@ while not(COUNT==2)
 %   q2 = logproppdf(y,x0);
 % this is a generic formula.
 %   rho = (q1+logpdf(y))-(q2+logpdf(x0));  
-%    Pdf=expm1(0.5.*(-RES.SMP+RES.OLD))+1;
+   Pdf=expm1(0.5.*(-RES.SMP+RES.OLD))+1;
    PRI.SMP=0;
    PRI.OLD=0;
 %   Pdf = expm1(-0.5.*...
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
-   Pdf = -0.5.*(RES.SMP-RES.OLD);
+%   Pdf = -0.5.*(RES.SMP-RES.OLD);
 % TODO:‚¤[‚ñ‚â‚Á‚Ï‚èƒ_ƒB
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
-%    IND_M=Pdf>rand(1,PRM.NPL,'single');
-    IND_M=Pdf > U(iT);
+    IND_M=Pdf>rand(1,PRM.NPL,'single');
+%    IND_M=Pdf > U(iT);
 % REVISE SECTION
     if sum(IND_M)~=0;
       Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
