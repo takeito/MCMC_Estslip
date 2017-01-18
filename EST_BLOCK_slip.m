@@ -303,8 +303,12 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
     if NF~=0
+      NN
+      NN+NF
+      size(CHA.Mc)
+      size(BLK(1).BOUND(NB1,NB2).blon)
       patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',...
-         mean(sqrt(CHA.Mc(3*(NN+NF)-2,:).^2+CHA.Mc(3*(NN+NF)-1,:).^2),2));
+         mean(sqrt(CHA.Mc(1*(NN+NF)-2,:).^2+CHA.Mc(1*(NN+NF)-1,:).^2),2));
       NN=NN+NF+1;
       hold on
     end
