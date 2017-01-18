@@ -272,7 +272,7 @@ while not(COUNT==2)
 %
   for BK=1:BLK(1).NBlock
     fprintf('POLE OF BLOCK %2i = %9.2e %9.2e %9.2e \n',...
-      BK,mean(CHA.Mp(3.*BK-2,:),2),mean(CHA.Mp(3.*BK-1,:),2),mean(CHA.Mp(3.*BK,:),2));
+             BK,mean(CHA.Mp(3.*BK-2,:),2),mean(CHA.Mp(3.*BK-1,:),2),mean(CHA.Mp(3.*BK,:),2));
   end
 %
   if CHA.AJR > 0.24
@@ -287,7 +287,7 @@ while not(COUNT==2)
   if RT > PRM.ITR; break; end;
 end
 CHA.SMP=CAL.SMP;
-fprintf('FINISHED MH_MCMC \n==================\n')
+fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
 function MAKE_FIG(CHA,BLK,OBS,TRI,PRM)
@@ -301,17 +301,19 @@ hold on
 NN=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
-    NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
-    patch(BLK(1).BOUND(NB1,NB2).blon,BLK(1).BOUND(NB1,NB2).blat,BLK(1).BOUND(NB1,NB2).bdep,...
+    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+    if NF~=0
+      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',...
          mean(sqrt(CHA.Mc(3*(NN+NF)-2,:).^2+CHA.Mc(3*(NN+NF)-1,:).^2),2));
-    NN=NN+NF+1;
-    hold on
+      NN=NN+NF+1;
+      hold on
+    end
   end
 end
 %
 figure(105);clf(105)
 for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CAL(1:3:end,NPL)',CAL(2:3:end,NPL)','blue')
+  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CAL(2:3:end,NPL)','blue')
   hold on
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,GYY(1:3:end,1)',GYY(2:3:end,1)','red')
@@ -378,8 +380,8 @@ function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
 %
 int_lat=0.25;
 int_lon=0.25;
-dep_limit=150;
-dep_limit_low=10;
+dep_limit=-150;
+dep_limit_low=-10;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
@@ -442,16 +444,16 @@ for NB1=1:BLK(1).NBlock
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
         if LENG~=0
-          Bslon=[BLK(1).BOUND(NB1,NB2).LON ; BLK(1).BOUND(NB1,NB2).LON];
-          Bslat=[BLK(1).BOUND(NB1,NB2).LAT ; BLK(1).BOUND(NB1,NB2).LAT];
-          Bsdep=[zeros(size(BLK(1).BOUND(NB1,NB2).LAT)) ; dep_limit_low.*ones(size(BLK(1).BOUND(NB1,NB2).LAT))];
-          Bstri(     1:  (LENG-1),1:3)=[     1: (LENG-1); 2:LENG; LENG+1:2*LENG-1]';
-          Bstri(          LENG   ,1:3)=[            LENG; 2*LENG;        2*LENG-1]';      
+          Bslon=[BLK(1).BOUND(NB1,NB2).LON;BLK(1).BOUND(NB1,NB2).LON(1);(BLK(1).BOUND(NB1,NB2).LON(1:LENG-1)+BLK(1).BOUND(NB1,NB2).LON(2:LENG))./2;BLK(1).BOUND(NB1,NB2).LON(LENG)];
+          Bslat=[BLK(1).BOUND(NB1,NB2).LAT;BLK(1).BOUND(NB1,NB2).LAT(1);(BLK(1).BOUND(NB1,NB2).LAT(1:LENG-1)+BLK(1).BOUND(NB1,NB2).LAT(2:LENG))./2;BLK(1).BOUND(NB1,NB2).LAT(LENG)];
+          Bsdep=[zeros(LENG,1)            ; dep_limit_low.*ones(LENG+1,1)];
+          Bstri(1:LENG-1     ,1:3)=[1     :LENG-1;     2:LENG    ;LENG+2:2*LENG]';
+          Bstri(LENG:2*LENG-1,1:3)=[LENG+1:2*LENG;LENG+2:2*LENG+1;     1:  LENG]';          
         end
       end
       if ~isempty(Bstri)
-        BLK(1).BOUND(NB1,NB2).blat=Bslat(Bstri);
         BLK(1).BOUND(NB1,NB2).blon=Bslon(Bstri);
+        BLK(1).BOUND(NB1,NB2).blat=Bslat(Bstri);
         BLK(1).BOUND(NB1,NB2).bdep=Bsdep(Bstri);
       end
     end
