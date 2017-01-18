@@ -303,8 +303,6 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
     if NF~=0
-        size(BLK(1).BOUND(NB1,NB2).blat)
-        size(mean(CHA.Mc(NN:NN+NF-1,:),2))
       patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',mean(CHA.Mc(NN:NN+NF-1,:),2));
       NN=NN+NF;
       hold on
@@ -314,14 +312,9 @@ end
 %
 figure(105);clf(105)
 for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CAL(2:3:end,NPL)','blue')
+  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
 end
-quiver(OBS(1).ALON,OBS(1).ALAT,GYY(1:3:end,1)',GYY(2:3:end,1)','red')
-hold on
-patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(TENS.CHA(1:MC(1).NP,:),2)'    ,3,1))
-hold on
-patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(TENS.CHA(MC(1).NP+1:end,:),2)',4,1))
 %
 figure(110);clf(110)
 patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(std(SLIP.CHA(1:MC(1).NP,:),0,2)'    ,3,1))
@@ -351,29 +344,6 @@ end
 %
 figure(140);clf(140)
 hist(LAMD.CHA(:),100)
-%
-%MCRE.SLIP=gather(SLIP.CHA);
-%MCRE.POLE=gather(POLE.CHA);
-%MCRE.LAMD=gather(LAMD.CHA);
-%
-MCRE.SLIP=SLIP.CHA;
-MCRE.POLE=POLE.CHA;
-MCRE.LAMD=LAMD.CHA;
-%
-%KEEP.SLIPMAX=max(MCRE.SLIP);
-%KEEP.SLIPMIN=min(MCRE.SLIP);
-%KEEP.SLIPINT=(KEEP.SLIPMAX-KEEP.SLIPMIN)./254;
-%KEEP.POLEMAX=max(MCRE.POLE);
-%KEEP.POLEMIN=min(MCRE.POLE);
-%KEEP.POLEINT=(KEEP.POLEMAX-KEEP.POLEMIN)./254;
-%KEEP.LAMDMAX=max(MCRE.LAMD);
-%KEEP.LAMDMIN=min(MCRE.LAMD);
-%KEEP.LAMDINT=(KEEP.LAMDMAX-KEEP.LAMDMIN)./254;
-%TODO: NOT CLEAN
-%KEEP.SLIP=uint8(round((MCRE.SLIP-repmat(LDIM,KEEP.SLIPMIN,1))./repmat(KEEP.SLIPINT,LDIM,1))); %CHECK
-%KEEP.POLE=uint8(round((MCRE.POLE-repmat(LDIM,KEEP.POLEMIN,1))./repmat(KEEP.POLEINT,LDIM,1))); %CHECK
-%KEEP.LAMD=uint8(round((MCRE.LAMD-repmat(LDIM,KEEP.LAMDMIN,1))./repmat(KEEP.LAMDINT,LDIM,1))); %CHECK
-
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
