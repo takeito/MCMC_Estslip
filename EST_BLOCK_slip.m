@@ -17,13 +17,13 @@ INPUT_SET='parameter.txt';
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[X]=MH_MCMC(D,G,BLK,OBS,PRM);
+[CHA]=MH_MCMC(D,G,BLK,PRM);
+% MAKE FIGURES
+MAKE_FIG(CHA,BLK,OBS,TRI,PRM);
 % CALC. ABIC AND BLOCK MOTION
 %[BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 %[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
-% MAKE FIGURES
-MAKE_FIGS(BLK,OBS);
 %
 end
 %% READ PARAMETER FOR MCMC Inversion 
@@ -113,6 +113,7 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
+% Need Project to direction of relative plate motion estimated from Pole
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
@@ -153,7 +154,7 @@ end
 G(1).C=TMP.C(D(1).IND,:);
 end
 %% Markov chain Monte Calro
-function [X]=MH_MCMC(D,G,BLK,OBS,PRM)
+function [CHA]=MH_MCMC(D,G,BLK,PRM)
 % Markov chain Monte Calro
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
@@ -183,9 +184,9 @@ La.STD=La.INT.*ones(La.N,PRM.NPL,'single');
 Mc.OLD=   0.5.*ones(Mc.N,PRM.NPL,'single');
 Mp.OLD=       zeros(Mp.N,PRM.NPL,'single');
 La.OLD=       zeros(La.N,PRM.NPL,'single');
-Mc.CHA=       zeros(Mc.N,LDIM,'single');
-Mp.CHA=       zeros(Mp.N,LDIM,'single');
-La.CHA=       zeros(La.N,LDIM,'single');
+CHA.Mc=       zeros(Mc.N,LDIM,'single');
+CHA.Mp=       zeros(Mp.N,LDIM,'single');
+CHA.La=       zeros(La.N,LDIM,'single');
 %
 RES.OLD=inf(1,PRM.NPL,'single');%gpuArray
 PRI.OLD=inf(1,PRM.NPL,'single');%gpuArray
@@ -215,7 +216,7 @@ while not(COUNT==2)
       if isempty(IND_S)==1; break; end
     end
 % CORRECTION FOR PDF DUE TO RESAMPLE EFFECT
-   WD=RWD.*Mc.STD;
+%   WD=RWD.*Mc.STD;
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
@@ -253,31 +254,31 @@ while not(COUNT==2)
     if iT > PRM.CHA-PRM.KEP
       SN=(iT-(PRM.CHA-PRM.KEP)-1)*PRM.NPL+1;
       EN=(iT-(PRM.CHA-PRM.KEP))  *PRM.NPL;
-      Mc.CHA(:,SN:EN)=Mc.SMP;
-      Mp.CHA(:,SN:EN)=Mp.SMP;
-      La.CHA(:,SN:EN)=La.SMP;
+      CHA.Mc(:,SN:EN)=Mc.SMP;
+      CHA.Mp(:,SN:EN)=Mp.SMP;
+      CHA.La(:,SN:EN)=La.SMP;
       NACC=NACC+sum(IND_M);
     end
   end
 %
-  AJR=NACC./LDIM;
+  CHA.AJR=NACC./LDIM;
 %
-  Mc.STD=repmat(std(Mc.CHA,1,2),1,PRM.NPL);
-  Mp.STD=repmat(std(Mp.CHA,1,2),1,PRM.NPL);
-  La.STD=repmat(std(La.CHA,1,2),1,PRM.NPL);
+  Mc.STD=repmat(std(CHA.Mc,1,2),1,PRM.NPL);
+  Mp.STD=repmat(std(CHA.Mp,1,2),1,PRM.NPL);
+  La.STD=repmat(std(CHA.La,1,2),1,PRM.NPL);
 %
   fprintf('T=%3d MaxRes=%6.3f MinRes=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
-           RT,1-max(RES.OLD)./RR,1-min(RES.OLD)./RR,100*AJR,RWD,toc)
+           RT,1-max(RES.OLD)./RR,1-min(RES.OLD)./RR,100*CHA.AJR,RWD,toc)
 %
   for BK=1:BLK(1).NBlock
     fprintf('POLE OF BLOCK %2i = %9.2e %9.2e %9.2e \n',...
-      BK,mean(Mp.CHA(3.*BK-2,:),2),mean(Mp.CHA(3.*BK-1,:),2),mean(Mp.CHA(3.*BK,:),2));
+      BK,mean(CHA.Mp(3.*BK-2,:),2),mean(CHA.Mp(3.*BK-1,:),2),mean(CHA.Mp(3.*BK,:),2));
   end
 %
-  if AJR > 0.24
+  if CHA.AJR > 0.24
     RWD=RWD*1.1;
     COUNT=0;
-  elseif AJR < 0.22
+  elseif CHA.AJR < 0.22
     RWD=RWD*0.618;
     COUNT=0;
   else
@@ -285,20 +286,26 @@ while not(COUNT==2)
   end
   if RT > PRM.ITR; break; end;
 end
-%% FIGURES
+CHA.SMP=CAL.SMP;
+fprintf('FINISHED MH_MCMC \n==================\n')
+end
+%% Show results for makeing FIGURES
+function MAKE_FIG(CHA,BLK,OBS,TRI,PRM)
 figure(100);clf(100)
 for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CAL.SMP(1:3:end,NPL)',CAL.SMP(2:3:end,NPL)','blue')
+  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'red')
 hold on
+NN=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
-    patch(BLK(1).BOUND(NB1,NB2).blon,BLK(1).BOUND(NB1,NB2).blat,BLK(1).BOUND(NB1,NB2).bdep,Mc.
-    patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(SLIP.CHA(1:MC(1).NP,:),2)'    ,3,1))
+    NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
+    patch(BLK(1).BOUND(NB1,NB2).blon,BLK(1).BOUND(NB1,NB2).blat,BLK(1).BOUND(NB1,NB2).bdep,...
+         mean(sqrt(Mc.CHA(3*(NN+NF)-2,:).^2+Mc.CHA(3*(NN+NF)-1,:).^2),2));
+     NN=NN+NF+1;
     hold on
-    patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(SLIP.CHA(MC(1).NP+1:end,:),2)',4,1))
   end
 end
 %
@@ -363,7 +370,7 @@ MCRE.LAMD=LAMD.CHA;
 %KEEP.SLIP=uint8(round((MCRE.SLIP-repmat(LDIM,KEEP.SLIPMIN,1))./repmat(KEEP.SLIPINT,LDIM,1))); %CHECK
 %KEEP.POLE=uint8(round((MCRE.POLE-repmat(LDIM,KEEP.POLEMIN,1))./repmat(KEEP.POLEINT,LDIM,1))); %CHECK
 %KEEP.LAMD=uint8(round((MCRE.LAMD-repmat(LDIM,KEEP.LAMDMIN,1))./repmat(KEEP.LAMDINT,LDIM,1))); %CHECK
-fprintf('FINISH GPU_CALC_MCMC_XYr \n==================\n')
+
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
@@ -550,7 +557,7 @@ DP=cross(NV,ST);
 STR=(180./pi).*atan2(NV(2),NV(1));
 DIP=(180./pi).*acos(NV(3));
 end
-%% MAKE FIGURES
+%% CALC MOTION BLOCKS
 function [BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS)
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
@@ -785,7 +792,7 @@ deg2rad=pi/180;
 Oxyz = Oxyz*1e3;
 OOxyz=[Oxyz sin(Olat*deg2rad) sin(Olon*deg2rad) cos(Olat*deg2rad) cos(Olon*deg2rad)];
 end
-%% Make GREEN FUNCTION
+%% MAKE GREEN FUNCTION
 %====================================================
 function [U] = CalcTriDisps(sx, sy, sz, x, y, z, pr, ss, ts, ds)
 % CalcTriDisps.m
