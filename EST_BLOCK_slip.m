@@ -102,7 +102,7 @@ D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
 %
-% (G(1).C * ( Mc .* ( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp ) ) + G(1).P * Mp
+% (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
 %
 G(1).P=zeros(3*NOBS,3.*BLK(1).NBlock);
 G(1).T=zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
@@ -174,8 +174,8 @@ LDIM=PRM.NPL.*PRM.KEP;
 Mc.INT=1e-2;
 Mp.INT=1e-10;
 La.INT=1e+1;
-Mc.N=size(G(1).C,2);
-Mp.N=size(G(1).P,2);
+Mc.N=BLK(1).NB;
+Mp.N=3.*BLK(1).NBlock;
 La.N=size(G(1).C,2);
 %
 Mc.STD=Mc.INT.*ones(Mc.N,PRM.NPL,'single');
@@ -220,7 +220,7 @@ while not(COUNT==2)
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-   CAL.SMP=G.C*(Mc.SMP.*(G.T*G.B*Mp.SMP))+G.P*Mp.SMP;
+   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 %% MAKE Probably Density Function
@@ -298,18 +298,15 @@ for NPL=1:PRM.NPL
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'red')
 hold on
-NN=0;
+NN=1;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
     if NF~=0
-      NN
-      NN+NF
-      size(CHA.Mc)
-      size(BLK(1).BOUND(NB1,NB2).blon)
-      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',...
-         mean(sqrt(CHA.Mc(1*(NN+NF)-2,:).^2+CHA.Mc(1*(NN+NF)-1,:).^2),2));
-      NN=NN+NF+1;
+        size(BLK(1).BOUND(NB1,NB2).blat)
+        size(mean(CHA.Mc(NN:NN+NF-1,:),2))
+      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',mean(CHA.Mc(NN:NN+NF-1,:),2));
+      NN=NN+NF;
       hold on
     end
   end
@@ -386,6 +383,7 @@ int_lat=0.25;
 int_lon=0.25;
 dep_limit=-150;
 dep_limit_low=-10;
+BLK(1).NB=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
@@ -461,6 +459,7 @@ for NB1=1:BLK(1).NBlock
         BLK(1).BOUND(NB1,NB2).bdep=Bsdep(Bstri);
       end
     end
+    BLK(1).NB=BLK(1).NB+size(BLK(1).BOUND(NB1,NB2).blon,1);
   end
 end
 end
