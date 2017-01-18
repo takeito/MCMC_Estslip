@@ -162,11 +162,11 @@ fprintf('Residual=%9.3f \n',RR);
 % TODO: CHECK GPU etc.
 % GPU Initialize 
 %
-g=gpuDevice(devGPU);
+%g=gpuDevice(devGPU);
 % TODO: CHECK GPU MEMORY
-g_men=g.TotalMemory
-g_men=g.TotalMemory; %byte
-reset(g);
+%g_men=g.TotalMemory
+%g_men=g.TotalMemory; %byte
+%reset(g);
 %
 RWD=PRM.RWD;
 LDIM=PRM.NPL.*PRM.KEP;
