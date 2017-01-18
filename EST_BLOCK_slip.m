@@ -17,7 +17,7 @@ INPUT_SET='parameter.txt';
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[CHA]=MH_MCMC(D,G,BLK,PRM);
+[CHA]=MH_MCMC(D,G,BLK,PRM,1);
 % MAKE FIGURES
 MAKE_FIG(CHA,BLK,OBS,TRI,PRM);
 % CALC. ABIC AND BLOCK MOTION
@@ -154,7 +154,7 @@ end
 G(1).C=TMP.C(D(1).IND,:);
 end
 %% Markov chain Monte Calro
-function [CHA]=MH_MCMC(D,G,BLK,PRM)
+function [CHA]=MH_MCMC(D,G,BLK,PRM,devGPU)
 % Markov chain Monte Calro
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
@@ -162,13 +162,13 @@ fprintf('Residual=%9.3f \n',RR);
 % TODO: CHECK GPU etc.
 % GPU Initialize 
 %
-%g=gpuDevice(devGPU);
+g=gpuDevice(devGPU);
 % TODO: CHECK GPU MEMORY
-%g_men=g.TotalMemory; %byte
-%reset(g);
+g_men=g.TotalMemory
+g_men=g.TotalMemory; %byte
+reset(g);
 %
 RWD=PRM.RWD;
-PRM.NPL=1;
 LDIM=PRM.NPL.*PRM.KEP;
 %
 Mc.INT=1e-2;
@@ -303,8 +303,8 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     patch(BLK(1).BOUND(NB1,NB2).blon,BLK(1).BOUND(NB1,NB2).blat,BLK(1).BOUND(NB1,NB2).bdep,...
-         mean(sqrt(Mc.CHA(3*(NN+NF)-2,:).^2+Mc.CHA(3*(NN+NF)-1,:).^2),2));
-     NN=NN+NF+1;
+         mean(sqrt(CHA.Mc(3*(NN+NF)-2,:).^2+CHA.Mc(3*(NN+NF)-1,:).^2),2));
+    NN=NN+NF+1;
     hold on
   end
 end
