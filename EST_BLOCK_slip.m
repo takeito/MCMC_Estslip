@@ -421,6 +421,10 @@ for NB1=1:BLK(1).NBlock
           Bsdep=[zeros(LENG,1)            ; dep_limit_low.*ones(LENG+1,1)];
           Bstri(1:LENG-1     ,1:3)=[1     :LENG-1;     2:LENG    ;LENG+2:2*LENG]';
           Bstri(LENG:2*LENG-1,1:3)=[LENG+1:2*LENG;LENG+2:2*LENG+1;     1:  LENG]';          
+        else
+          BLK(1).BOUND(NB1,NB2).blon=[];
+          BLK(1).BOUND(NB1,NB2).blat=[];
+          BLK(1).BOUND(NB1,NB2).bdep=[];          
         end
       end
       if ~isempty(Bstri)
@@ -640,6 +644,8 @@ end
 fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
+    BLK(1).BOUND(NB1,NB2).LAT=[];
+    BLK(1).BOUND(NB1,NB2).LON=[];
     [~,ialon,~]=intersect(BLK(NB1).LON,BLK(NB2).LON);
     [~,ialat,~]=intersect(BLK(NB1).LAT,BLK(NB2).LAT);
     [Ca,~,~]=intersect(ialat,ialon);
