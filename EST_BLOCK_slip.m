@@ -359,6 +359,8 @@ for NB1=1:BLK(1).NBlock
     pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
     Fid=fopen(pre_tri_f,'r');
     if Fid >= 0
+      fprintf('BLOCK INTERFACE: %2i  %2i \n',NB1,NB2)
+      fprintf('READ INTERFACE TRI BOUDARY FILE : %s \n',pre_tri_f)
       NF=0;
       blon=zeros(1,3);blat=zeros(1,3);bdep=zeros(1,3);
       while 1
@@ -390,6 +392,8 @@ for NB1=1:BLK(1).NBlock
       sub_f=fullfile(DIRBLK,['B_',num2str(NB1),'_',num2str(NB2),'.txt']);
       Fid=fopen(sub_f,'r');
       if Fid >= 0
+        fprintf('BLOCK INTERFACE: %2i  %2i \n',NB1,NB2)
+        fprintf('READ INTERFACE BOUDARY SHAPE FILE : %s \n',sub_f)
         dep_blk=textscan(Fid,'%f%f%f'); fclose(Fid);
         dep_blk=cell2mat(dep_blk);
         F=scatteredInterpolant(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3),'natural');
@@ -405,13 +409,15 @@ for NB1=1:BLK(1).NBlock
         min_lon=min(bound_blk(:,1)); max_lon=max(bound_blk(:,1));
         min_lat=min(bound_blk(:,2)); max_lat=max(bound_blk(:,2));
         [slon,slat]=meshgrid(min_lon:int_lon:max_lon,min_lat:int_lat:max_lat);
+        slon=slon(:);
+        slat=slat(:);
         ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
         slon=slon(ID); slat=slat(ID); sdep=F(slon,slat);
-        ID=find(sdep<dep_limit);
+        ID=find(sdep>dep_limit);
         Bslon=slon(ID);
         Bslat=slat(ID);
-        Bsdep=F(slon,slat);
-        Bstri=delaunay(slon,slat);
+        Bsdep=F(Bslon,Bslat);
+        Bstri=delaunay(Bslon,Bslat);
       else
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
@@ -420,7 +426,8 @@ for NB1=1:BLK(1).NBlock
           Bslat=[BLK(1).BOUND(NB1,NB2).LAT;BLK(1).BOUND(NB1,NB2).LAT(1);(BLK(1).BOUND(NB1,NB2).LAT(1:LENG-1)+BLK(1).BOUND(NB1,NB2).LAT(2:LENG))./2;BLK(1).BOUND(NB1,NB2).LAT(LENG)];
           Bsdep=[zeros(LENG,1)            ; dep_limit_low.*ones(LENG+1,1)];
           Bstri(1:LENG-1     ,1:3)=[1     :LENG-1;     2:LENG    ;LENG+2:2*LENG]';
-          Bstri(LENG:2*LENG-1,1:3)=[LENG+1:2*LENG;LENG+2:2*LENG+1;     1:  LENG]';          
+          Bstri(LENG:2*LENG-1,1:3)=[LENG+1:2*LENG;LENG+2:2*LENG+1;     1:  LENG]';
+          fprintf('BLOCK INTERFACE: %2i  %2i AUTO SET %4i \n',NB1,NB2,(LENG-1)*2+1)
         else
           BLK(1).BOUND(NB1,NB2).blon=[];
           BLK(1).BOUND(NB1,NB2).blat=[];
@@ -428,9 +435,9 @@ for NB1=1:BLK(1).NBlock
         end
       end
       if ~isempty(Bstri)
-        BLK(1).BOUND(NB1,NB2).blon=Bslon(Bstri);
-        BLK(1).BOUND(NB1,NB2).blat=Bslat(Bstri);
-        BLK(1).BOUND(NB1,NB2).bdep=Bsdep(Bstri);
+        BLK(1).BOUND(NB1,NB2).blon=[Bslon(Bstri(:,1)),Bslon(Bstri(:,2)),Bslon(Bstri(:,3))];
+        BLK(1).BOUND(NB1,NB2).blat=[Bslat(Bstri(:,1)),Bslat(Bstri(:,2)),Bslat(Bstri(:,3))];
+        BLK(1).BOUND(NB1,NB2).bdep=[Bsdep(Bstri(:,1)),Bsdep(Bstri(:,2)),Bsdep(Bstri(:,3))];
       end
     end
     BLK(1).NB=BLK(1).NB+size(BLK(1).BOUND(NB1,NB2).blon,1);
