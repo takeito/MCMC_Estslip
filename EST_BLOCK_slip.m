@@ -433,9 +433,7 @@ for NB1=1:BLK(1).NBlock
         plot3(dep_blk(:,1),dep_blk(:,2),F(dep_blk(:,1),dep_blk(:,2)),'.y')
         hold on
         plot(bound_blk(:,1),bound_blk(:,2))
-        whos
         Bstri=Bttri(ID_B,:);
-        whos
       else
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
