@@ -268,6 +268,7 @@ S.y=sy;
 S.z=sz;
 S.U=Ua;
 S.F=Fobs;
+S.H=H;
 
 % save figure at the number of n-mesh
 close(fig30)
