@@ -315,7 +315,7 @@ for NPL=1:PRM.NPL
   quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
 end
-%
+%{
 figure(110);clf(110)
 patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(std(SLIP.CHA(1:MC(1).NP,:),0,2)'    ,3,1))
 hold on
@@ -344,6 +344,7 @@ end
 %
 figure(140);clf(140)
 hist(LAMD.CHA(:),100)
+%}
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
@@ -418,6 +419,13 @@ for NB1=1:BLK(1).NBlock
         Bslat=slat(ID);
         Bsdep=F(Bslon,Bslat);
         Bstri=delaunay(Bslon,Bslat);
+        Bclon=mean([Bslon(Bstri(:,1)),Bslon(Bstri(:,2)),Bslon(Bstri(:,3))]);
+        Bclat=mean([Bslat(Bstri(:,1)),Bslat(Bstri(:,2)),Bslat(Bstri(:,3))]);
+        SID=inpolygon(Bclon,Bclat,bound_blk(:,1),bound_blk(:,2));
+        Bslon=Bslon(SID);
+        Bslat=Bslat(SID);        
+        Bsdep=Bsdep(SID);
+        Bstri=Bstri(SID,:);
       else
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
