@@ -350,9 +350,9 @@ end
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
 % Coded by Takeo Ito 2016/12/21 (ver 1.0)
 %
-int_lat=0.25;
-int_lon=0.25;
-dep_limit=-150;
+int_lat=0.5;
+int_lon=0.5;
+dep_limit=-100;
 dep_limit_low=-10;
 BLK(1).NB=0;
 for NB1=1:BLK(1).NBlock
@@ -418,14 +418,24 @@ for NB1=1:BLK(1).NBlock
         Bslon=slon(ID);
         Bslat=slat(ID);
         Bsdep=F(Bslon,Bslat);
-        Bstri=delaunay(Bslon,Bslat);
-        Bclon=mean([Bslon(Bstri(:,1)),Bslon(Bstri(:,2)),Bslon(Bstri(:,3))]);
-        Bclat=mean([Bslat(Bstri(:,1)),Bslat(Bstri(:,2)),Bslat(Bstri(:,3))]);
-        SID=inpolygon(Bclon,Bclat,bound_blk(:,1),bound_blk(:,2));
-        Bslon=Bslon(SID);
-        Bslat=Bslat(SID);        
-        Bsdep=Bsdep(SID);
-        Bstri=Bstri(SID,:);
+        Bttri=delaunay(Bslon,Bslat);
+        Bcdep=mean([Bsdep(Bttri(:,1)),Bsdep(Bttri(:,2)),Bsdep(Bttri(:,3))],2);
+        ID_D=find(Bcdep>dep_limit);
+        Bclon=mean([Bslon(Bttri(ID_D,1)),Bslon(Bttri(ID_D,2)),Bslon(Bttri(ID_D,3))],2);
+        Bclat=mean([Bslat(Bttri(ID_D,1)),Bslat(Bttri(ID_D,2)),Bslat(Bttri(ID_D,3))],2);
+        Bttri=Bttri(ID_D,:);
+        ID_B=inpolygon(Bclon,Bclat,bound_blk(:,1),bound_blk(:,2));
+        figure
+        plot3(Bclon,Bclat,F(Bclon,Bclat),'.r')
+        hold on
+        plot3(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3),'.b')
+        hold on
+        plot3(dep_blk(:,1),dep_blk(:,2),F(dep_blk(:,1),dep_blk(:,2)),'.y')
+        hold on
+        plot(bound_blk(:,1),bound_blk(:,2))
+        whos
+        Bstri=Bttri(ID_B,:);
+        whos
       else
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
