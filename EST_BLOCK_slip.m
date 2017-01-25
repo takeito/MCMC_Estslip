@@ -34,32 +34,15 @@ function [PRM]=READ_PARAMETERS(INPUT_SET)
 % Modified by Takeo Ito 2015/11/11 (ver 1.2)
 % Modified by Takeo Ito 2016/07/06 (ver 1.3)
 %
-PRM.FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
-%DIRBlock='./colombia_data_set/BLOCK_PB2003/';
-%DIRBlock='./colombia_data_set/BLOCK_8/';
-%DIRBlock='./colombia_data_set/BLOCK_9/';
-%DIRBlock='./colombia_data_set/BLOCK_12/';
-%DIRBlock='./colombia_data_set/BLOCK_12_rev2/';
-PRM.DIRBlock='./BLOCK/';
-%DIRBlock='./colombia_data_set/BLOCK_14/';
-%DIRBlock='./colombia_data_set/BLOCK_15/';
-%DIRBlock='./colombia_data_set/BLOCK_16/';
-%DIRBlock='./colombia_data_set/BLOCK_rev2/';
-PRM.DIRBlock_Interface='./BLOCK_Int/';
-%DIRBlock='./colombia_data_set/BLOCK_14/';
-%DIRBlock='./colombia_data_set/BLOCK_15/';
-%DIRBlock='./colombia_data_set/BLOCK_16/';
-%DIRBlock='./colombia_data_set/BLOCK_rev2/';
 Fid=fopen(INPUT_SET,'r');
 PRM.HOME_D=pwd;
-TRI_F=fscanf(Fid,'%s \n',[1,1]);
-PRM.TRI_F=fullfile(PRM.HOME_D,TRI_F);
+FileOBS=fscanf(Fid,'%s \n',[1,1]);
+PRM.FileOBS=fullfile(PRM.HOME_D,FileOBS);
 [~]=fgetl(Fid);
-RECT_F=fscanf(Fid,'%s \n',[1,1]);
-PRM.RECT_F=fullfile(PRM.HOME_D,RECT_F);
+DIRBlock=fscanf(Fid,'%s \n',[1,1]);
+PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
 [~]=fgetl(Fid);
-OBS_F=fscanf(Fid,'%s \n',[1,1]);
-PRM.OBS_F=fullfile(PRM.HOME_D,OBS_F);
+PRM.DIRBlock_Interface=fscanf(Fid,'%s \n',[1,1]);
 [~]=fgetl(Fid);
 %
 PRM.NPL=fscanf(Fid,'%d \n',[1,1]);
@@ -74,15 +57,15 @@ PRM.RWD=fscanf(Fid,'%f \n',[1,1]);
 fclose(Fid);
 %====================================================
 fprintf('==================\nINPUT PARAMETERS\n==================\n') 
-fprintf('HOME_D       : %s \n',PRM.HOME_D) 
-fprintf('TRI_F        : %s \n',PRM.TRI_F) 
-fprintf('RECT_F       : %s \n',PRM.RECT_F)
-fprintf('OBS_F        : %s \n',PRM.OBS_F) 
-fprintf('PP           : %i \n',PRM.NPL) 
-fprintf('Max_Nitr     : %i \n',PRM.ITR) 
-fprintf('Chain        : %i \n',PRM.CHA) 
-fprintf('KEEP         : %i \n'   ,PRM.KEP) 
-fprintf('Walk_dis     : %4.2f \n',PRM.RWD) 
+fprintf('HOME_D             : %s \n',PRM.HOME_D) 
+fprintf('FileOBS            : %s \n',PRM.FileOBS) 
+fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
+fprintf('DIRBlock_Interface : %s \n',PRM.DIRBlock_Interface) 
+fprintf('NPL(PP)            : %i \n',PRM.NPL) 
+fprintf('ITR(Max_Nitr)      : %i \n',PRM.ITR) 
+fprintf('CHA(Chain)         : %i \n',PRM.CHA) 
+fprintf('KEP(KEEP)          : %i \n',PRM.KEP) 
+fprintf('RWD(Walk_dis)      : %4.2f \n',PRM.RWD) 
 fprintf('==================\n') 
 %====================================================
 disp('PASS READ_PARAMETERS')
@@ -678,6 +661,7 @@ for NB1=1:BLK(1).NBlock
     if sum(Ca) > 0 
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
     end
+    figure
   end
 end
 for N=1:BLK(1).NBlock
