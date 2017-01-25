@@ -10,6 +10,8 @@ INPUT_SET='parameter.txt';
 [OBS]=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY
 [BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
+% SHOW BLOCK BOUNDARY MAP
+SHOW_BLOCK_BOUND(BLK)
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM.DIRBlock_Interface);
 % CALC. GREEN FUNCTION
@@ -25,6 +27,23 @@ MAKE_FIG(CHA,BLK,OBS,TRI,PRM);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 %[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 %
+end
+%% SHOW BLOCK BOUNDARY MAP
+function SHOW_BLOCK_BOUND(BLK)
+figure('Name','BLOCK_AND_BOUNDARY_MAP')
+for NB=1:BLK(1).NBlock
+  plot(BLK(NB).LON,BLK(NB).LAT)
+  hold on
+  text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB))
+  hold on
+end
+for NB1=1:BLK(1).NBlock
+  for NB2=NB1+1:BLK(1).NBlock
+    plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT,'o')
+    hold on
+  end
+end
+drawnow
 end
 %% READ PARAMETER FOR MCMC Inversion 
 function [PRM]=READ_PARAMETERS(INPUT_SET)
@@ -88,9 +107,10 @@ D(1).ERR=TMP.ERR(D(1).IND)';
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
 %
-G(1).P=zeros(3*NOBS,3.*BLK(1).NBlock);
 G(1).T=zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
 G(1).B=zeros(2*TRI(1).TNF,3.*BLK(1).NBlock);
+TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
+%
 MC=1;
 MT=1;
 for NB1=1:BLK(1).NBlock
@@ -128,14 +148,15 @@ for NB1=1:BLK(1).NBlock
   IND=OBS(1).ABLK==NB1;
   NIND=[IND;zeros(size(IND));zeros(size(IND))]; NIND=logical(reshape(NIND',3*NOBS,1));
   EIND=[zeros(size(IND));IND;zeros(size(IND))]; EIND=logical(reshape(EIND',3*NOBS,1));
-  G(1).P(EIND,3*NB1-2)=-OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3);
-  G(1).P(EIND,3*NB1-1)=-OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3);
-  G(1).P(EIND,3*NB1  )= OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,2)                    +OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,1);
-  G(1).P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
-  G(1).P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
-  G(1).P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
+  TMP.P(EIND,3*NB1-2)=-OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3);
+  TMP.P(EIND,3*NB1-1)=-OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3);
+  TMP.P(EIND,3*NB1  )= OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,2)                    +OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,1);
+  TMP.P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
+  TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
+  TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
 end
 G(1).C=TMP.C(D(1).IND,:);
+G(1).P=TMP.P(D(1).IND,:);
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,devGPU)
@@ -204,7 +225,7 @@ while not(COUNT==2)
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;
+   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 %% MAKE Probably Density Function
@@ -276,6 +297,7 @@ end
 %% Show results for makeing FIGURES
 function MAKE_FIG(CHA,BLK,OBS,TRI,PRM)
 figure(100);clf(100)
+% BUG to wait zero
 for NPL=1:PRM.NPL
   quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
@@ -409,14 +431,6 @@ for NB1=1:BLK(1).NBlock
         Bclat=mean([Bslat(Bttri(ID_D,1)),Bslat(Bttri(ID_D,2)),Bslat(Bttri(ID_D,3))],2);
         Bttri=Bttri(ID_D,:);
         ID_B=inpolygon(Bclon,Bclat,bound_blk(:,1),bound_blk(:,2));
-        figure
-        plot3(Bclon,Bclat,F(Bclon,Bclat),'.r')
-        hold on
-        plot3(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3),'.b')
-        hold on
-        plot3(dep_blk(:,1),dep_blk(:,2),F(dep_blk(:,1),dep_blk(:,2)),'.y')
-        hold on
-        plot(bound_blk(:,1),bound_blk(:,2))
         Bstri=Bttri(ID_B,:);
       else
         Bstri=[];
@@ -639,8 +653,7 @@ end
 %% READ BLOCK BOUNDARY DATA
 function [BLK,OBS]=READ_BLOCK_BOUND(DIR,OBS)
 EXT='*.txt';
-DIR
-file=dir([DIR,'/',EXT])
+file=dir([DIR,'/',EXT]);
 [NBlock,~]=size(file);
 BLK(1).NBlock=NBlock;
 for NB=1:BLK(1).NBlock
@@ -663,7 +676,6 @@ for NB1=1:BLK(1).NBlock
     if sum(Ca) > 0 
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
     end
-    figure
   end
 end
 for N=1:BLK(1).NBlock

@@ -2,7 +2,7 @@ GNSS_ITRF2008_sw_japan.txt        : FileOBS GNSS_ITRF2008_Colombia_matlab.txt
 BLOCK_sw_japan                    : DIRBlock
 BLOCK_Int_sw_japan                : DIRBlock_Interface
 1                                 : NPL(PP)
-20                                : ITR(Max_Nitr) 
-10000                             : CHA(Chain) 
-1000                              : KEEP
+10                                : ITR(Max_Nitr) 
+50                                : CHA(Chain) 
+10                                : KEEP
 1.0                               : Walk_dis
