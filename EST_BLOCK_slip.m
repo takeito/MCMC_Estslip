@@ -42,7 +42,8 @@ PRM.FileOBS=fullfile(PRM.HOME_D,FileOBS);
 DIRBlock=fscanf(Fid,'%s \n',[1,1]);
 PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
 [~]=fgetl(Fid);
-PRM.DIRBlock_Interface=fscanf(Fid,'%s \n',[1,1]);
+DIRBlock_Interface=fscanf(Fid,'%s \n',[1,1]);
+PRM.DIRBlock_Interface=fullfile(PRM.HOME_D,DIRBlock_Interface);
 [~]=fgetl(Fid);
 %
 PRM.NPL=fscanf(Fid,'%d \n',[1,1]);
@@ -638,7 +639,8 @@ end
 %% READ BLOCK BOUNDARY DATA
 function [BLK,OBS]=READ_BLOCK_BOUND(DIR,OBS)
 EXT='*.txt';
-file=dir([DIR,EXT]);
+DIR
+file=dir([DIR,'/',EXT])
 [NBlock,~]=size(file);
 BLK(1).NBlock=NBlock;
 for NB=1:BLK(1).NBlock
@@ -709,6 +711,9 @@ while 1
 end
 OBS(1).NOBS=N;
 OBS(1).ABLK=zeros(OBS(1).NOBS,1);
+fprintf('==================\n') 
+fprintf('Number of GNSS site %4d \n',N)
+fprintf('==================\n') 
 end
 %% Estimate BLOCK Motion
 function [PL,EVne,Sigma]=est_pole_w(Oxyz,Vne,w)
