@@ -423,15 +423,12 @@ for NB1=1:BLK(1).NBlock
         ID=find(sdep>dep_limit);
         Bslon=slon(ID);
         Bslat=slat(ID);
-        Bsdep=F(Bslon,Bslat);
+        Bsdep=sdep(ID);
         Bttri=delaunay(Bslon,Bslat);
-        Bcdep=mean([Bsdep(Bttri(:,1)),Bsdep(Bttri(:,2)),Bsdep(Bttri(:,3))],2);
-        ID_D=find(Bcdep>dep_limit);
-        Bclon=mean([Bslon(Bttri(ID_D,1)),Bslon(Bttri(ID_D,2)),Bslon(Bttri(ID_D,3))],2);
-        Bclat=mean([Bslat(Bttri(ID_D,1)),Bslat(Bttri(ID_D,2)),Bslat(Bttri(ID_D,3))],2);
-        Bttri=Bttri(ID_D,:);
-        ID_B=inpolygon(Bclon,Bclat,bound_blk(:,1),bound_blk(:,2));
-        Bstri=Bttri(ID_B,:);
+        Bclon=mean([Bslon(Bttri(:,1)),Bslon(Bttri(:,2)),Bslon(Bttri(:,3))],2);
+        Bclat=mean([Bslat(Bttri(:,1)),Bslat(Bttri(:,2)),Bslat(Bttri(:,3))],2);
+%        ID_D=find(F(Bclon,Bclat)>dep_limit);
+        Bstri=Bttri(F(Bclon,Bclat)>dep_limit,:);
       else
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
@@ -672,7 +669,7 @@ for NB1=1:BLK(1).NBlock
     [Ca,~,~]=intersect(ialat,ialon);
     BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
     BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
-    BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);    
     if sum(Ca) > 0 
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
     end
