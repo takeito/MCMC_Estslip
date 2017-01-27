@@ -708,12 +708,12 @@ for NB1=1:BLK(1).NBlock
     if length(blkshare(NB1,NB2).sID1)
 %     if sum(Ca) > 0 
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
-      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
-      hold on
+%       plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
+%       hold on
     end
   end
 end
-hold off
+% hold off
 
 for N=1:BLK(1).NBlock
   IND=inpolygon(OBS(1).ALON,OBS(1).ALAT,BLK(N).LON,BLK(N).LAT);
