@@ -243,7 +243,7 @@ while not(COUNT==2)
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:‚¤[‚ñ‚â‚Á‚Ï‚èƒ_ƒB
+% TODO:?½?½?½[?½?½?½?½?½Ï‚ï¿½_?½?½?½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -664,17 +664,57 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
     BLK(1).BOUND(NB1,NB2).LON=[];
-    [~,ialon,~]=intersect(BLK(NB1).LON,BLK(NB2).LON);
-    [~,ialat,~]=intersect(BLK(NB1).LAT,BLK(NB2).LAT);
-    [Ca,~,~]=intersect(ialat,ialon);
-    BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
-    BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
-    BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);    
-    if sum(Ca) > 0 
+    blkmat(NB1).lon=repmat(BLK(NB1).LON',length(BLK(NB2).LON),1);
+    blkmat(NB2).lon=repmat(BLK(NB2).LON,1,length(BLK(NB1).LON));
+    blkmat(NB1).lat=repmat(BLK(NB1).LAT',length(BLK(NB2).LAT),1);
+    blkmat(NB2).lat=repmat(BLK(NB2).LAT,1,length(BLK(NB1).LAT));
+    blkshare(NB1,NB2).lon=blkmat(NB1).lon-blkmat(NB2).lon;
+    blkshare(NB1,NB2).lat=blkmat(NB1).lat-blkmat(NB2).lat;
+    blkshare(NB1,NB2).share=blkshare(NB1,NB2).lon==0&blkshare(NB1,NB2).lat==0;  % logicak matrix
+    [blkshare(NB1,NB2).sID2,blkshare(NB1,NB2).sID1]=find(blkshare(NB1,NB2).share==1);
+    sIDlogic1=zeros(length(BLK(NB1).LON),1); sIDlogic2=zeros(length(BLK(NB2).LON),1);
+    sIDlogic1(blkshare(NB1,NB2).sID1)=1; sIDlogic2(blkshare(NB1,NB2).sID2)=1;
+    sIDlogic1=logical(sIDlogic1); sIDlogic2=logical(sIDlogic2);
+    if sIDlogic1(1)~=1 
+      BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(blkshare(NB1,NB2).sID1);
+      BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(blkshare(NB1,NB2).sID1);
+      BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    else
+      cycN=0;
+      while sIDlogic1(1)==1
+        sIDlogic1(end+1)=sIDlogic1(1);
+        sIDlogic1(1)=[];
+        blkshare(NB1,NB2).sID1(end+1)=blkshare(NB1,NB2).sID1(1);
+        blkshare(NB1,NB2).sID1(1)=[];
+        if cycN==0
+          sIDlogic1(end)=[];
+          blkshare(NB1,NB2).sID1(end)=[];
+        elseif (BLK(NB1).LON(blkshare(NB1,NB2).sID1(end))==BLK(NB1).LON(blkshare(NB1,NB2).sID1(end-1)) && BLK(NB1).LAT(blkshare(NB1,NB2).sID1(end))==BLK(NB1).LAT(blkshare(NB1,NB2).sID1(end-1)))
+          blkshare(NB1,NB2).sID1(end)=[];
+          sIDlogic1(2:end+1)=sIDlogic1(1:end);
+        end
+        cycN=cycN+1;
+      end
+      BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(blkshare(NB1,NB2).sID1);
+      BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(blkshare(NB1,NB2).sID1);
+      BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    end
+%     [~,ialon,~]=intersect(BLK(NB1).LON,BLK(NB2).LON);
+%     [~,ialat,~]=intersect(BLK(NB1).LAT,BLK(NB2).LAT);
+%     [Ca,~,~]=intersect(ialat,ialon);
+%     BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
+%     BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
+%     BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    if length(blkshare(NB1,NB2).sID1)
+%     if sum(Ca) > 0 
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
+      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
+      hold on
     end
   end
 end
+hold off
+
 for N=1:BLK(1).NBlock
   IND=inpolygon(OBS(1).ALON,OBS(1).ALAT,BLK(N).LON,BLK(N).LAT);
   OBS(1).ABLK(IND)=N;
