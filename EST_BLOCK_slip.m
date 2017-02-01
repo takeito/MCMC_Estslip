@@ -30,17 +30,48 @@ MAKE_FIG(CHA,BLK,OBS,TRI,PRM);
 end
 %% SHOW BLOCK BOUNDARY MAP
 function SHOW_BLOCK_BOUND(BLK)
-figure('Name','BLOCK_AND_BOUNDARY_MAP')
+%
+minlat=[];minlon=[];maxlat=[];maxlon=[];
+minlatc=[];minlonc=[];maxlatc=[];maxlonc=[];
 for NB=1:BLK(1).NBlock
-  plot(BLK(NB).LON,BLK(NB).LAT)
+  minlatc=min([(min(BLK(NB).LAT)+max(BLK(NB).LAT))/2;minlatc]); 
+  minlonc=min([(min(BLK(NB).LON)+max(BLK(NB).LON))/2;minlonc]); 
+  maxlatc=max([(min(BLK(NB).LAT)+max(BLK(NB).LAT))/2;maxlatc]); 
+  maxlonc=max([(min(BLK(NB).LON)+max(BLK(NB).LON))/2;maxlonc]); 
+  minlat=min([BLK(NB).LAT;minlat]); 
+  minlon=min([BLK(NB).LON;minlon]); 
+  maxlat=max([BLK(NB).LAT;maxlat]); 
+  maxlon=max([BLK(NB).LON;maxlon]); 
+end
+%
+figure('Name','BLOCK_AND_BOUNDARY_MAP WIDE')
+h = worldmap([minlat,maxlat],[minlon,maxlon]);
+getm(h, 'MapProjection');
+geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
+for NB=1:BLK(1).NBlock
+  plotm(BLK(NB).LAT,BLK(NB).LON)
   hold on
-  text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB))
+  textm(mean(BLK(NB).LAT),mean(BLK(NB).LON),int2str(NB))
+  hold on
+end
+drawnow
+%
+figure('Name','BLOCK_AND_BOUNDARY_MAP REGIONAL')
+h = worldmap([minlatc,maxlatc],[minlonc,maxlonc]);
+getm(h, 'MapProjection');
+geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
+for NB=1:BLK(1).NBlock
+  plotm(BLK(NB).LAT,BLK(NB).LON)
+  hold on
+  textm(mean(BLK(NB).LAT),mean(BLK(NB).LON),int2str(NB))
   hold on
 end
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
-    plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT,'o')
-    hold on
+    if ~isempty(BLK(1).BOUND(NB1,NB2).LAT)
+      plotm(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON,'o')
+      hold on
+    end
   end
 end
 drawnow
