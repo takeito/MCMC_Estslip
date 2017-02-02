@@ -739,9 +739,20 @@ for NB1=1:BLK(1).NBlock
     ialon=ismember(BLK(NB1).LON,BLK(NB2).LON);
     ialat=ismember(BLK(NB1).LAT,BLK(NB2).LAT);
     Ca=and(ialat,ialon);
-    BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
-    BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
-    BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    if and(Ca(1),Ca(end))
+      Calatter=false(1,length(Ca));
+      Caformer=false(1,length(Ca));
+      Ca0ID=[find(Ca~=true,1,'first') find(Ca~=true,1,'last')];
+      Caformer(1:Ca0ID(1)-1)=true;
+      Calatter(Ca0ID(2)+1:end)=true;Calatter(end)=false;
+      BLK(1).BOUND(NB1,NB2).LAT=[BLK(NB1).LAT(Calatter); BLK(NB1).LAT(Caformer)];
+      BLK(1).BOUND(NB1,NB2).LON=[BLK(NB1).LON(Calatter); BLK(NB1).LON(Caformer)];
+      BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    else
+      BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
+      BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
+      BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    end
     if ~isempty(Ca)
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
       plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
