@@ -272,7 +272,7 @@ while not(COUNT==2)
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:?ï¿½?ï¿½?ï¿½[?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½Ï‚ï¿½_?ï¿½?ï¿½?ï¿½B
+% TODO:??½??½??½[??½??½??½??½??½Ï‚ï¿½_??½??½??½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -689,6 +689,7 @@ for NB=1:BLK(1).NBlock
 %   BLK(NB).N  =size(tmp,1);
 end
 fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
+figure('Name','BLOCK_BOUNDARY_LINE')
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
@@ -722,7 +723,6 @@ for NB1=1:BLK(1).NBlock
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
-      figure('Name','BLOCK_BOUNDARY_LINE')
       plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
       hold on
     end
