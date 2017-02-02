@@ -272,7 +272,7 @@ while not(COUNT==2)
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:?½?½?½[?½?½?½?½?½Ï‚ï¿½_?½?½?½B
+% TODO:?ï¿½?ï¿½?ï¿½[?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½Ï‚ï¿½_?ï¿½?ï¿½?ï¿½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -686,34 +686,45 @@ for NB=1:BLK(1).NBlock
   BLK(NB).name=file(NB).name;
   BLK(NB).LON=tmp(:,1);
   BLK(NB).LAT=tmp(:,2);
-  BLK(NB).N  =size(tmp,1);
+%   BLK(NB).N  =size(tmp,1);
 end
 fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
     BLK(1).BOUND(NB1,NB2).LON=[];
-    ialon=ismember(BLK(NB1).LON,BLK(NB2).LON);
-    ialat=ismember(BLK(NB1).LAT,BLK(NB2).LAT);
-    LCa=and(ialat,ialon);
+    LCa=inpolygon(BLK(NB1).LON,BLK(NB1).LAT,BLK(NB2).LON,BLK(NB2).LAT);
     Ca=find(LCa);
     if ~isempty(Ca)
-      if and(isequal(Ca(1),1),isequal(Ca(end),BLK(NB1).N))
-        Ca0=find(LCa~=true,1,'last')+1:length(LCa);
+      if and(LCa(1),LCa(end))
+        Ca0=find(LCa~=true,1,'last')+1:length(LCa)-1;
         Ca1=1:find(LCa~=true,1,'first')-1;
         Ca=[Ca0 Ca1];
       end
-      if     ~isequal(ismember(BLK(NB2).LON,BLK(NB1).LON(Ca(1))),...
-                      ismember(BLK(NB2).LAT,BLK(NB1).LAT(Ca(1))));
-        Ca=Ca(2:end);
-      elseif ~isequal(ismember(BLK(NB2).LON,BLK(NB1).LON(Ca(end))),...
-                      ismember(BLK(NB2).LAT,BLK(NB1).LAT(Ca(end))));
-        Ca=Ca(1:end-1);
-      end
+%     ialon=ismember(BLK(NB1).LON,BLK(NB2).LON);
+%     ialat=ismember(BLK(NB1).LAT,BLK(NB2).LAT);
+%     LCa=and(ialat,ialon);
+%     Ca=find(LCa);
+%     if ~isempty(Ca)
+%       if and(isequal(Ca(1),1),isequal(Ca(end),BLK(NB1).N))
+%         Ca0=find(LCa~=true,1,'last')+1:length(LCa);
+%         Ca1=1:find(LCa~=true,1,'first')-1;
+%         Ca=[Ca0 Ca1];
+%       end
+%       if     ~isequal(ismember(BLK(NB2).LON,BLK(NB1).LON(Ca(1))),...
+%                       ismember(BLK(NB2).LAT,BLK(NB1).LAT(Ca(1))));
+%         Ca=Ca(2:end);
+%       elseif ~isequal(ismember(BLK(NB2).LON,BLK(NB1).LON(Ca(end))),...
+%                       ismember(BLK(NB2).LAT,BLK(NB1).LAT(Ca(end))));
+%         Ca=Ca(1:end-1);
+%       end
       BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
+      figure('Name','BLOCK_BOUNDARY_LINE')
+      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
+      hold on
     end
   end
 end
