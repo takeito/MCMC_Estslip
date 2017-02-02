@@ -49,10 +49,10 @@ h = worldmap([minlat,maxlat],[minlon,maxlon]);
 getm(h, 'MapProjection');
 geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
 for NB=1:BLK(1).NBlock
+  hold on
   plotm(BLK(NB).LAT,BLK(NB).LON)
   hold on
   textm(mean(BLK(NB).LAT),mean(BLK(NB).LON),int2str(NB))
-  hold on
 end
 drawnow
 %
@@ -60,17 +60,15 @@ figure('Name','BLOCK_AND_BOUNDARY_MAP REGIONAL')
 h = worldmap([minlatc,maxlatc],[minlonc,maxlonc]);
 getm(h, 'MapProjection');
 geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
-for NB=1:BLK(1).NBlock
-  plotm(BLK(NB).LAT,BLK(NB).LON)
+for NB1=1:BLK(1).NBlock
+  hold on
+  plotm(BLK(NB1).LAT,BLK(NB1).LON)
   hold on
   textm(mean(BLK(NB).LAT),mean(BLK(NB).LON),int2str(NB))
-  hold on
-end
-for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     if ~isempty(BLK(1).BOUND(NB1,NB2).LAT)
-      plotm(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON,'o')
       hold on
+      plotm(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON,'o')
     end
   end
 end
@@ -740,7 +738,7 @@ for NB1=1:BLK(1).NBlock
 %     BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
     ialon=ismember(BLK(NB1).LON,BLK(NB2).LON);
     ialat=ismember(BLK(NB1).LAT,BLK(NB2).LAT);
-    Ca=ismember(ialat,ialon);
+    Ca=and(ialat,ialon);
     BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
     BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
     BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
