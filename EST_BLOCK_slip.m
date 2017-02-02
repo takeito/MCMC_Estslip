@@ -458,7 +458,6 @@ for NB1=1:BLK(1).NBlock
         Bttri=delaunay(Bslon,Bslat);
         Bclon=mean([Bslon(Bttri(:,1)),Bslon(Bttri(:,2)),Bslon(Bttri(:,3))],2);
         Bclat=mean([Bslat(Bttri(:,1)),Bslat(Bttri(:,2)),Bslat(Bttri(:,3))],2);
-%        ID_D=find(F(Bclon,Bclat)>dep_limit);
         Bstri=Bttri(F(Bclon,Bclat)>dep_limit,:);
       else
         Bstri=[];
@@ -695,6 +694,7 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
     BLK(1).BOUND(NB1,NB2).LON=[];
+%{
     blkmat(NB1).lon=repmat(BLK(NB1).LON',length(BLK(NB2).LON),1);
     blkmat(NB2).lon=repmat(BLK(NB2).LON,1,length(BLK(NB1).LON));
     blkmat(NB1).lat=repmat(BLK(NB1).LAT',length(BLK(NB2).LAT),1);
@@ -730,17 +730,24 @@ for NB1=1:BLK(1).NBlock
       BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(blkshare(NB1,NB2).sID1);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
     end
+%}
+%
 %     [~,ialon,~]=intersect(BLK(NB1).LON,BLK(NB2).LON);
 %     [~,ialat,~]=intersect(BLK(NB1).LAT,BLK(NB2).LAT);
 %     [Ca,~,~]=intersect(ialat,ialon);
 %     BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
 %     BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
 %     BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
-    if length(blkshare(NB1,NB2).sID1)
-%     if sum(Ca) > 0 
+    ialon=ismember(BLK(NB1).LON,BLK(NB2).LON);
+    ialat=ismember(BLK(NB1).LAT,BLK(NB2).LAT);
+    Ca=ismember(ialat,ialon);
+    BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
+    BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
+    BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    if ~isempty(Ca)
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
-%       plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
-%       hold on
+      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
+      hold on
     end
   end
 end
