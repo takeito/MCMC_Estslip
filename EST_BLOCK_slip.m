@@ -10,7 +10,7 @@ INPUT_SET='parameter.txt';
 [OBS]=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY
 [BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
-% SHOW BLOCK BOUNDARY MAP
+% SHOW BLOCK BOUNDjjjjARY MAP
 SHOW_BLOCK_BOUND(BLK)
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM.DIRBlock_Interface);
@@ -27,6 +27,77 @@ MAKE_FIG(CHA,BLK,OBS,TRI,PRM);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 %[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 %
+end
+%% UNIFORM MESH GENERATION
+function [p,t]=mesh2D_uni(bo,int_bo,pfix)
+% bo(lon,lat)   : boundary 
+% h0            : spaceing distance 
+% pfix(lon,lat) : fixed points
+dptol=.001; ttol=.1; ptol=1024*eps; 
+Fscale=1.2; deltat=.2; geps=.001*int_bo; deps=sqrt(eps)*int_bo;
+densityctrlfreq=30;
+%
+[x,y]=meshgrid(min(bo,1):int_bo:max(bo,1),min(bo,2):int_bo:max(bo,2));
+x(2:2:end,:)=x(2:2:end,:)+int_bo/2;
+p=[x(:),y(:)];
+p=p(distp(ps,pb)<geps,:);
+if ~isempty(pfix), p=setdiff(p,pfix,'rows'); end
+pfix=unique(pfix,'rows');
+nfix=size(pfix,1);
+p=[pfix; p];
+np=size(p,1);
+count=0;
+pold=inf;
+while 1
+  count=count+1;
+  if max(sqrt(sum((p-pold).^2,2))/int_bo)>ttol
+    pold=p;
+    t=delaunayn(p);
+    pmid=(p(t(:,1),:)+p(t(:,2),:)+p(t(:,3),:))/3;
+    t=t(distp(pmid,pb)<-geps,:);
+    bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];
+    bars=unique(sort(bars,2),'rows');
+  end
+  barvec=p(bars(:,1),:)-p(bars(:,2),:);
+  L=sqrt(sum(barvec.^2,2));
+  L0=Fscale*sqrt(sum(L.^2));
+  if mod(count,densityctrlfreq)==0
+    p(setdiff(reshape(bars(L0>2*L,:),[],1),1:nfix),:)=[];
+    np=size(p,1); pold=inf;
+    continue;
+  end
+  F=max(L0-L,0);
+  Fvec=F./L*[1,1].*barvec;
+  Ftot=full(sparse(bars(:,[1,1,2,2]),ones(size(F))*[1,2,1,2],[Fvec,-Fvec],np,2));
+  Ftot(1:size(pfix,1),:)=0;
+  p=p+deltat*Ftot;
+  d=distp(p,pb); ix=d>0;
+  dgradx=(distp([p(ix,1)+deps,p(ix,2)],pb)-d(ix))/deps;
+  dgrady=(distp([p(ix,1),p(ix,2)+deps],pb)-d(ix))/deps;
+  dgrad2=dgradx.^2+dgrady.^2;
+  p(ix,:)=p(ix,:)-[d(ix).*dgradx./dgrad2,d(ix).*dgrady./dgrad2];
+  if max(sqrt(sum(deltat*Ftot(d<-geps,:).^2,2))/int_bo)<dptol, break; end
+end
+[p,t]=fixmesh(p,t);
+snap=max(max(p,[],1)-min(p,[],1),[],2)*ptol;
+[~,ix,jx]=unique(round(p/snap)*snap,'rows');
+p=p(ix,:);
+t=reshape(jx(t),size(t));
+[pix,~,jx1]=unique(t);
+t=reshape(jx1,size(t));
+p=p(pix,:);
+if size(t,2)==size(p,2)+1
+  d12=p(t(:,2),:)-p(t(:,1),:);
+  d13=p(t(:,3),:)-p(t(:,1),:);
+  v=(d12(:,1).*d13(:,2)-d12(:,2).*d13(:,1))/2;
+  flip=v<0;
+  t(flip,[1,2])=t(flip,[2,1]);
+end
+end
+function d=distp(ps,pb)
+dss=sqrt(sum(bxfun(@minus,ps,pb).^2,2));
+d=min(dss,[],2);
+d=(-1).^(inpolygon(ps(:,1),ps(:,2),pb(:,1),pb(:,2))).*d;
 end
 %% SHOW BLOCK BOUNDARY MAP
 function SHOW_BLOCK_BOUND(BLK)
@@ -272,12 +343,12 @@ while not(COUNT==2)
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:??½??½??½[??½??½??½??½??½Ï‚ï¿½_??½??½??½B
+% TODO:???½???½???½[???½???½???½???½???½Ï‚ï¿½_???½???½???½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
 % REVISE SECTION
-    if sum(IND_M)~=0;
+    if sum(IND_M)~=0
       Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
       Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
       La.OLD(:,IND_M) = La.SMP(:,IND_M);
@@ -350,36 +421,6 @@ for NPL=1:PRM.NPL
   quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
 end
-%{
-figure(110);clf(110)
-patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(std(SLIP.CHA(1:MC(1).NP,:),0,2)'    ,3,1))
-hold on
-patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(std(SLIP.CHA(MC(1).NP+1:end,:),0,2)',4,1))
-%
-figure(120);clf(120)
-PVEL_T=pole2velo((POLE.CHA(7:9,:)-POLE.CHA(4:6,:))',MC(1).FXYZ); %TRENCH
-PVEL_M=pole2velo((POLE.CHA(4:6,:)-POLE.CHA(1:3,:))',MC(2).FXYZ); %MTL
-patch( TRI(1).LON', TRI(1).LAT', TRI(1).HIG',repmat(mean(sqrt(PVEL_T(1:2:end,:).^2+PVEL_T(2:2:end,:).^2),2)',3,1))
-hold on
-patch(RECT(1).LON',RECT(1).LAT',RECT(1).HIG',repmat(mean(sqrt(PVEL_M(1:2:end,:).^2+PVEL_M(2:2:end,:).^2),2)',4,1))
-hold on
-quiver3(double( TRI(1).CLON),double( TRI(1).CLAT),double( TRI(1).CHIG),double(mean(PVEL_T(1:2:end,:),2)'),double(mean(PVEL_T(2:2:end,:),2)'),zeros(size( TRI(1).CHIG)))
-hold on
-quiver3(double(RECT(1).CLON),double(RECT(1).CLAT),double(RECT(1).CHIG),double(mean(PVEL_M(1:2:end,:),2)'),double(mean(PVEL_M(2:2:end,:),2)'),zeros(size(RECT(1).CHIG)))
-%
-figure(130);clf(130)
-BVEL_1=pole2velo((POLE.CHA(1:3,:))',MC(1).OXYZ);
-BVEL_2=pole2velo((POLE.CHA(4:6,:))',MC(2).OXYZ);
-for NPL=1:PRM.NPL
-  quiver(MC(1).OLON,MC(1).OLAT,BVEL_1(1:2:end,NPL)',BVEL_1(2:2:end,NPL)','blue')
-  hold on
-  quiver(MC(2).OLON,MC(2).OLAT,BVEL_2(1:2:end,NPL)',BVEL_2(2:2:end,NPL)','red')
-  hold on
-end
-%
-figure(140);clf(140)
-hist(LAMD.CHA(:),100)
-%}
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
@@ -442,6 +483,12 @@ for NB1=1:BLK(1).NBlock
           IDB=boundary(dep_blk(:,1),dep_blk(:,2));
           bound_blk=dep_blk(IDB,:);
         end
+        [p,t]=mesh2D_uni(bound_blk,int_bound,pfix);
+        slon=p(:,1);
+        slat=p(:,2);
+        sdep=F(slon,slat);
+        
+%{
         min_lon=min(bound_blk(:,1)); max_lon=max(bound_blk(:,1));
         min_lat=min(bound_blk(:,2)); max_lat=max(bound_blk(:,2));
         [slon,slat]=meshgrid(min_lon:int_lon:max_lon,min_lat:int_lat:max_lat);
@@ -454,6 +501,7 @@ for NB1=1:BLK(1).NBlock
         Bslat=slat(ID);
         Bsdep=sdep(ID);
         Bttri=delaunay(Bslon,Bslat);
+%}
         Bclon=mean([Bslon(Bttri(:,1)),Bslon(Bttri(:,2)),Bslon(Bttri(:,3))],2);
         Bclat=mean([Bslat(Bttri(:,1)),Bslat(Bttri(:,2)),Bslat(Bttri(:,3))],2);
         Bstri=Bttri(F(Bclon,Bclat)>dep_limit,:);
@@ -702,23 +750,6 @@ for NB1=1:BLK(1).NBlock
         Ca1=1:find(LCa~=true,1,'first')-1;
         Ca=[Ca0 Ca1];
       end
-%     ialon=ismember(BLK(NB1).LON,BLK(NB2).LON);
-%     ialat=ismember(BLK(NB1).LAT,BLK(NB2).LAT);
-%     LCa=and(ialat,ialon);
-%     Ca=find(LCa);
-%     if ~isempty(Ca)
-%       if and(isequal(Ca(1),1),isequal(Ca(end),BLK(NB1).N))
-%         Ca0=find(LCa~=true,1,'last')+1:length(LCa);
-%         Ca1=1:find(LCa~=true,1,'first')-1;
-%         Ca=[Ca0 Ca1];
-%       end
-%       if     ~isequal(ismember(BLK(NB2).LON,BLK(NB1).LON(Ca(1))),...
-%                       ismember(BLK(NB2).LAT,BLK(NB1).LAT(Ca(1))));
-%         Ca=Ca(2:end);
-%       elseif ~isequal(ismember(BLK(NB2).LON,BLK(NB1).LON(Ca(end))),...
-%                       ismember(BLK(NB2).LAT,BLK(NB1).LAT(Ca(end))));
-%         Ca=Ca(1:end-1);
-%       end
       BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
