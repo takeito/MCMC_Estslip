@@ -95,18 +95,18 @@ d=inf(npo,1);
 for n=1:npo
   [~,ind]=sort(sqrt((bo(:,1)-po(n,1)).^2+(bo(:,2)-po(n,2)).^2));
   in1=ind(1); in2=ind(2);
-%  count=3;
-%  while vec2ang(bo(in1,:),po(n,:),bo(in2,:)) < 0 || vec2ang(bo(in2,:),po(n,:),bo(in1,:)) < 0
-%    in2=ind(count);
-%    count=count+1
-%  end
+  count=3;
+  while d(n)>5 && (vec2ang(bo(in1,:),po(n,:),bo(in2,:)) < 0 || vec2ang(bo(in2,:),po(n,:),bo(in1,:)) < 0)
+    in2=ind(count);
+    count=count+1;
+  end
   a=bo(in2,2)-bo(in1,2); b=bo(in2,1)-bo(in1,1);
   d(n)=abs(a.*po(n,1)-b.*po(n,2)-a.*bo(in1,1)+b.*bo(in1,2))./sqrt(a.^2+b.^2);
 end
 end
 %====================================================
 function ang=vec2ang(a,b1,b2)
-ang=dot(b1-a,b2-a)/(sqrt(sum((b1-a).^2)).*sqrt(sum((b2-a).^2)));
+ang=dot(b1-a,b2-a)./(sqrt(sum((b1-a).^2)).*sqrt(sum((b2-a).^2)));
 end
 %====================================================
 function BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B)
@@ -137,8 +137,6 @@ else
     BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(end-1:-1:2);B2.LAT(B.I(2).IND(end):end)];      
   end
 end
-%  BLK(NB1).LON=[B1.LON(1:B.I(1).IND(1));LON(2:end-1);B1.LON(B.I(1).IND(end):end)];
-%  BLK(NB1).LAT=[B1.LAT(1:B.I(1).IND(1));LAT(2:end-1);B1.LAT(B.I(1).IND(end):end)];
 end
 %====================================================
 function SHOW_BLOCK_BOUND(BLK)
