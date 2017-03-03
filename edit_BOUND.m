@@ -13,7 +13,7 @@ nBLK=BLK(1).NBlock;
 for NB=1:nBLK
   fullname=fullfile(oDIR,BLK(NB).name);
   fileID=fopen(fullname,'w'); 
-  fprintf(fileID,'%15.9f %15.9f \n',BLK(NB).LAT,BLK(NB).LON);
+  fprintf(fileID,'%15.9f %15.9f \n',[BLK(NB).LON BLK(NB).LAT]');
   fclose(fileID);
   fprintf('OUTPUT FILE : %s \n',fullname)
 end
