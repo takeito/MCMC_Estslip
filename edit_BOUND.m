@@ -93,12 +93,13 @@ function d=dist_bo(po,bo)
 npo=length(po);
 d=inf(npo,1);
 for n=1:npo
-  [~,ind]=sort(sqrt((bo(:,1)-po(n,1)).^2+(bo(:,2)-po(n,2)).^2));
+  [dist,ind]=sort(sqrt((bo(:,1)-po(n,1)).^2+(bo(:,2)-po(n,2)).^2));
   in1=ind(1); in2=ind(2);
-  count=3;
-  while d(n)>4 && (vec2ang(bo(in1,:),po(n,:),bo(in2,:)) < 0 || vec2ang(bo(in2,:),po(n,:),bo(in1,:)) < 0)
-    in2=ind(count);
-    count=count+1;
+  co=3;
+  while dist(1) > sqrt((bo(in1,1)-bo(in2,1)).^2+(bo(in1,2)-bo(in2,2)).^2)...
+    && ((vec2ang(bo(in1,:),po(n,:),bo(in2,:)) < 0 || vec2ang(bo(in2,:),po(n,:),bo(in1,:)) < 0))
+    in2=ind(co);
+    co=co+1;
   end
   a=bo(in2,2)-bo(in1,2); b=bo(in2,1)-bo(in1,1);
   d(n)=abs(a.*po(n,1)-b.*po(n,2)-a.*bo(in1,1)+b.*bo(in1,2))./sqrt(a.^2+b.^2);
