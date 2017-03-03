@@ -36,8 +36,8 @@ ALAT=B.LAT(1); ALON=B.LON(1);
 count=0; oBXY=[B.X B.Y]; BXY=oBXY; NBO=size(BXY,1);
 fprintf('BOUNDARY: %2i %2i INT:%5.1f intPOINT:%5i \n',NB1,NB2,INT,NBO)
 %
-B.I(1).IND=mach_bo(BLK,NB1,NB2);
-B.I(2).IND=mach_bo(BLK,NB2,NB1);
+[B.I(1).IND,B.I(1).AIND]=mach_bo(BLK,NB1,NB2);
+[B.I(2).IND,B.I(2).AIND]=mach_bo(BLK,NB2,NB1);
 %
 while 1
   count=count+1;
@@ -45,14 +45,14 @@ while 1
   dL=sqrt(dXY(:,1).^2+dXY(:,2).^2);
   mdL=mean(dL);
 %
-  if mod(count,20)==0 || mdL < 0.5*INT
-    if count > 20*NBO || ((std(dL-INT) < 0.1*INT) && (abs(mdL-INT) < 0.1*INT && max(dist_bo(BXY,oBXY)) < 0.01*INT))
+  if mod(count,10)==0 || mdL < 0.3*INT
+    if count > 10*NBO || ((std(dL-INT) < 0.1*INT) && (abs(mdL-INT) < 0.1*INT && max(dist_bo(BXY,oBXY)) < 0.01*INT))
       fprintf('Count:%5i Mean(dL):%6.1f POINT:%5i STD:%5.1f \n',count,mdL,size(BXY,1),std(dL-INT))
       OUT_BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B);
       break;
     end
 %
-    if mdL > INT || size(BXY,1)<4
+    if mdL > INT || size(BXY,1)<5
       [~,index]=max(dL);
       BXY=[BXY(1:index,:);mean(BXY(index:index+1,:),1); BXY(index+1:end,:)];
     else
@@ -96,29 +96,49 @@ for n=1:npo
   [~,ind]=sort(sqrt((bo(:,1)-po(n,1)).^2+(bo(:,2)-po(n,2)).^2));
   in1=ind(1); in2=ind(2);
 %  count=3;
-%  while dot(bo(in1,:)-po(n,:),bo(in2,:)-po(n,:))/...
-%    (sqrt(sum((bo(in1,:)-po(n,:)).^2)).*sqrt(sum((bo(in2,:)-po(n,:)).^2))) < cosd(45)
+%  while vec2ang(bo(in1,:),po(n,:),bo(in2,:)) < 0 || vec2ang(bo(in2,:),po(n,:),bo(in1,:)) < 0
 %    in2=ind(count);
-%    count=count+1;
+%    count=count+1
 %  end
   a=bo(in2,2)-bo(in1,2); b=bo(in2,1)-bo(in1,1);
   d(n)=abs(a.*po(n,1)-b.*po(n,2)-a.*bo(in1,1)+b.*bo(in1,2))./sqrt(a.^2+b.^2);
 end
 end
 %====================================================
+function ang=vec2ang(a,b1,b2)
+ang=dot(b1-a,b2-a)/(sqrt(sum((b1-a).^2)).*sqrt(sum((b2-a).^2)));
+end
+%====================================================
 function BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B)
 [LAT,LON]=XYTPL(BXY(:,1),BXY(:,2),ALAT,ALON);
-BLK(NB1).LON=[B1.LON(1:B.I(1).IND(1));LON(2:end-1);B1.LON(B.I(1).IND(end):end)];
-BLK(NB1).LAT=[B1.LAT(1:B.I(1).IND(1));LAT(2:end-1);B1.LAT(B.I(1).IND(end):end)];
-if isequal(B1.LON(B.I(1).IND),B2.LON(B.I(2).IND)) && isequal(B1.LAT(B.I(1).IND),B2.LAT(B.I(2).IND))
-  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(2:end-1);B2.LON(B.I(2).IND(end):end)];
-  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(2:end-1);B2.LAT(B.I(2).IND(end):end)]; 
-else
-  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(end-1:-1:2);B2.LON(B.I(2).IND(end):end)];
-  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(end-1:-1:2);B2.LAT(B.I(2).IND(end):end)];
-end
 BLK(1).BOUND(NB1,NB2).LON=[B.LON(1);LON(2:end-1);B.LON(end)];
 BLK(1).BOUND(NB1,NB2).LAT=[B.LAT(1);LAT(2:end-1);B.LAT(end)];
+if and(B.I(1).AIND(1),B.I(1).AIND(end))
+  BLK(NB1).LON=[B.LON(end);B1.LON(~B.I(1).AIND);BLK(1).BOUND(NB1,NB2).LON];
+  BLK(NB1).LAT=[B.LAT(end);B1.LAT(~B.I(1).AIND);BLK(1).BOUND(NB1,NB2).LAT];
+else
+  BLK(NB1).LON=[B1.LON(1:B.I(1).IND(1));LON(2:end-1);B1.LON(B.I(1).IND(end):end)];
+  BLK(NB1).LAT=[B1.LAT(1:B.I(1).IND(1));LAT(2:end-1);B1.LAT(B.I(1).IND(end):end)];
+end
+if isequal(B1.LON(B.I(1).IND),B2.LON(B.I(2).IND)) && isequal(B1.LAT(B.I(1).IND),B2.LAT(B.I(2).IND))
+  if and(B.I(2).AIND(1),B.I(2).AIND(end))
+    BLK(NB2).LON=[B.LON(end);B2.LON(~B.I(2).AIND);BLK(1).BOUND(NB1,NB2).LON];
+    BLK(NB2).LAT=[B.LAT(end);B2.LAT(~B.I(2).AIND);BLK(1).BOUND(NB1,NB2).LAT];
+  else
+    BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(2:end-1);B2.LON(B.I(2).IND(end):end)];
+    BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(2:end-1);B2.LAT(B.I(2).IND(end):end)];
+  end
+else
+  if and(B.I(2).AIND(1),B.I(2).AIND(end))
+    BLK(NB2).LON=[B.LON(1);B2.LON(~B.I(2).AIND);BLK(1).BOUND(NB1,NB2).LON(end:-1:1)];
+    BLK(NB2).LAT=[B.LAT(1);B2.LAT(~B.I(2).AIND);BLK(1).BOUND(NB1,NB2).LAT(end:-1:1)];      
+  else
+    BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(end-1:-1:2);B2.LON(B.I(2).IND(end):end)];
+    BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(end-1:-1:2);B2.LAT(B.I(2).IND(end):end)];      
+  end
+end
+%  BLK(NB1).LON=[B1.LON(1:B.I(1).IND(1));LON(2:end-1);B1.LON(B.I(1).IND(end):end)];
+%  BLK(NB1).LAT=[B1.LAT(1:B.I(1).IND(1));LAT(2:end-1);B1.LAT(B.I(1).IND(end):end)];
 end
 %====================================================
 function SHOW_BLOCK_BOUND(BLK)
@@ -175,7 +195,7 @@ for NB1=1:BLK(1).NBlock
 end
 end
 %====================================================
-function Ca=mach_bo(BLK,NB1,NB2)
+function [Ca,LCa]=mach_bo(BLK,NB1,NB2)
 LCa=inpolygon(BLK(NB1).LON,BLK(NB1).LAT,BLK(NB2).LON,BLK(NB2).LAT);
 Ca=find(LCa);
 if ~isempty(Ca)
