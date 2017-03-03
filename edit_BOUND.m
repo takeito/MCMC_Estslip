@@ -5,7 +5,11 @@ for nB=1:PAR(1).num
   BLK=OPT_BLOCK_BOUND(BLK,PAR(1).B1(nB),PAR(1).B2(nB),PAR(1).INT(nB));
 end
 SHOW_BLOCK_BOUND(BLK);
+<<<<<<< HEAD
 WRITE_BLOCK_BOUND(BLK,'./BLOCK_OUT/');;%comment
+=======
+WRITE_BLOCK_BOUND(BLK,'./BLOCK_OUT/');% test 1
+>>>>>>> refs/remotes/origin/master
 end
 %====================================================
 function WRITE_BLOCK_BOUND(BLK,oDIR)
@@ -96,7 +100,7 @@ for n=1:npo
   [~,ind]=sort(sqrt((bo(:,1)-po(n,1)).^2+(bo(:,2)-po(n,2)).^2));
   in1=ind(1); in2=ind(2);
   count=3;
-  while d(n)>5 && (vec2ang(bo(in1,:),po(n,:),bo(in2,:)) < 0 || vec2ang(bo(in2,:),po(n,:),bo(in1,:)) < 0)
+  while d(n)>4 && (vec2ang(bo(in1,:),po(n,:),bo(in2,:)) < 0 || vec2ang(bo(in2,:),po(n,:),bo(in1,:)) < 0)
     in2=ind(count);
     count=count+1;
   end
