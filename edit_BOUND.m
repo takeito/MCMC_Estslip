@@ -95,12 +95,12 @@ d=inf(npo,1);
 for n=1:npo
   [~,ind]=sort(sqrt((bo(:,1)-po(n,1)).^2+(bo(:,2)-po(n,2)).^2));
   in1=ind(1); in2=ind(2);
-  count=3;
-  while dot(bo(in1,:)-po(n,:),bo(in2,:)-po(n,:))/...
-    (sqrt(sum((bo(in1,:)-po(n,:)).^2)).*sqrt(sum((bo(in2,:)-po(n,:)).^2))) < cosd(45)
-    in2=ind(count);
-    count=count+1
-  end
+%  count=3;
+%  while dot(bo(in1,:)-po(n,:),bo(in2,:)-po(n,:))/...
+%    (sqrt(sum((bo(in1,:)-po(n,:)).^2)).*sqrt(sum((bo(in2,:)-po(n,:)).^2))) < cosd(45)
+%    in2=ind(count);
+%    count=count+1;
+%  end
   a=bo(in2,2)-bo(in1,2); b=bo(in2,1)-bo(in1,1);
   d(n)=abs(a.*po(n,1)-b.*po(n,2)-a.*bo(in1,1)+b.*bo(in1,2))./sqrt(a.^2+b.^2);
 end
@@ -110,14 +110,12 @@ function BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B)
 [LAT,LON]=XYTPL(BXY(:,1),BXY(:,2),ALAT,ALON);
 BLK(NB1).LON=[B1.LON(1:B.I(1).IND(1));LON(2:end-1);B1.LON(B.I(1).IND(end):end)];
 BLK(NB1).LAT=[B1.LAT(1:B.I(1).IND(1));LAT(2:end-1);B1.LAT(B.I(1).IND(end):end)];
-if B.I(2).IND(1)>B.I(2).IND(end)
-%  BLK(NB2).LON=[B2.LON(end:-1:B.I(2).IND(end));LON(end-1-1:2);B2.LON(B.I(2).IND(1):-1:1)];
-%  BLK(NB2).LAT=[B2.LAT(end:-1:B.I(2).IND(end));LAT(end-1-1:2);B2.LAT(B.I(2).IND(1):-1:1)];
-  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(end-1-1:2);B2.LON(B.I(2).IND(end):end)];
-  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(end-1-1:2);B2.LAT(B.I(2).IND(end):end)];
+if isequal(B1.LON(B.I(1).IND),B2.LON(B.I(2).IND)) && isequal(B1.LAT(B.I(1).IND),B2.LAT(B.I(2).IND))
+  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(2:end-1);B2.LON(B.I(2).IND(end):end)];
+  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(2:end-1);B2.LAT(B.I(2).IND(end):end)]; 
 else
-  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(end));LON(2:end-1);B2.LON(B.I(2).IND(1):end)];
-  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(end));LAT(2:end-1);B2.LAT(B.I(2).IND(1):end)]; 
+  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(end-1:-1:2);B2.LON(B.I(2).IND(end):end)];
+  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(end-1:-1:2);B2.LAT(B.I(2).IND(end):end)];
 end
 BLK(1).BOUND(NB1,NB2).LON=[B.LON(1);LON(2:end-1);B.LON(end)];
 BLK(1).BOUND(NB1,NB2).LAT=[B.LAT(1);LAT(2:end-1);B.LAT(end)];
