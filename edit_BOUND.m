@@ -5,7 +5,7 @@ for nB=1:PAR(1).num
   BLK=OPT_BLOCK_BOUND(BLK,PAR(1).B1(nB),PAR(1).B2(nB),PAR(1).INT(nB));
 end
 SHOW_BLOCK_BOUND(BLK);
-WRITE_BLOCK_BOUND(BLK,'./BLOCK_OUT/');;
+WRITE_BLOCK_BOUND(BLK,'./BLOCK_OUT/');;%comment
 end
 %====================================================
 function WRITE_BLOCK_BOUND(BLK,oDIR)
