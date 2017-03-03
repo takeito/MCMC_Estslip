@@ -10,8 +10,6 @@ end
 %====================================================
 function WRITE_BLOCK_BOUND(BLK,oDIR)
 nBLK=BLK(1).NBlock;
-[NBlock,~]=size(file);
-BLK(1).NBlock=NBlock;
 for NB=1:nBLK
   fname=strcat(sprintf('%02i',NB),'_',BLK(NB).name,'.txt');
   fullname=fullfile(oDIR,fname);
@@ -38,11 +36,8 @@ ALAT=B.LAT(1); ALON=B.LON(1);
 count=0; oBXY=[B.X B.Y]; BXY=oBXY; NBO=size(BXY,1);
 fprintf('BOUNDARY: %2i %2i INT:%5.1f intPOINT:%5i \n',NB1,NB2,INT,NBO)
 %
-[B.LON(1) B.LAT(1) B.LON(end) B.LAT(end)]
-Bind.S(1)=find((B1.LAT==B.LAT(1))  &(B1.LON==B.LON(1)));
-Bind.E(1)=find((B1.LAT==B.LAT(end))&(B1.LON==B.LON(end)));
-Bind.S(2)=find((B2.LAT==B.LAT(1))  &(B2.LON==B.LON(1)));
-Bind.E(2)=find((B2.LAT==B.LAT(end))&(B2.LON==B.LON(end)));
+B.I(1).IND=mach_bo(BLK,NB1,NB2);[B.I(1).IND(1) B.I(1).IND(end)]
+B.I(2).IND=mach_bo(BLK,NB2,NB1);[B.I(2).IND(1) B.I(2).IND(end)]
 %
 while 1
   count=count+1;
@@ -51,11 +46,14 @@ while 1
   mdL=mean(dL);
 %
   if mod(count,10)==0 || mdL < 0.25*INT
-    if count > 10*NBO; break; end
+    if count > 10*NBO
+      OUT_BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B);
+      break;
+    end
 %
     if (std(dL-INT) < 0.1*INT) && (abs(mdL-INT) < 0.1*INT && max(dist_bo(BXY,oBXY)) < 0.01*INT )
       fprintf('Count:%5i Mean(dL):%6.1f POINT:%5i STD:%5.1f \n',count,mdL,size(BXY,1),std(dL-INT))
-      OUT_BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,Bind,B);
+      OUT_BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B);
       break;
     end
 %
@@ -73,12 +71,11 @@ while 1
 %
     if mod(count,100)==0 
       fprintf('Count:%5i Mean(dL):%6.1f POINT:%5i STD:%5.1f \n',count,mdL,size(BXY,1),std(dL-INT))
-      OUT_BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,Bind,B);
+      OUT_BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B);
       SHOW_BLOCK_BOUND(OUT_BLK);
     end
     continue
   end
- 
 %  
   ind=dL>INT;
   ind1=[false(1);ind];
@@ -108,13 +105,18 @@ for n=1:npo
 end
 end
 %====================================================
-function BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,Bind,B)
+function BLK=update_BLK(BXY,ALAT,ALON,NB1,NB2,B1,B2,BLK,B)
 [LAT,LON]=XYTPL(BXY(:,1),BXY(:,2),ALAT,ALON);
-BLK(NB1).LON=[B1.LON(1:Bind.S(1)-1);LON;B1.LON(Bind.E(1)+1:end)];
-BLK(NB1).LAT=[B1.LAT(1:Bind.S(1)-1);LAT;B1.LAT(Bind.E(1)+1:end)];
-BLK(NB2).LON=[B2.LON(1:Bind.S(2)-1);LON;B2.LON(Bind.E(2)+1:end)];
-BLK(NB2).LAT=[B2.LAT(1:Bind.S(2)-1);LAT;B2.LAT(Bind.E(2)+1:end)];
-BLK(1).BOUND(NB1,NB2).LON=[B.LON(1);LON(2:end-1);B.LON(end)]; 
+BLK(NB1).LON=[B1.LON(1:B.I(1).IND(1));LON(2:end-1);B1.LON(B.I(1).IND(end):end)];
+BLK(NB1).LAT=[B1.LAT(1:B.I(1).IND(1));LAT(2:end-1);B1.LAT(B.I(1).IND(end):end)];
+if B.I(2).IND(1)<B.I(2).IND(end)
+  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(1));LON(end-1-1:2);B2.LON(B.I(2).IND(end):end)];
+  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(1));LAT(end-1-1:2);B2.LAT(B.I(2).IND(end):end)];
+else
+  BLK(NB2).LON=[B2.LON(1:B.I(2).IND(end));LON(2:end-1);B2.LON(B.I(2).IND(1):end)];
+  BLK(NB2).LAT=[B2.LAT(1:B.I(2).IND(end));LAT(2:end-1);B2.LAT(B.I(2).IND(1):end)]; 
+end
+BLK(1).BOUND(NB1,NB2).LON=[B.LON(1);LON(2:end-1);B.LON(end)];
 BLK(1).BOUND(NB1,NB2).LAT=[B.LAT(1);LAT(2:end-1);B.LAT(end)];
 end
 %====================================================
@@ -172,7 +174,7 @@ for NB1=1:BLK(1).NBlock
 end
 end
 %====================================================
-function [LAT,LON]mach_bo(BLK,NB1,NB2)
+function Ca=mach_bo(BLK,NB1,NB2)
 LCa=inpolygon(BLK(NB1).LON,BLK(NB1).LAT,BLK(NB2).LON,BLK(NB2).LAT);
 Ca=find(LCa);
 if ~isempty(Ca)
@@ -181,8 +183,7 @@ if ~isempty(Ca)
     Ca1=1:find(LCa~=true,1,'first')-1;
     Ca=[Ca0 Ca1];
   end
-LAT=BLK(NB1).LAT(Ca);
-LON=BLK(NB1).LON(Ca);
+end
 end
 %====================================================
 function [X,Y]=PLTXY(ALAT,ALON,ALAT0,ALON0)
