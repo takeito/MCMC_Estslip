@@ -11,7 +11,7 @@ INPUT_SET='parameter.txt';
 % READ BLOCK BOUNDARY FILE in DIRECTORY
 [BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
 % SHOW BLOCK BOUNDARY MAP
-SHOW_BLOCK_BOUND(BLK)
+%SHOW_BLOCK_BOUND(BLK)
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM.DIRBlock_Interface);
 % CALC. GREEN FUNCTION
@@ -483,12 +483,12 @@ for NB1=1:BLK(1).NBlock
           IDB=boundary(dep_blk(:,1),dep_blk(:,2));
           bound_blk=dep_blk(IDB,:);
         end
-        [p,t]=mesh2D_uni(bound_blk,int_bound,pfix);
-        slon=p(:,1);
-        slat=p(:,2);
-        sdep=F(slon,slat);
+%        [p,t]=mesh2D_uni(bound_blk,int_bound,pfix);
+%        slon=p(:,1);
+%        slat=p(:,2);
+%        sdep=F(slon,slat);
         
-%{
+%
         min_lon=min(bound_blk(:,1)); max_lon=max(bound_blk(:,1));
         min_lat=min(bound_blk(:,2)); max_lat=max(bound_blk(:,2));
         [slon,slat]=meshgrid(min_lon:int_lon:max_lon,min_lat:int_lat:max_lat);
@@ -501,7 +501,7 @@ for NB1=1:BLK(1).NBlock
         Bslat=slat(ID);
         Bsdep=sdep(ID);
         Bttri=delaunay(Bslon,Bslat);
-%}
+%
         Bclon=mean([Bslon(Bttri(:,1)),Bslon(Bttri(:,2)),Bslon(Bttri(:,3))],2);
         Bclat=mean([Bslat(Bttri(:,1)),Bslat(Bttri(:,2)),Bslat(Bttri(:,3))],2);
         Bstri=Bttri(F(Bclon,Bclat)>dep_limit,:);
@@ -734,7 +734,6 @@ for NB=1:BLK(1).NBlock
   BLK(NB).name=file(NB).name;
   BLK(NB).LON=tmp(:,1);
   BLK(NB).LAT=tmp(:,2);
-%   BLK(NB).N  =size(tmp,1);
 end
 fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
 figure('Name','BLOCK_BOUNDARY_LINE')
