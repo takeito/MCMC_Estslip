@@ -1,7 +1,7 @@
 function EST_BLOCK
 % Estimate BLOCK MOTION
 % Code by T.ITO 2016/03/02
-%
+
 warning('off','all')
 INPUT_SET='./PARAMETER/parameter_EST_BLOCK.txt';
 % READ PARAMETER FOR MCMC Inversion 
