@@ -3,7 +3,7 @@ function EST_BLOCK_slip
 % Code by T.ITO 2016/03/02
 %
 warning('off','all')
-INPUT_SET='./PARAMETER/parameter.txt';
+INPUT_SET='./PARAMETER/parameter_EST_BLOCK_slip.txt';
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT_SET);
 % READ OBSERVATION FILE
