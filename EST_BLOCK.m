@@ -3,7 +3,7 @@ function EST_BLOCK
 % Code by T.ITO 2016/03/02
 
 warning('off','all')
-INPUT_SET='./PARAMETER/parameter_EST_BLOCK.txt';
+INPUT_SET='./PARAMETER/parameter.txt';
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT_SET);
 % FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
