@@ -21,7 +21,7 @@ INPUT_SET='parameter.txt';
 % CAL Markov chain Monte Calro
 [CHA]=MH_MCMC(D,G,BLK,PRM,1);
 % MAKE FIGURES
-MAKE_FIG(CHA,BLK,OBS,TRI,PRM);
+MAKE_FIG(CHA,BLK,OBS,TRI,D,PRM);
 % CALC. ABIC AND BLOCK MOTION
 %[BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -29,21 +29,21 @@ MAKE_FIG(CHA,BLK,OBS,TRI,PRM);
 %
 end
 %% UNIFORM MESH GENERATION
-function [p,t]=mesh2D_uni(bo,int_bo,pfix)
+function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
 % bo(lon,lat)   : boundary 
-% h0            : spaceing distance 
+% int_bo        : spaceing distance (km)
 % pfix(lon,lat) : fixed points
-dptol=.001; ttol=.1; ptol=1024*eps; 
-Fscale=1.2; deltat=.2; geps=.001*int_bo; deps=sqrt(eps)*int_bo;
-densityctrlfreq=30;
+dptol=0.01; ttol=0.1; delt=0.1; deps=0.01*int_bo; 
 %
-[x,y]=meshgrid(min(bo,1):int_bo:max(bo,1),min(bo,2):int_bo:max(bo,2));
+ALON=mean(bou(:,1));ALAT=mean(bou(:,2));
+[bo(:,2),bo(:,1)]=PLTXY(bou(:,2),bou(:,1),ALAT,ALON);
+[pfix(:,2),pfix(:,1)]=PLTXY(p_fix(:,2),p_fix(:,1),ALAT,ALON);
+[x,y]=meshgrid(min(bo(:,1)):0.8*int_bo:max(bo(:,1)),min(bo(:,2)):0.8*int_bo:max(bo(:,2)));
 x(2:2:end,:)=x(2:2:end,:)+int_bo/2;
 p=[x(:),y(:)];
-p=p(distp(ps,pb)<geps,:);
-if ~isempty(pfix), p=setdiff(p,pfix,'rows'); end
-pfix=unique(pfix,'rows');
-nfix=size(pfix,1);
+p=p(dist_bo(p,bo)<deps,:);
+if ~isempty(pfix), p=setdiff(p,pfix,'rows'); end 
+pfix=unique(pfix,'rows'); nfix=size(pfix,1);
 p=[pfix; p];
 np=size(p,1);
 count=0;
@@ -54,51 +54,63 @@ while 1
     pold=p;
     t=delaunayn(p);
     pmid=(p(t(:,1),:)+p(t(:,2),:)+p(t(:,3),:))/3;
-    t=t(distp(pmid,pb)<-geps,:);
+    t=t(dist_bo(pmid,bo)<-deps,:);
     bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];
     bars=unique(sort(bars,2),'rows');
   end
   barvec=p(bars(:,1),:)-p(bars(:,2),:);
   L=sqrt(sum(barvec.^2,2));
-  L0=Fscale*sqrt(sum(L.^2));
-  if mod(count,densityctrlfreq)==0
-    p(setdiff(reshape(bars(L0>2*L,:),[],1),1:nfix),:)=[];
-    np=size(p,1); pold=inf;
-    continue;
-  end
-  F=max(L0-L,0);
+  F=max(int_bo-L,0);
   Fvec=F./L*[1,1].*barvec;
   Ftot=full(sparse(bars(:,[1,1,2,2]),ones(size(F))*[1,2,1,2],[Fvec,-Fvec],np,2));
   Ftot(1:size(pfix,1),:)=0;
-  p=p+deltat*Ftot;
-  d=distp(p,pb); ix=d>0;
-  dgradx=(distp([p(ix,1)+deps,p(ix,2)],pb)-d(ix))/deps;
-  dgrady=(distp([p(ix,1),p(ix,2)+deps],pb)-d(ix))/deps;
-  dgrad2=dgradx.^2+dgrady.^2;
-  p(ix,:)=p(ix,:)-[d(ix).*dgradx./dgrad2,d(ix).*dgrady./dgrad2];
-  if max(sqrt(sum(deltat*Ftot(d<-geps,:).^2,2))/int_bo)<dptol, break; end
+  p=p+delt*Ftot;
+  d=dist_bo(p,bo); ix=d>0;
+  dgx=(dist_bo([p(ix,1)+deps,p(ix,2)],bo)-d(ix))/deps;
+  dgy=(dist_bo([p(ix,1),p(ix,2)+deps],bo)-d(ix))/deps;
+  dg2=dgx.^2+dgy.^2;
+  p(ix,:)=p(ix,:)-[d(ix).*dgx./dg2,d(ix).*dgy./dg2];
+  if mod(count,10)==0 && any(2*L<mean(L))
+    p(setdiff(reshape(bars(2*L>int_bo,:),[],1),1:nfix),:)=[];
+    pold=inf;  np=size(p,1);
+    continue;
+  end
+  max(sqrt(sum(delt*Ftot(d<-deps,:).^2,2))/int_bo)
+  if max(sqrt(sum(delt*Ftot(d<-deps,:).^2,2))/int_bo)<dptol, break; end
 end
-[p,t]=fixmesh(p,t);
-snap=max(max(p,[],1)-min(p,[],1),[],2)*ptol;
-[~,ix,jx]=unique(round(p/snap)*snap,'rows');
-p=p(ix,:);
-t=reshape(jx(t),size(t));
-[pix,~,jx1]=unique(t);
-t=reshape(jx1,size(t));
-p=p(pix,:);
-if size(t,2)==size(p,2)+1
-  d12=p(t(:,2),:)-p(t(:,1),:);
-  d13=p(t(:,3),:)-p(t(:,1),:);
-  v=(d12(:,1).*d13(:,2)-d12(:,2).*d13(:,1))/2;
-  flip=v<0;
-  t(flip,[1,2])=t(flip,[2,1]);
+[lat,lon]=PLTXY(p(:,2),p(:,1),ALAT,ALON);
+p=[lon lat];
 end
+%====================================================
+function d=dist_bo(po,bo)
+% Distance of bo (line) and po (point)  
+npo=length(po);
+nbo=length(bo);
+d=inf(npo,1);
+for n=1:npo
+  [~,ind]=sort(sqrt((bo(:,1)-po(n,1)).^2+(bo(:,2)-po(n,2)).^2));
+  in1=ind(1);
+  if in1 == 1; in2=2; in3=nbo;
+  elseif in1 == nbo; in2=1; in3=nbo-1;
+  else
+    in2=in1+1; in3=in2-1;
+  end
+  if vec2ang(po(n,:),bo(in1,:),bo(in2,:)) < vec2ang(po(n,:),bo(in1,:),bo(in3,:))
+    in2=in3;
+  end
+  a=bo(in2,2)-bo(in1,2);b=bo(in2,1)-bo(in1,1);
+  d(n)=abs(a.*po(n,1)-b.*po(n,2)-a.*bo(in1,1)+b.*bo(in1,2))./sqrt(a.^2+b.^2);
 end
-function d=distp(ps,pb)
-dss=sqrt(sum(bxfun(@minus,ps,pb).^2,2));
-d=min(dss,[],2);
-d=(-1).^(inpolygon(ps(:,1),ps(:,2),pb(:,1),pb(:,2))).*d;
+d=(-1).^(inpolygon(po(:,1),po(:,2),bo(:,1),bo(:,2))).*d;
 end
+%====================================================
+function ang=vec2ang(a,b1,b2)
+b1b2=sqrt(sum((b2-b1).^2));
+Lb1a=sqrt(sum((b1-a).^2));
+Lb2a=sqrt(sum((b2-a).^2));
+ang=min([dot(a-b1,b2-b1)/(b1b2.*Lb1a);dot(a-b2,b1-b2)/(b1b2.*Lb2a)]);
+end
+%====================================================
 %% SHOW BLOCK BOUNDARY MAP
 function SHOW_BLOCK_BOUND(BLK)
 %
@@ -395,15 +407,9 @@ CHA.SMP=CAL.SMP;
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,TRI,PRM)
+function MAKE_FIG(CHA,BLK,OBS,TRI,D,PRM)
 figure(100);clf(100)
 % BUG to wait zero
-for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
-  hold on
-end
-quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'red')
-hold on
 NN=1;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
@@ -421,13 +427,13 @@ for NPL=1:PRM.NPL
   quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
 end
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'red')
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
 % Coded by Takeo Ito 2016/12/21 (ver 1.0)
 %
-int_lat=0.5;
-int_lon=0.5;
+int_tri=50;
 dep_limit=-100;
 dep_limit_low=-10;
 BLK(1).NB=0;
@@ -455,9 +461,9 @@ for NB1=1:BLK(1).NBlock
       if Fid >= 0
         bound_blk=textscan(Fid,'%f%f'); fclose(Fid);     
         bound_blk=cell2mat(bound_blk);
-        slon=mean(blon,2);
-        slat=mean(blat,2);
-        ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
+        Bslon=mean(blon,2);
+        Bslat=mean(blat,2);
+        ID=inpolygon(Bslon,Bslat,bound_blk(:,1),bound_blk(:,2));
         blon=blon(ID,:);
         blat=blat(ID,:);
         bdep=bdep(ID,:);
@@ -483,28 +489,10 @@ for NB1=1:BLK(1).NBlock
           IDB=boundary(dep_blk(:,1),dep_blk(:,2));
           bound_blk=dep_blk(IDB,:);
         end
-%        [p,t]=mesh2D_uni(bound_blk,int_bound,pfix);
-%        slon=p(:,1);
-%        slat=p(:,2);
-%        sdep=F(slon,slat);
-        
-%
-        min_lon=min(bound_blk(:,1)); max_lon=max(bound_blk(:,1));
-        min_lat=min(bound_blk(:,2)); max_lat=max(bound_blk(:,2));
-        [slon,slat]=meshgrid(min_lon:int_lon:max_lon,min_lat:int_lat:max_lat);
-        slon=slon(:);
-        slat=slat(:);
-        ID=inpolygon(slon,slat,bound_blk(:,1),bound_blk(:,2));
-        slon=slon(ID); slat=slat(ID); sdep=F(slon,slat);
-        ID=find(sdep>dep_limit);
-        Bslon=slon(ID);
-        Bslat=slat(ID);
-        Bsdep=sdep(ID);
-        Bttri=delaunay(Bslon,Bslat);
-%
-        Bclon=mean([Bslon(Bttri(:,1)),Bslon(Bttri(:,2)),Bslon(Bttri(:,3))],2);
-        Bclat=mean([Bslat(Bttri(:,1)),Bslat(Bttri(:,2)),Bslat(Bttri(:,3))],2);
-        Bstri=Bttri(F(Bclon,Bclat)>dep_limit,:);
+        [p,Bstri]=mesh2D_uni(bound_blk,int_tri,[BLK(1).BOUND(NB1,NB2).LON BLK(1).BOUND(NB1,NB2).LAT]);
+        Bslon=p(:,1);
+        Bslat=p(:,2);
+        Bsdep=F(Bslon,Bslat);
       else
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
@@ -736,7 +724,7 @@ for NB=1:BLK(1).NBlock
   BLK(NB).LAT=tmp(:,2);
 end
 fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
-figure('Name','BLOCK_BOUNDARY_LINE')
+%figure('Name','BLOCK_BOUNDARY_LINE')
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
@@ -752,9 +740,9 @@ for NB1=1:BLK(1).NBlock
       BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
-      fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
-      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
-      hold on
+%      fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
+%      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
+%      hold on
     end
   end
 end
