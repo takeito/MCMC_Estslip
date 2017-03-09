@@ -1,8 +1,0 @@
-GNSS_ITRF2008_Colombia_matlab.txt : FileOBS GNSS_ITRF2008_Colombia_matlab.txt
-BLOCK_OUT                         : DIRBlock
-BLOCK_Int                         : DIRBlock_Interface
-1                                 : NPL(PP)
-10                                : ITR(Max_Nitr) 
-50                                : CHA(Chain) 
-10                                : KEEP
-1.0                               : Walk_dis

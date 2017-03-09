@@ -3,9 +3,10 @@ function EST_BLOCK_slip
 % Code by T.ITO 2016/03/02
 %
 warning('off','all')
-INPUT_SET='./PARAMETER/parameter.txt';
+INPUT.Parfile='./PARAMETER/parameter.txt';
+INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 % READ PARAMETER FOR MCMC Inversion 
-[PRM]=READ_PARAMETERS(INPUT_SET);
+[PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
 [OBS]=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY
@@ -13,7 +14,7 @@ INPUT_SET='./PARAMETER/parameter.txt';
 % SHOW BLOCK BOUNDARY MAP
 %SHOW_BLOCK_BOUND(BLK)
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
-[BLK]=READ_BLOCK_INTERFACE(BLK,PRM.DIRBlock_Interface);
+[BLK]=READ_BLOCK_INTERFACE(BLK,PRM);
 % CALC. GREEN FUNCTION
 [TRI]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
@@ -33,12 +34,12 @@ function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
 % bo(lon,lat)   : boundary 
 % int_bo        : spaceing distance (km)
 % pfix(lon,lat) : fixed points
-dptol=0.01; ttol=0.1; delt=0.1; deps=0.01*int_bo; 
+dptol=0.21; ttol=0.1; delt=0.1; deps=0.01*int_bo; 
 %
 ALON=mean(bou(:,1));ALAT=mean(bou(:,2));
 [bo(:,2),bo(:,1)]=PLTXY(bou(:,2),bou(:,1),ALAT,ALON);
 [pfix(:,2),pfix(:,1)]=PLTXY(p_fix(:,2),p_fix(:,1),ALAT,ALON);
-[x,y]=meshgrid(min(bo(:,1)):0.8*int_bo:max(bo(:,1)),min(bo(:,2)):0.8*int_bo:max(bo(:,2)));
+[x,y]=meshgrid(min(bo(:,1)):0.5*int_bo:max(bo(:,1)),min(bo(:,2)):0.8*int_bo:max(bo(:,2)));
 x(2:2:end,:)=x(2:2:end,:)+int_bo/2;
 p=[x(:),y(:)];
 p=p(dist_bo(p,bo)<deps,:);
@@ -70,7 +71,7 @@ while 1
   dgy=(dist_bo([p(ix,1),p(ix,2)+deps],bo)-d(ix))/deps;
   dg2=dgx.^2+dgy.^2;
   p(ix,:)=p(ix,:)-[d(ix).*dgx./dg2,d(ix).*dgy./dg2];
-  if mod(count,10)==0 && any(2*L<mean(L))
+  if mod(count,100)==0 && any(2*L<mean(L))
     p(setdiff(reshape(bars(2*L>int_bo,:),[],1),1:nfix),:)=[];
     pold=inf;  np=size(p,1);
     continue;
@@ -158,14 +159,14 @@ end
 drawnow
 end
 %% READ PARAMETER FOR MCMC Inversion 
-function [PRM]=READ_PARAMETERS(INPUT_SET)
+function [PRM]=READ_PARAMETERS(INPUT)
 % MCMC Inversion for Geodetic 
 % Coded    by Takeo Ito 2011/11/08 (ver 1.0)
 % Modified by Takeo Ito 2012/10/26 (ver 1.1)
 % Modified by Takeo Ito 2015/11/11 (ver 1.2)
 % Modified by Takeo Ito 2016/07/06 (ver 1.3)
 %
-Fid=fopen(INPUT_SET,'r');
+Fid=fopen(INPUT.Parfile,'r');
 PRM.HOME_D=pwd;
 FileOBS=fscanf(Fid,'%s \n',[1,1]);
 PRM.FileOBS=fullfile(PRM.HOME_D,FileOBS);
@@ -187,6 +188,12 @@ PRM.KEP=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
 PRM.RWD=fscanf(Fid,'%f \n',[1,1]);
 fclose(Fid);
+%====================================================
+tmp=load(INPUT.Optfile);
+PRM.num=size(tmp,1);
+PRM.OptB1=tmp(:,1);
+PRM.OptB2=tmp(:,2);
+PRM.OptINT=tmp(:,3);
 %====================================================
 fprintf('==================\nINPUT PARAMETERS\n==================\n') 
 fprintf('HOME_D             : %s \n',PRM.HOME_D) 
@@ -355,7 +362,7 @@ while not(COUNT==2)
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:???ï¿½???ï¿½???ï¿½[???ï¿½???ï¿½???ï¿½???ï¿½???ï¿½Ï‚ï¿½_???ï¿½???ï¿½???ï¿½B
+% TODO:????½????½????½[????½????½????½????½????½Ï‚ï¿½_????½????½????½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -430,12 +437,13 @@ end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'red')
 end
 %% READ PLATE INTERFACE
-function [BLK]=READ_BLOCK_INTERFACE(BLK,DIRBLK)
+function [BLK]=READ_BLOCK_INTERFACE(BLK,PRM)
 % Coded by Takeo Ito 2016/12/21 (ver 1.0)
 %
 int_tri=50;
 dep_limit=-100;
 dep_limit_low=-10;
+DIRBLK=PRM.DIRBlock_Interface;
 BLK(1).NB=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
@@ -489,7 +497,13 @@ for NB1=1:BLK(1).NBlock
           IDB=boundary(dep_blk(:,1),dep_blk(:,2));
           bound_blk=dep_blk(IDB,:);
         end
-        [p,Bstri]=mesh2D_uni(bound_blk,int_tri,[BLK(1).BOUND(NB1,NB2).LON BLK(1).BOUND(NB1,NB2).LAT]);
+        iNB=intersect(find(PRM.OptB1==NB1),find(PRM.OptB2==NB2));
+        if isempty(iNB)
+          int_bo=int_tri;
+        else
+          int_bo=PRM.OptINT(iNB);
+        end
+        [p,Bstri]=mesh2D_uni(bound_blk,int_bo,bound_blk);
         Bslon=p(:,1);
         Bslat=p(:,2);
         Bsdep=F(Bslon,Bslat);
