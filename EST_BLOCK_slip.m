@@ -3,7 +3,7 @@ function EST_BLOCK_slip
 % Code by T.ITO 2016/03/02
 %
 warning('off','all')
-INPUT_SET='parameter.txt';
+INPUT_SET='./PARAMETER/parameter.txt';
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT_SET);
 % READ OBSERVATION FILE
@@ -355,7 +355,7 @@ while not(COUNT==2)
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:???½???½???½[???½???½???½???½???½Ï‚ï¿½_???½???½???½B
+% TODO:???ï¿½???ï¿½???ï¿½[???ï¿½???ï¿½???ï¿½???ï¿½???ï¿½Ï‚ï¿½_???ï¿½???ï¿½???ï¿½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);

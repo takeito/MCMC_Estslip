@@ -1,14 +1,17 @@
 function EST_BLOCK
 % Estimate BLOCK MOTION
 % Code by T.ITO 2016/03/02
-%
+
 warning('off','all')
-FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
-DIRBlock='./BLOCK/';
+INPUT_SET='./PARAMETER/parameter.txt';
+% READ PARAMETER FOR MCMC Inversion 
+[PRM]=READ_PARAMETERS(INPUT_SET);
+% FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
+% DIRBlock='./BLOCK/';
 % READ OBSERVATION FILE
-OBS=READ_OBS(FileOBS);
+OBS=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY 
-[BLK,OBS]=READ_BLOCK_BOUND(DIRBlock,OBS);
+[BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -29,7 +32,7 @@ end
 end
 %% MAKE FIGURES
 function [BLK,OBS]=MAKE_FIGS(BLK,OBS)
-figure(100); clf(100)
+figure('Name','OBS_vector'); clf
 for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     hold on
@@ -37,7 +40,7 @@ for N=1:BLK(1).NBlock
   end
 end
 %
-figure(200); clf(200)
+figure('Name','OBS_sites, OBS_vector, Computed_vector'); clf
 PLON=[];PLAT=[];EVEL=[];NVEL=[];
 for N=1:BLK(1).NBlock
   plot(BLK(N).LON,BLK(N).LAT);
@@ -53,7 +56,7 @@ quiver(PLON,PLAT,EVEL,NVEL);
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC);
 %
-figure(300); clf(300)
+figure('Name','BLOCK_BOUNDARY, BLOCK_SHARED_POINT'); clf
 LAT=[];LON=[];VEL=[];
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
@@ -97,23 +100,42 @@ for N=1:BLK(1).NBlock
   OBS(N).EEV=EVne(1:2:end);
   OBS(N).ENV=EVne(2:2:end);
   fprintf('BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f \n',N,OBS(N).NBLK,Sig)
-  if OBS(N).NBLK>=2 
-    fprintf('OBS(E,N) ')
-    fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
-    fprintf('EST(E,N) ')
-    fprintf('%5.2f ',EVne)      ;fprintf('\n')
-  fprintf('\n')
-  end
+%   if OBS(N).NBLK>=2 
+%     fprintf('OBS(E,N) ')
+%     fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
+%     fprintf('EST(E,N) ')
+%     fprintf('%5.2f ',EVne)      ;fprintf('\n')
+%     fprintf('\n')
+%   end
 end
 AIC=(OBS(1).NOBS.*2).*log(TSig./(OBS(1).NOBS.*2))+2.*NumB.*3;
 cAIC=AIC+2.*NumB.*3.*(NumB.*3+1)./(OBS(1).NOBS.*2-NumB.*3-1);
 fprintf('Sigma^2=%8.3f AIC=%7.3f cAIC=%7.3f K=%2d\n',TSig./(OBS(1).NOBS.*2),AIC,cAIC,NumB.*3)
 %
 end
+%% READ PARAMETER FILE 
+function [PRM]=READ_PARAMETERS(INPUT_SET)
+%
+Fid=fopen(INPUT_SET,'r');
+PRM.HOME_D=pwd;
+FileOBS=fscanf(Fid,'%s \n',[1,1]);
+PRM.FileOBS=fullfile(PRM.HOME_D,FileOBS);
+[~]=fgetl(Fid);
+DIRBlock=fscanf(Fid,'%s \n',[1,1]);
+PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
+fclose(Fid);
+%====================================================
+fprintf('==================\nINPUT PARAMETERS\n==================\n') 
+fprintf('HOME_D             : %s \n',PRM.HOME_D) 
+fprintf('FileOBS            : %s \n',PRM.FileOBS) 
+fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
+%====================================================
+disp('PASS READ_PARAMETERS')
+end
 %% READ BLOCK BOUNDARY DATA
 function [BLK,OBS]=READ_BLOCK_BOUND(DIR,OBS)
 EXT='*.txt';
-file=dir([DIR,EXT]);
+file=dir([DIR,'/',EXT]);
 [NBlock,~]=size(file);
 BLK(1).NBlock=NBlock;
 for NB=1:BLK(1).NBlock
@@ -122,14 +144,27 @@ for NB=1:BLK(1).NBlock
   BLK(NB).LON=tmp(:,1);
   BLK(NB).LAT=tmp(:,2);
 end
+fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
+figure('Name','BLOCK_BOUNDARY_LINE')
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
-    [~,ialon,~]=intersect(BLK(NB1).LON,BLK(NB2).LON);
-    [~,ialat,~]=intersect(BLK(NB1).LAT,BLK(NB2).LAT);
-    [Ca,~,~]=intersect(ialat,ialon);
-    BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
-    BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
-    BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+    BLK(1).BOUND(NB1,NB2).LAT=[];
+    BLK(1).BOUND(NB1,NB2).LON=[];
+    LCa=inpolygon(BLK(NB1).LON,BLK(NB1).LAT,BLK(NB2).LON,BLK(NB2).LAT);
+    Ca=find(LCa);
+    if ~isempty(Ca)
+      if and(LCa(1),LCa(end))
+        Ca0=find(LCa~=true,1,'last')+1:length(LCa)-1;
+        Ca1=1:find(LCa~=true,1,'first')-1;
+        Ca=[Ca0 Ca1];
+      end
+      BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
+      BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
+      BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+      fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
+      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
+      hold on
+    end
   end
 end
 for N=1:BLK(1).NBlock
