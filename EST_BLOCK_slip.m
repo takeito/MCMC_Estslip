@@ -11,10 +11,10 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 [OBS]=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY
 [BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
-% SHOW BLOCK BOUNDARY MAP
-%SHOW_BLOCK_BOUND(BLK)
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM);
+% SHOW BLOCK BOUNDARY MAP
+SHOW_BLOCK_BOUND(BLK)
 % CALC. GREEN FUNCTION
 [TRI]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
@@ -34,12 +34,13 @@ function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
 % bo(lon,lat)   : boundary 
 % int_bo        : spaceing distance (km)
 % pfix(lon,lat) : fixed points
-dptol=0.21; ttol=0.1; delt=0.1; deps=0.01*int_bo; 
+dptol=0.01; ttol=0.01; delt=0.01; deps=0.01*int_bo; 
 %
+fprintf('Optimal interval %5.1f \n',int_bo)
 ALON=mean(bou(:,1));ALAT=mean(bou(:,2));
 [bo(:,2),bo(:,1)]=PLTXY(bou(:,2),bou(:,1),ALAT,ALON);
 [pfix(:,2),pfix(:,1)]=PLTXY(p_fix(:,2),p_fix(:,1),ALAT,ALON);
-[x,y]=meshgrid(min(bo(:,1)):0.5*int_bo:max(bo(:,1)),min(bo(:,2)):0.8*int_bo:max(bo(:,2)));
+[x,y]=meshgrid(min(bo(:,1)):0.7*int_bo:max(bo(:,1)),min(bo(:,2)):0.7*int_bo:max(bo(:,2)));
 x(2:2:end,:)=x(2:2:end,:)+int_bo/2;
 p=[x(:),y(:)];
 p=p(dist_bo(p,bo)<deps,:);
@@ -66,20 +67,29 @@ while 1
   Ftot=full(sparse(bars(:,[1,1,2,2]),ones(size(F))*[1,2,1,2],[Fvec,-Fvec],np,2));
   Ftot(1:size(pfix,1),:)=0;
   p=p+delt*Ftot;
-  d=dist_bo(p,bo); ix=d>0;
-  dgx=(dist_bo([p(ix,1)+deps,p(ix,2)],bo)-d(ix))/deps;
-  dgy=(dist_bo([p(ix,1),p(ix,2)+deps],bo)-d(ix))/deps;
-  dg2=dgx.^2+dgy.^2;
-  p(ix,:)=p(ix,:)-[d(ix).*dgx./dg2,d(ix).*dgy./dg2];
-  if mod(count,100)==0 && any(2*L<mean(L))
-    p(setdiff(reshape(bars(2*L>int_bo,:),[],1),1:nfix),:)=[];
+  d=dist_bo(p,bo); ix=d>0; 
+  if sum(ix)>1
+    dgx=(dist_bo([p(ix,1)+deps,p(ix,2)],bo)-d(ix))/deps;
+    dgy=(dist_bo([p(ix,1),p(ix,2)+deps],bo)-d(ix))/deps;
+    dXY=d(ix)./(dgx.^2+dgy.^2);
+    p(ix,:)=p(ix,:)-dXY.*[dgx dgy];
+  end
+  max_change=max(sqrt(sum(delt*Ftot(d<-deps,:).^2,2))/int_bo);
+  if mod(count,100)==0
+    fprintf('Count %4i Maxchange %4.1f Out side %3i Ave L %5.1f\n',count,100*max_change,sum(d>0),mean(L))
+  end
+  if abs(mean(L)-int_bo)/int_bo > 0.05 && mod(count,5)==0
+    [~,ind_min]=min(L);
+    p(setdiff(reshape(bars(ind_min,:),[],1),1:nfix),:)=[];
     pold=inf;  np=size(p,1);
     continue;
   end
-  max(sqrt(sum(delt*Ftot(d<-deps,:).^2,2))/int_bo)
-  if max(sqrt(sum(delt*Ftot(d<-deps,:).^2,2))/int_bo)<dptol, break; end
+  if count > 100*np | (abs(mean(L)-int_bo)/int_bo < 0.05 & max_change < dptol)
+    fprintf('Count %4i Maxchange %4.1f Out side %3i Ave L %5.1f\n',count,100*max_change,sum(d>0),mean(L))
+    break;
+  end
 end
-[lat,lon]=PLTXY(p(:,2),p(:,1),ALAT,ALON);
+[lat,lon]=XYTPL(p(:,2),p(:,1),ALAT,ALON);
 p=[lon lat];
 end
 %====================================================
@@ -157,6 +167,18 @@ for NB1=1:BLK(1).NBlock
   end
 end
 drawnow
+%
+figure('Name','BLOCK_AND_BOUNDARY_MAP REGIONAL')
+for NB1=1:BLK(1).NBlock
+  for NB2=NB1+1:BLK(1).NBlock
+    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+    if NF~=0
+      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep');
+      hold on
+    end
+  end
+end
+drawnow 
 end
 %% READ PARAMETER FOR MCMC Inversion 
 function [PRM]=READ_PARAMETERS(INPUT)
@@ -491,6 +513,7 @@ for NB1=1:BLK(1).NBlock
         BO_f=fullfile(DIRBLK,['BO_',num2str(NB1),'_',num2str(NB2),'.txt']);
         Fid=fopen(BO_f,'r');
         if Fid >= 0
+          fprintf('READ INTERFACE BOUDARY DEFINITION FILE : %s \n',BO_f)
           bound_blk=textscan(Fid,'%f%f'); fclose(Fid);     
           bound_blk=cell2mat(bound_blk);
         else
@@ -503,6 +526,7 @@ for NB1=1:BLK(1).NBlock
         else
           int_bo=PRM.OptINT(iNB);
         end
+%        [p,Bstri]=mesh2D_uni(bound_blk,int_bo,[BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT]);
         [p,Bstri]=mesh2D_uni(bound_blk,int_bo,bound_blk);
         Bslon=p(:,1);
         Bslat=p(:,2);
@@ -1195,5 +1219,30 @@ C1   = D./R;
 C2   = D./AN;
 Y    = (PH1-ALAT0)./C1;
 X    = (AL.*CLAT)./C2+(AL.^3.*CLAT.*cos(2.0.*RLAT))./(6.0.*C2.*D.^2);
+end
+%====================================================
+function [LAT,LON]=XYTPL(X,Y,ALAT0,ALON0)
+%-------------------------------------------------------------------------
+%  PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG)
+%  TRANSFORMATION  BETWEEN (X,Y) AND (ALAT,ALONG).
+%-------------------------------------------------------------------------
+A=6.378160e3;
+E2=6.6944541e-3;
+E12=6.7395719e-3;
+D=5.72958e1;
+RD=1.0/D;
+RLATO = ALAT0.*RD;
+SLATO = sin(RLATO);
+R     = A.*(1-E2)./sqrt((1-E2.*SLATO.^2).^3);
+AN    = A./sqrt(1.0-E2.*SLATO.^2);
+V2    = 1 + E12.*cos(RLATO).^2;
+C1    = D./R;
+C2    = D./AN;
+PH1   = ALAT0+C1.*Y;
+RPH1  = PH1.*RD;
+TPHI1 = tan(RPH1);
+CPHI1 = cos(RPH1);
+LAT   = PH1-(C2.*X).^2.*V2.*TPHI1./(2.*D);
+LON   = ALON0+C2.*X./CPHI1-(C2.*X).^3.*(1.0+2.*TPHI1.^2)./(6.*D.^2.*CPHI1);
 end
 %====================================================
