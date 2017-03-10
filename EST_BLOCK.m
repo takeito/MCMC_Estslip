@@ -297,7 +297,7 @@ if ~isempty(Ca)
 end
 end
 %% Combine two blocks
-function COMBINE_BOUND(BLK,NB1,NB2)
+function BLK=COMBINE_BOUND(BLK,NB1,NB2)
 [B.I(1).IND,B.I(1).AIND]=mach_bo(BLK,NB1,NB2);
 [B.I(2).IND,B.I(2).AIND]=mach_bo(BLK,NB2,NB1);
 B.I(1).NAIND=~B.I(1).AIND;
@@ -326,7 +326,7 @@ if isequal(BLK(NB1).LON(B.I(1).IND),BLK(NB2).LON(B.I(2).IND)) && isequal(BLK(NB1
   BLK(length(BLK(1).NBlock)+1).LON=[BLK(NB1).NLON; flip(BLK(NB2).NLON(2:end-1))];
   BLK(length(BLK(1).NBlock)+1).LAT=[BLK(NB1).NLAT; flip(BLK(NB2).NLAT(2:end-1))];
 else  % Reverse direction
-  BLK(length(BLK(1).NBlock)+1).LON=[BLK(NB1).NLON; BLK(NB2).NLON(2:end-1)];
-  BLK(length(BLK(1).NBlock)+1).LAT=[BLK(NB1).NLAT; BLK(NB2).NLAT(2:end-1)];
+  BLK(BLK(1).NBlock+1).LON=[BLK(NB1).NLON; BLK(NB2).NLON(2:end-1)];
+  BLK(BLK(1).NBlock+1).LAT=[BLK(NB1).NLAT; BLK(NB2).NLAT(2:end-1)];
 end
 end
