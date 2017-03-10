@@ -282,3 +282,49 @@ deg2rad=pi/180;
 Oxyz = Oxyz*1e3;
 OOxyz=[Oxyz sin(Olat*deg2rad) sin(Olon*deg2rad) cos(Olat*deg2rad) cos(Olon*deg2rad)];
 end
+%% Find shared point between blocks
+function [Ca,LCa]=mach_bo(BLK,NB1,NB2)
+LCa=inpolygon(BLK(NB1).LON,BLK(NB1).LAT,BLK(NB2).LON,BLK(NB2).LAT);
+Ca=find(LCa);
+if ~isempty(Ca)
+  if and(LCa(1),LCa(end))
+    Ca0=find(LCa~=true,1,'last')+1:length(LCa)-1;
+    Ca1=1:find(LCa~=true,1,'first')-1;
+    Ca=[Ca0 Ca1];
+  end
+end
+end
+%% Combine two blocks
+function COMBINE_BOUND(BLK,NB1,NB2)
+[B.I(1).IND,B.I(1).AIND]=mach_bo(BLK,NB1,NB2);
+[B.I(2).IND,B.I(2).AIND]=mach_bo(BLK,NB2,NB1);
+B.I(1).NAIND=~B.I(1).AIND;
+B.I(2).NAIND=~B.I(2).AIND;
+if and(B.I(1).AIND(1),B.I(1).AIND(end))
+  BLK(NB1).NLON=BLK(NB1).LON(B.I(1).NAIND);
+  BLK(NB1).NLAT=BLK(NB1).LAT(B.I(1).NAIND);
+else
+  NCa0=find(B.I(1).AIND==true,1,'last')+1:length(B.I(1).AIND)-1;
+  NCa1=1:find(B.I(1).AIND==true,1,'first')-1;
+  NCa=[NCa0 NCa1];
+  BLK(NB1).NLON=BLK(NB1).LON(NCa);
+  BLK(NB1).NLAT=BLK(NB1).LAT(NCa);
+end
+if and(B.I(2).AIND(1),B.I(2).AIND(end))
+  BLK(NB2).NLON=BLK(NB2).LON(B.I(2).NAIND);
+  BLK(NB2).NLAT=BLK(NB2).LAT(B.I(2).NAIND);
+else
+  NCa0=find(B.I(2).AIND==true,1,'last')+1:length(B.I(2).AIND)-1;
+  NCa1=1:find(B.I(2).AIND==true,1,'first')-1;
+  NCa=[NCa0 NCa1];
+  BLK(NB2).NLON=BLK(NB2).LON(NCa);
+  BLK(NB2).NLAT=BLK(NB2).LAT(NCa);
+end
+if isequal(BLK(NB1).LON(B.I(1).IND),BLK(NB2).LON(B.I(2).IND)) && isequal(BLK(NB1).LAT(B.I(1).IND),BLK(NB2).LAT(B.I(2).IND))  % Normal direction
+  BLK(length(BLK(1).NBlock)+1).LON=[BLK(NB1).NLON; flip(BLK(NB2).NLON(2:end-1))];
+  BLK(length(BLK(1).NBlock)+1).LAT=[BLK(NB1).NLAT; flip(BLK(NB2).NLAT(2:end-1))];
+else  % Reverse direction
+  BLK(length(BLK(1).NBlock)+1).LON=[BLK(NB1).NLON; BLK(NB2).NLON(2:end-1)];
+  BLK(length(BLK(1).NBlock)+1).LAT=[BLK(NB1).NLAT; BLK(NB2).NLAT(2:end-1)];
+end
+end
