@@ -14,15 +14,15 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM);
 % SHOW BLOCK BOUNDARY MAP
-SHOW_BLOCK_BOUND(BLK)
+%SHOW_BLOCK_BOUND(BLK)
 % CALC. GREEN FUNCTION
 [TRI]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[CHA]=MH_MCMC(D,G,BLK,PRM,1);
+[CHA]=MH_MCMC(D,G,BLK,PRM,OBS,1);
 % MAKE FIGURES
-MAKE_FIG(CHA,BLK,OBS,TRI,D,PRM);
+%MAKE_FIG(CHA,BLK,OBS,PRM);
 % CALC. ABIC AND BLOCK MOTION
 %[BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -144,7 +144,7 @@ getm(h, 'MapProjection');
 geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
 for NB=1:BLK(1).NBlock
   hold on
-  plotm(BLK(NB).LAT,BLK(NB).LON)
+  plotm(BLK(NB).LAT,BLK(NB).LON,'red')
   hold on
   textm(mean(BLK(NB).LAT),mean(BLK(NB).LON),int2str(NB))
 end
@@ -156,7 +156,7 @@ getm(h, 'MapProjection');
 geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
 for NB1=1:BLK(1).NBlock
   hold on
-  plotm(BLK(NB1).LAT,BLK(NB1).LON)
+  plotm(BLK(NB1).LAT,BLK(NB1).LON,'red')
   hold on
   textm(mean(BLK(NB).LAT),mean(BLK(NB).LON),int2str(NB))
   for NB2=NB1+1:BLK(1).NBlock
@@ -168,12 +168,12 @@ for NB1=1:BLK(1).NBlock
 end
 drawnow
 %
-figure('Name','BLOCK_AND_BOUNDARY_MAP REGIONAL')
+figure('Name','BLOCK_AND_BOUNDARY_GEOMETRY')
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
     if NF~=0
-      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep');
+      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',BLK(1).BOUND(NB1,NB2).bdep');
       hold on
     end
   end
@@ -300,7 +300,7 @@ G(1).C=TMP.C(D(1).IND,:);
 G(1).P=TMP.P(D(1).IND,:);
 end
 %% Markov chain Monte Calro
-function [CHA]=MH_MCMC(D,G,BLK,PRM,devGPU)
+function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,devGPU)
 % Markov chain Monte Calro
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
@@ -342,10 +342,10 @@ COUNT=0;
 fprintf('USE CPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
            PRM.CHA,PRM.NPL,PRM.ITR,Mc.N,Mp.N);
 %
-LO_Mc=-1;
+LO_Mc= -1;
 UP_Mc= 1;
 PDF_Mc=1./(UP_Mc-LO_Mc);
-while not(COUNT==2)
+while not(COUNT==5)
   RT  =RT+1;
   NACC=0;tic
   U   =log(rand(PRM.CHA,1));
@@ -366,7 +366,8 @@ while not(COUNT==2)
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
+%   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
+   CAL.SMP=G.P*Mp.SMP;   
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 %% MAKE Probably Density Function
@@ -430,13 +431,14 @@ while not(COUNT==2)
   else
     COUNT=COUNT+1;
   end
+  CHA.SMP=CAL.SMP;
+  MAKE_FIG(CHA,BLK,OBS,PRM)
   if RT > PRM.ITR; break; end;
 end
-CHA.SMP=CAL.SMP;
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,TRI,D,PRM)
+function MAKE_FIG(CHA,BLK,OBS,PRM)
 figure(100);clf(100)
 % BUG to wait zero
 NN=1;
@@ -451,12 +453,39 @@ for NB1=1:BLK(1).NBlock
   end
 end
 %
+figure(110);clf(110)
+% BUG to wait zero
+NN=1;
+for NB1=1:BLK(1).NBlock
+  for NB2=NB1+1:BLK(1).NBlock
+    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+    if NF~=0
+      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',std(CHA.Mc(NN:NN+NF-1,:),0,2));
+      NN=NN+NF;
+      hold on
+    end
+  end
+end
+%
+xyzp=mean(CHA.Mp,2);
+[latp,lonp]=xyz2sph(xyzp(1:3:end),xyzp(2:3:end),xyzp(3:3:end));
 figure(105);clf(105)
+for NB=1:BLK(1).NBlock
+  plot(BLK(NB).LON,BLK(NB).LAT,'red')
+  hold on
+  text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB))
+  hold on
+  plot(lonp(NB),latp(NB),'x')
+  hold on
+  text(double(lonp(NB)),double(latp(NB)),int2str(NB))
+  hold on
+end
 for NPL=1:PRM.NPL
   quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
 end
-quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'red')
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
+drawnow
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,PRM)
@@ -509,7 +538,7 @@ for NB1=1:BLK(1).NBlock
         fprintf('READ INTERFACE BOUDARY SHAPE FILE : %s \n',sub_f)
         dep_blk=textscan(Fid,'%f%f%f'); fclose(Fid);
         dep_blk=cell2mat(dep_blk);
-        F=scatteredInterpolant(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3),'natural');
+        F=scatteredInterpolant(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3));
         BO_f=fullfile(DIRBLK,['BO_',num2str(NB1),'_',num2str(NB2),'.txt']);
         Fid=fopen(BO_f,'r');
         if Fid >= 0
@@ -894,6 +923,14 @@ v=a./sqrt(1-e2.*slat.*slat);
 x=(v+h).*clat.*clon;
 y=(v+h).*clat.*slon;
 z=(v.*(1-e2)+h).*slat;
+end
+%====================================================
+function [lat,lon]=xyz2sph(X,Y,Z)
+% XYZ2SPH  Converts Spher coordinates from cartesian. Vectorized.
+% GRS80
+% CODE BY T.ITO 2017/03/11     ver0.1
+lat=atan2(Z,sqrt(X.*X+Y.*Y));lat=lat.*180/pi;
+lon=atan2(Y,X);lon=lon.*180/pi;
 end
 %% CONVERT TO XYZ FROM ELL AT SURFACE
 function [OOxyz]=conv2ell(Olat,Olon)
