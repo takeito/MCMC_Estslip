@@ -14,20 +14,36 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM);
 % SHOW BLOCK BOUNDARY MAP
-%SHOW_BLOCK_BOUND(BLK)
+SHOW_BLOCK_BOUND(BLK)
 % CALC. GREEN FUNCTION
 [TRI]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
 [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,1);
+save('CHA.mat','CHA')
+save('BLK.mat','BLK')
+save('TRI.mat','TRI')
+save('PRM.mat','PRM')
+
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 % CALC. ABIC AND BLOCK MOTION
 %[BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 %[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
+% OUTPUT.Ofile='./OUTPUT_DIR
+% WRITE_CHA(CHA,OUTPUT)
 %
+end
+%% WIRTE OUTPUT FILE
+function WRITE_CHA(CHA,OUTPUT)
+%
+fid=fopen(OUTPUT.Ofile,'w');
+OUT=[CHA.Mc CHA.Mp];
+[NS,NM]=size(OUT);
+fprintf(fid,'%4.2f ')
+
 end
 %% UNIFORM MESH GENERATION
 function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
@@ -342,13 +358,13 @@ COUNT=0;
 fprintf('USE CPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
            PRM.CHA,PRM.NPL,PRM.ITR,Mc.N,Mp.N);
 %
-LO_Mc= -1;
+LO_Mc= 0;
 UP_Mc= 1;
-PDF_Mc=1./(UP_Mc-LO_Mc);
+%PDF_Mc=1./(UP_Mc-LO_Mc);
 while not(COUNT==5)
   RT  =RT+1;
   NACC=0;tic
-  U   =log(rand(PRM.CHA,1));
+%  U   =log(rand(PRM.CHA,1));
   for iT=1:PRM.CHA
 % SAMPLE SECTION
     Mc.SMP=Mc.OLD+RWD.*Mc.STD.*(rand(Mc.N,PRM.NPL,'single')-0.5);
@@ -366,8 +382,8 @@ while not(COUNT==5)
 %   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
 %          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-%   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
-   CAL.SMP=G.P*Mp.SMP;   
+   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
+%   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 %% MAKE Probably Density Function
@@ -414,19 +430,19 @@ while not(COUNT==5)
   Mp.STD=repmat(std(CHA.Mp,1,2),1,PRM.NPL);
   La.STD=repmat(std(CHA.La,1,2),1,PRM.NPL);
 %
-  fprintf('T=%3d MaxRes=%6.3f MinRes=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
-           RT,1-max(RES.OLD)./RR,1-min(RES.OLD)./RR,100*CHA.AJR,RWD,toc)
+  fprintf('T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
+           RT,1-RES.OLD./RR,100*CHA.AJR,RWD,toc)
 %
   for BK=1:BLK(1).NBlock
-    fprintf('POLE OF BLOCK %2i = %9.2e %9.2e %9.2e \n',...
-             BK,mean(CHA.Mp(3.*BK-2,:),2),mean(CHA.Mp(3.*BK-1,:),2),mean(CHA.Mp(3.*BK,:),2));
+    [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
+    fprintf('POLE OF BLOCK %2i = %7.2f %8.2f %9.2e \n',BK,mean(latp),mean(lonp),mean(ang));
   end
 %
   if CHA.AJR > 0.24
     RWD=RWD*1.1;
     COUNT=0;
   elseif CHA.AJR < 0.22
-    RWD=RWD*0.618;
+    RWD=RWD*0.8;
     COUNT=0;
   else
     COUNT=COUNT+1;
@@ -467,17 +483,16 @@ for NB1=1:BLK(1).NBlock
   end
 end
 %
-xyzp=mean(CHA.Mp,2);
-[latp,lonp]=xyz2sph(xyzp(1:3:end),xyzp(2:3:end),xyzp(3:3:end));
 figure(105);clf(105)
 for NB=1:BLK(1).NBlock
   plot(BLK(NB).LON,BLK(NB).LAT,'red')
   hold on
   text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB))
   hold on
-  plot(lonp(NB),latp(NB),'x')
+  [latp,lonp,~]=xyzp2lla(CHA.Mp(3.*NB-2,:),CHA.Mp(3.*NB-1,:),CHA.Mp(3.*NB,:));
+  plot(mean(lonp),mean(latp),'x')
   hold on
-  text(double(lonp(NB)),double(latp(NB)),int2str(NB))
+  text(double(mean(lonp)),double(mean(latp)),int2str(NB))
   hold on
 end
 for NPL=1:PRM.NPL
@@ -555,7 +570,6 @@ for NB1=1:BLK(1).NBlock
         else
           int_bo=PRM.OptINT(iNB);
         end
-%        [p,Bstri]=mesh2D_uni(bound_blk,int_bo,[BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT]);
         [p,Bstri]=mesh2D_uni(bound_blk,int_bo,bound_blk);
         Bslon=p(:,1);
         Bslat=p(:,2);
@@ -791,7 +805,6 @@ for NB=1:BLK(1).NBlock
   BLK(NB).LAT=tmp(:,2);
 end
 fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
-%figure('Name','BLOCK_BOUNDARY_LINE')
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
@@ -807,9 +820,6 @@ for NB1=1:BLK(1).NBlock
       BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
-%      fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
-%      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
-%      hold on
     end
   end
 end
@@ -925,12 +935,13 @@ y=(v+h).*clat.*slon;
 z=(v.*(1-e2)+h).*slat;
 end
 %====================================================
-function [lat,lon]=xyz2sph(X,Y,Z)
-% XYZ2SPH  Converts Spher coordinates from cartesian. Vectorized.
+function [lat,lon,ang]=xyzp2lla(X,Y,Z)
+% XYZP2LLA  Converts Shpear coordinates from cartesian. Vectorized.
 % GRS80
 % CODE BY T.ITO 2017/03/11     ver0.1
 lat=atan2(Z,sqrt(X.*X+Y.*Y));lat=lat.*180/pi;
 lon=atan2(Y,X);lon=lon.*180/pi;
+ang=sqrt(X.*X+Y.*Y+Z.*Z);
 end
 %% CONVERT TO XYZ FROM ELL AT SURFACE
 function [OOxyz]=conv2ell(Olat,Olon)
