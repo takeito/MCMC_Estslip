@@ -332,9 +332,6 @@ fprintf('Residual=%9.3f \n',RR);
 %
 RWD=PRM.RWD;
 LDIM=PRM.NPL.*PRM.KEP;
-
-
-ffanim=0;
 %
 Mc.INT=1e-2;
 Mp.INT=1e-10;
@@ -404,7 +401,7 @@ while not(COUNT==5)
 %            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
 %            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:????ï¿½????ï¿½????ï¿½[????ï¿½????ï¿½????ï¿½????ï¿½????ï¿½Ï‚ï¿½_????ï¿½????ï¿½????ï¿½B
+% TODO:????½????½????½[????½????½????½????½????½Ï‚ï¿½_????½????½????½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -451,34 +448,13 @@ while not(COUNT==5)
     COUNT=COUNT+1;
   end
   CHA.SMP=CAL.SMP;
-  MAKE_FIG(CHA,BLK,OBS,PRM,ffanim)
-  
-  ffanim=ffanim+1;
-% GIF animation test -----------
-  frame=getframe(figure(105));
-  im=frame2im(frame);
-  [A,map]=rgb2ind(im,256);
-  if ffanim == 1
-      imwrite(A,map,'POLE_test.gif','gif','LoopCount',Inf,'DelayTime',0.2);
-  else
-      imwrite(A,map,'POLE_test.gif','gif','WriteMode','append','DelayTime',0.2);
-  end
-%
-  frame=getframe(figure(106));
-  im=frame2im(frame);
-  [A,map]=rgb2ind(im,256);
-  if ffanim == 1
-      imwrite(A,map,'Vector_test.gif','gif','LoopCount',Inf,'DelayTime',0.2);
-  else
-      imwrite(A,map,'Vector_test.gif','gif','WriteMode','append','DelayTime',0.2);
-  end
-%   
+  MAKE_FIG(CHA,BLK,OBS,PRM)
   if RT > PRM.ITR; break; end;
 end
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,PRM,ffanim)
+function MAKE_FIG(CHA,BLK,OBS,PRM)
 figure(100);clf(100)
 % BUG to wait zero
 NN=1;
@@ -522,23 +498,9 @@ end
 for NPL=1:PRM.NPL
   quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
-  axis([-200,300,-80,80]);
-  title(['Iteration Number: ',num2str(ffanim)]);
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 drawnow
-% 
-figure(106);clf(106)
-for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
-  hold on
-  quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
-  hold on
-  axis([129,141,30,37.5]);
-  title(['Iteration Number: ',num2str(ffanim)]);
-end
-% quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
-% drawnow
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,PRM)
