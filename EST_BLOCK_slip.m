@@ -21,29 +21,28 @@ SHOW_BLOCK_BOUND(BLK)
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
 [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,1);
-save('CHA.mat','CHA')
-save('BLK.mat','BLK')
-save('TRI.mat','TRI')
-save('PRM.mat','PRM')
-
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 % CALC. ABIC AND BLOCK MOTION
 %[BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 %[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
-% OUTPUT.Ofile='./OUTPUT_DIR
-% WRITE_CHA(CHA,OUTPUT)
+OUTPUT.DIR='./Result/';
+WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
 %
 end
 %% WIRTE OUTPUT FILE
-function WRITE_CHA(CHA,OUTPUT)
+function WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
 %
-fid=fopen(OUTPUT.Ofile,'w');
-OUT=[CHA.Mc CHA.Mp];
-[NS,NM]=size(OUT);
-fprintf(fid,'%4.2f ')
-
+fprintf('Write OUTPUT FILE: %s \n',OUTPUT.DIR)
+dlmwrite(fullfile(OUTPUT.DIR,'Mp.txt'),CHA.Mp);
+dlmwrite(fullfile(OUTPUT.DIR,'Mc.txt'),CHA.Mc);
+dlmwrite(fullfile(OUTPUT.DIR,'La.txt'),CHA.La);
+%
+save(fullfile(OUTPUT.DIR,'CHA.mat'),'CHA')
+save(fullfile(OUTPUT.DIR,'BLK.mat'),'BLK')
+save(fullfile(OUTPUT.DIR,'TRI.mat'),'TRI')
+save(fullfile(OUTPUT.DIR,'PRM.mat'),'PRM')
 end
 %% UNIFORM MESH GENERATION
 function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
@@ -338,7 +337,7 @@ Mp.INT=1e-10;
 La.INT=1e+1;
 Mc.N=BLK(1).NB;
 Mp.N=3.*BLK(1).NBlock;
-La.N=size(G(1).C,2);
+La.N=1;
 %
 Mc.STD=Mc.INT.*ones(Mc.N,PRM.NPL,'single');
 Mp.STD=Mp.INT.*ones(Mp.N,PRM.NPL,'single');
@@ -386,20 +385,19 @@ while not(COUNT==5)
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
+% Mc is better Zero 
+   PRI.SMP=sum(abs(Mc.SMP),1);   
 %% MAKE Probably Density Function
-% $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$
-%%
+% $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$%%
 %  log(x(x>0));
 %   q1 = logproppdf(x0,y);
 %   q2 = logproppdf(y,x0);
 % this is a generic formula.
 %   rho = (q1+logpdf(y))-(q2+logpdf(x0));  
-   Pdf=expm1(0.5.*(-RES.SMP+RES.OLD))+1;
-   PRI.SMP=0;
-   PRI.OLD=0;
-%   Pdf = expm1(-0.5.*...
-%            ((RES.SMP+LAMD.SMP+exp(-LAMD.SMP).*PRI.SMP)...
-%            -(RES.OLD+LAMD.OLD+exp(-LAMD.OLD).*PRI.OLD)))+1;
+%   Pdf=expm1(0.5.*(-RES.SMP+RES.OLD))+1;
+   Pdf = expm1(-0.5.*...
+            ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
+            -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
 % TODO:????½????½????½[????½????½????½????½????½Ï‚ï¿½_????½????½????½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
@@ -437,6 +435,7 @@ while not(COUNT==5)
     [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
     fprintf('POLE OF BLOCK %2i = %7.2f %8.2f %9.2e \n',BK,mean(latp),mean(lonp),mean(ang));
   end
+  fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
   if CHA.AJR > 0.24
     RWD=RWD*1.1;
