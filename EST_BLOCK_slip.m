@@ -329,6 +329,7 @@ fprintf('Residual=%9.3f \n',RR);
 %g_men=g.TotalMemory; %byte
 %reset(g);
 %
+ffanim=0;
 RWD=PRM.RWD;
 LDIM=PRM.NPL.*PRM.KEP;
 %
@@ -447,13 +448,13 @@ while not(COUNT==5)
     COUNT=COUNT+1;
   end
   CHA.SMP=CAL.SMP;
-  MAKE_FIG(CHA,BLK,OBS,PRM)
+  MAKE_FIG(CHA,BLK,OBS,PRM,ffanim)
   if RT > PRM.ITR; break; end;
 end
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,PRM)
+function MAKE_FIG(CHA,BLK,OBS,PRM,ffanim)
 figure(100);clf(100)
 % BUG to wait zero
 NN=1;
@@ -500,6 +501,16 @@ for NPL=1:PRM.NPL
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 drawnow
+%
+figure(106);clf(106)
+for NPL=1:PRM.NPL
+  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
+  hold on
+  quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
+  hold on
+  axis([129,141,30,37.5]);
+  title(['Iteration Number: ',num2str(ffanim)]);
+end
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,PRM)
