@@ -329,7 +329,6 @@ fprintf('Residual=%9.3f \n',RR);
 %g_men=g.TotalMemory; %byte
 %reset(g);
 %
-ffanim=0;
 RWD=PRM.RWD;
 LDIM=PRM.NPL.*PRM.KEP;
 %
@@ -400,7 +399,7 @@ while not(COUNT==5)
             ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
             -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:????½????½????½[????½????½????½????½????½Ï‚ï¿½_????½????½????½B
+% TODO:????ï¿½????ï¿½????ï¿½[????ï¿½????ï¿½????ï¿½????ï¿½????ï¿½Ï‚ï¿½_????ï¿½????ï¿½????ï¿½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -448,13 +447,13 @@ while not(COUNT==5)
     COUNT=COUNT+1;
   end
   CHA.SMP=CAL.SMP;
-  MAKE_FIG(CHA,BLK,OBS,PRM,ffanim)
+  MAKE_FIG(CHA,BLK,OBS,PRM,RT)
   if RT > PRM.ITR; break; end;
 end
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,PRM,ffanim)
+function MAKE_FIG(CHA,BLK,OBS,PRM,RT)
 figure(100);clf(100)
 % BUG to wait zero
 NN=1;
@@ -500,7 +499,7 @@ for NPL=1:PRM.NPL
   hold on
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
-drawnow
+% drawnow
 %
 figure(106);clf(106)
 for NPL=1:PRM.NPL
@@ -508,9 +507,10 @@ for NPL=1:PRM.NPL
   hold on
   quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
   hold on
-  axis([129,141,30,37.5]);
-  title(['Iteration Number: ',num2str(ffanim)]);
+  axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
+  title(['Iteration Number: ',num2str(RT)]);
 end
+drawnow
 end
 %% READ PLATE INTERFACE
 function [BLK]=READ_BLOCK_INTERFACE(BLK,PRM)
@@ -879,6 +879,10 @@ while 1
 end
 OBS(1).NOBS=N;
 OBS(1).ABLK=zeros(OBS(1).NOBS,1);
+OBS(1).LATMAX=max(OBS(1).ALAT);
+OBS(1).LATMIN=min(OBS(1).ALAT);
+OBS(1).LONMAX=max(OBS(1).ALON);
+OBS(1).LONMIN=min(OBS(1).ALON);
 fprintf('==================\n') 
 fprintf('Number of GNSS site %4d \n',N)
 fprintf('==================\n') 
