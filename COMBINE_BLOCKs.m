@@ -202,8 +202,8 @@ else
   BLK(NB2).NLAT=BLK(NB2).LAT(NCa);
 end
 if isequal(BLK(NB1).LON(B.I(1).IND),BLK(NB2).LON(B.I(2).IND)) && isequal(BLK(NB1).LAT(B.I(1).IND),BLK(NB2).LAT(B.I(2).IND))  % Normal direction
-  BLK(length(BLK(1).NBlock)+1).LON=[BLK(NB1).NLON; flip(BLK(NB2).NLON); BLK(NB1).NLON(1)];
-  BLK(length(BLK(1).NBlock)+1).LAT=[BLK(NB1).NLAT; flip(BLK(NB2).NLAT); BLK(NB1).NLAT(1)];
+  BLK(BLK(1).NBlock+1).LON=[BLK(NB1).NLON; flip(BLK(NB2).NLON); BLK(NB1).NLON(1)];
+  BLK(BLK(1).NBlock+1).LAT=[BLK(NB1).NLAT; flip(BLK(NB2).NLAT); BLK(NB1).NLAT(1)];
 else  % Reverse direction
   BLK(BLK(1).NBlock+1).LON=[BLK(NB1).NLON; BLK(NB2).NLON; BLK(NB1).NLON(1)];
   BLK(BLK(1).NBlock+1).LAT=[BLK(NB1).NLAT; BLK(NB2).NLAT; BLK(NB1).NLAT(1)];
