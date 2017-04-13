@@ -637,7 +637,7 @@ for NB1=1:BLK(1).NBlock
 %
       for N=1:NF
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
-        TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
+        TRIz=BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
         [F,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
         TRI(1).BOUND(NB1,NB2).clat(N)=F(1);
@@ -677,10 +677,10 @@ end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
 function [FLOC,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(loc_f)
 % Coded by Takeo Ito 2015/11/11 (ver 1.0)
-[X,Y]=PLTXY(loc_f(:,2),loc_f(:,1),loc_f(1,2),loc_f(1,1));
-[DA]=AREA_TRI(X,Y,loc_f(:,3));
-FLOC=mean(loc_f);
-[STR,DIP,NV,ST,DP]=EST_STRDIP_TRI(X,Y,loc_f(:,3));
+% [X,Y]=PLTXY(loc_f(:,2),loc_f(:,1),loc_f(1,2),loc_f(1,1));
+[DA]=AREA_TRI(loc_f(:,1),loc_f(:,2),loc_f(:,3));
+FLOC=mean(loc_f,2)';
+[STR,DIP,NV,ST,DP]=EST_STRDIP_TRI(loc_f(:,1),loc_f(:,2),loc_f(:,3));
 end
 %% ESTIMATE AREA AT SUB-FAULT FOR TRI
 function [DA]=AREA_TRI(X,Y,Z)
