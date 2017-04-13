@@ -704,9 +704,9 @@ function [STR,DIP,NV,ST,DP]=EST_STRDIP_TRI(X,Y,Z)
 NV=cross([X(2);Y(2);Z(2)]-[X(1);Y(1);Z(1)], [X(3);Y(3);Z(3)]-[X(1);Y(1);Z(1)]);
 NV=NV./norm(NV);
 if (NV(3) < 0); NV = -NV; end; % Enforce clockwise circulation
-ST=[cos(atan2(NV(2),NV(1))) sin(atan2(NV(2),NV(1))) 0];
+ST=[-sin(atan2(NV(2),NV(1))) cos(atan2(NV(2),NV(1))) 0];
 DP=cross(NV,ST);
-STR=(180./pi).*atan2(NV(2),NV(1));
+STR=(180./pi).*atan2(NV(2),NV(1)); % <- NEED TO BE MODIFIED!!
 DIP=(180./pi).*acos(NV(3));
 end
 %% CALC MOTION BLOCKS
