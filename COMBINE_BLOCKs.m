@@ -43,9 +43,14 @@ for FN=1:BLK(1).NBlock
 end
 newfile=[num2str(BLK(1).NBlock+1,'%02i'),'_',B(BNO1).NAME,'-',B(BNO2).NAME,'.txt'];
 NEWFILE=fullfile(DIR,newfile);
+LOGFILE=fullfile(DIR,'combine.log');
 FID=fopen(NEWFILE,'w');
 fprintf(FID,'%f %f\n',[BLK(BLK(1).NBlock+1).LON BLK(BLK(1).NBlock+1).LAT]');
 fclose(FID);
+FIDl=fopen(LOGFILE,'w');
+fprintf(FID,'%s\n',['BLOCK ',num2str(BNO1,'%02i'),' and BLOCK ',num2str(BNO2,'%02i'),' were combined!!']);
+fprintf(FID,'%s\n',['And then BLOCK ',num2str(BLK(1).NBlock+1,'%02i'),' ( ',newfile, ' ) ' 'was created!!']);
+fclose(FIDl);
 end
 %% MAKE FIGURES
 function MAKE_FIGS(BLK,BNO1,BNO2)
