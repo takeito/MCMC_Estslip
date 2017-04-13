@@ -21,12 +21,12 @@ PRM.DIRBlock=BDIR;
 % COMBINE BLOCKS
 [BLK]=COMBINE_BOUND(BLK,BNO1,BNO2);
 % SAVE COMBINED BLOCK FILE TO 'BLOCK_MODEL' FOLDER
-WRITE_FILE(BLK,BNO1,BNO2);
+B=WRITE_FILE(BLK,BNO1,BNO2);
 % MAKE_FIGS(BLK);
-MAKE_FIGS(BLK,BNO1,BNO2);
+MAKE_FIGS(BLK,B,BNO1,BNO2);
 end
 %% Write blocks in txt format
-function WRITE_FILE(BLK,BNO1,BNO2)
+function B=WRITE_FILE(BLK,BNO1,BNO2)
 DIR1='BLOCK_MODEL';
 for DN=1:Inf
   DIR2=['MODEL_',num2str(DN,'%02i')];
@@ -38,22 +38,25 @@ for FN=1:BLK(1).NBlock
   namesplit=strsplit(BLK(FN).name,{'_','.'});
   B(FN).NO=str2num(char(namesplit(1)));
   B(FN).NAME=cell2mat(namesplit(2:end-1));
-  if B(FN).NO==BNO1||B(FN).NO==BNO2; continue; end
+  if B(FN).NO==BNO1; BNO1=FN; continue; end
+  if B(FN).NO==BNO2; BNO2=FN; continue; end
   copyfile(BLK(FN).fullname,fullfile(DIR,BLK(FN).name));
 end
-newfile=[num2str(BLK(1).NBlock+1,'%02i'),'_',B(BNO1).NAME,'-',B(BNO2).NAME,'.txt'];
+B(BLK(1).NBlock+1).NO=B(BLK(1).NBlock).NO+1;
+B(BLK(1).NBlock+1).NAME=[B(BNO1).NAME,'-',B(BNO2).NAME];
+newfile=[num2str(B(BLK(1).NBlock+1).NO,'%02i'),'_',B(BLK(1).NBlock+1).NAME,'.txt'];
 NEWFILE=fullfile(DIR,newfile);
 LOGFILE=fullfile(DIR,'combine.log');
 FID=fopen(NEWFILE,'w');
 fprintf(FID,'%f %f\n',[BLK(BLK(1).NBlock+1).LON BLK(BLK(1).NBlock+1).LAT]');
 fclose(FID);
 FIDl=fopen(LOGFILE,'w');
-fprintf(FID,'%s\n',['BLOCK ',num2str(BNO1,'%02i'),' and BLOCK ',num2str(BNO2,'%02i'),' were combined!!']);
+fprintf(FID,'%s\n',['BLOCK ',num2str(B(BNO1).NO,'%02i'),' and BLOCK ',num2str(B(BNO2).NO,'%02i'),' were combined!!']);
 fprintf(FID,'%s\n',['And then BLOCK ',num2str(BLK(1).NBlock+1,'%02i'),' ( ',newfile, ' ) ' 'was created!!']);
 fclose(FIDl);
 end
 %% MAKE FIGURES
-function MAKE_FIGS(BLK,BNO1,BNO2)
+function MAKE_FIGS(BLK,B,BNO1,BNO2)
 % figure('Name','OBS_vector'); clf
 % for N=1:BLK(1).NBlock
 %   if OBS(N).NBLK~=0
@@ -93,15 +96,17 @@ figure('Name','BLOCK_BOUNDARY, BLOCK_SHARED_POINT'); clf
 %   end
 % end
 for N=1:BLK(1).NBlock+1
-  if N==BNO1||N==BNO2; continue; end
+  if B(N).NO==BNO1 || B(N).NO==BNO2; continue; end
+%   if N==BNO1||N==BNO2; continue; end
   plot(BLK(N).LON,BLK(N).LAT,'-k');
   hold on
 end
 % scatter(LON,LAT,20,VEL);
 hold on
 for N=1:BLK(1).NBlock+1
-  if N==BNO1||N==BNO2; continue; end
-  text(mean(BLK(N).LON),mean(BLK(N).LAT),num2str(N));
+  if B(N).NO==BNO1 || B(N).NO==BNO2; continue; end
+%   if N==BNO1||N==BNO2; continue; end
+  text(mean(BLK(N).LON),mean(BLK(N).LAT),num2str(B(N).NO));
   hold on
 end
 end
@@ -175,6 +180,14 @@ end
 end
 %% Combine two blocks
 function BLK=COMBINE_BOUND(BLK,NB1,NB2)
+for FN=1:BLK(1).NBlock
+  namesplit=strsplit(BLK(FN).name,{'_','.'});
+  Btmp(FN).NO=str2num(char(namesplit(1)));
+  Btmp(FN).NAME=cell2mat(namesplit(2:end-1));
+  if Btmp(FN).NO==NB1; NB1=FN; continue; end
+  if Btmp(FN).NO==NB2; NB2=FN; end
+end
+
 [B.I(1).IND,B.I(1).AIND]=mach_bo(BLK,NB1,NB2);
 [B.I(2).IND,B.I(2).AIND]=mach_bo(BLK,NB2,NB1);
 B.I(1).NAIND=~B.I(1).AIND;
