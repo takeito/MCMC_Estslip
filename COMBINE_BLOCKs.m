@@ -29,22 +29,25 @@ end
 function B=WRITE_FILE(BLK,BNO1,BNO2)
 DIR1='BLOCK_MODEL';
 for DN=1:Inf
-  DIR2=['MODEL_',num2str(DN,'%02i')];
-  DIR=fullfile(DIR1,DIR2);
+  DIR=['MODEL_',num2str(DN,'%02i')];
+  DIR=fullfile(DIR1,DIR);
   EXID=exist(DIR);
   if EXID~=7; mkdir(DIR); break; end
 end
+NB=1;
 for FN=1:BLK(1).NBlock
   namesplit=strsplit(BLK(FN).name,{'_','.'});
   B(FN).NO=str2num(char(namesplit(1)));
   B(FN).NAME=cell2mat(namesplit(2:end-1));
   if B(FN).NO==BNO1; BNO1=FN; continue; end
   if B(FN).NO==BNO2; BNO2=FN; continue; end
-  copyfile(BLK(FN).fullname,fullfile(DIR,BLK(FN).name));
+  rename=[num2str(NB,'%02i'),'_',B(FN).NAME,'.txt'];
+  copyfile(BLK(FN).fullname,fullfile(DIR,rename));
+  NB=NB+1;
 end
 B(BLK(1).NBlock+1).NO=B(BLK(1).NBlock).NO+1;
 B(BLK(1).NBlock+1).NAME=[B(BNO1).NAME,'-',B(BNO2).NAME];
-newfile=[num2str(B(BLK(1).NBlock+1).NO,'%02i'),'_',B(BLK(1).NBlock+1).NAME,'.txt'];
+newfile=[num2str(NB,'%02i'),'_',B(BLK(1).NBlock+1).NAME,'.txt'];
 NEWFILE=fullfile(DIR,newfile);
 LOGFILE=fullfile(DIR,'combine.log');
 FID=fopen(NEWFILE,'w');
@@ -52,7 +55,7 @@ fprintf(FID,'%f %f\n',[BLK(BLK(1).NBlock+1).LON BLK(BLK(1).NBlock+1).LAT]');
 fclose(FID);
 FIDl=fopen(LOGFILE,'w');
 fprintf(FID,'%s\n',['BLOCK ',num2str(B(BNO1).NO,'%02i'),' and BLOCK ',num2str(B(BNO2).NO,'%02i'),' were combined!!']);
-fprintf(FID,'%s\n',['And then BLOCK ',num2str(BLK(1).NBlock+1,'%02i'),' ( ',newfile, ' ) ' 'was created!!']);
+fprintf(FID,'%s\n',['And then BLOCK ',num2str(NB,'%02i'),' ( ',newfile, ' ) ' 'was created!!']);
 fclose(FIDl);
 end
 %% MAKE FIGURES
@@ -97,16 +100,16 @@ figure('Name','BLOCK_BOUNDARY, BLOCK_SHARED_POINT'); clf
 % end
 for N=1:BLK(1).NBlock+1
   if B(N).NO==BNO1 || B(N).NO==BNO2; continue; end
-%   if N==BNO1||N==BNO2; continue; end
   plot(BLK(N).LON,BLK(N).LAT,'-k');
   hold on
 end
 % scatter(LON,LAT,20,VEL);
 hold on
+NB=1;
 for N=1:BLK(1).NBlock+1
   if B(N).NO==BNO1 || B(N).NO==BNO2; continue; end
-%   if N==BNO1||N==BNO2; continue; end
-  text(mean(BLK(N).LON),mean(BLK(N).LAT),num2str(B(N).NO));
+  text(mean(BLK(N).LON),mean(BLK(N).LAT),num2str(NB));
+  NB=NB+1;
   hold on
 end
 end
@@ -180,6 +183,7 @@ end
 end
 %% Combine two blocks
 function BLK=COMBINE_BOUND(BLK,NB1,NB2)
+%% TODO: Need to combine BLOCK Interface file corresponding to combined BLOCK
 for FN=1:BLK(1).NBlock
   namesplit=strsplit(BLK(FN).name,{'_','.'});
   Btmp(FN).NO=str2num(char(namesplit(1)));
