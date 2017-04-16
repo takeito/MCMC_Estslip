@@ -51,7 +51,7 @@ newfile=[num2str(NB,'%02i'),'_',B(BLK(1).NBlock+1).NAME,'.txt'];
 NEWFILE=fullfile(DIR,newfile);
 LOGFILE=fullfile(DIR,'combine.log');
 FID=fopen(NEWFILE,'w');
-fprintf(FID,'%f %f\n',[BLK(BLK(1).NBlock+1).LON BLK(BLK(1).NBlock+1).LAT]');
+fprintf(FID,'%15.9f %15.9f \n',[BLK(BLK(1).NBlock+1).LON BLK(BLK(1).NBlock+1).LAT]');
 fclose(FID);
 FIDl=fopen(LOGFILE,'w');
 fprintf(FID,'%s\n',['BLOCK ',num2str(B(BNO1).NO,'%02i'),' and BLOCK ',num2str(B(BNO2).NO,'%02i'),' were combined!!']);
