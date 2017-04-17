@@ -738,8 +738,8 @@ for N=1:BLK(1).NBlock
   EVEL=[EVEL; OBS(N).EEV];
   NVEL=[NVEL; OBS(N).ENV];
 end
-text(OBS(1).ALON,OBS(1).ALAT,OBS(1).NAME) 
-hold on
+% text(OBS(1).ALON,OBS(1).ALAT,OBS(1).NAME) 
+% hold on
 quiver(PLON,PLAT,EVEL,NVEL);
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC);
