@@ -434,7 +434,7 @@ while not(COUNT==5)
 %
   for BK=1:BLK(1).NBlock
     [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
-    fprintf('POLE OF BLOCK %2i = %7.2f deg. %8.2f deg. %9.2e deg./m.y. \n',BK,mean(latp),mean(lonp),mean(ang).*(10e6./(180./pi)));
+    fprintf('POLE OF BLOCK %2i = lat:%7.2f deg. lon:%8.2f deg. ang:%9.2e deg./m.y. \n',BK,mean(latp),mean(lonp),mean(ang));
   end
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
@@ -951,9 +951,10 @@ function [lat,lon,ang]=xyzp2lla(X,Y,Z)
 % XYZP2LLA  Converts Shpear coordinates from cartesian. Vectorized.
 % GRS80
 % CODE BY T.ITO 2017/03/11     ver0.1
-lat=atan2(Z,sqrt(X.*X+Y.*Y));lat=lat.*180/pi;
-lon=atan2(Y,X);lon=lon.*180/pi;
-ang=sqrt(X.*X+Y.*Y+Z.*Z);
+% lat: deg, lon: deg, ang: deg/m.y.
+lat=atan2(Z,sqrt(X.*X+Y.*Y)).*180/pi;
+lon=atan2(Y,X).*180/pi;
+ang=sqrt(X.*X+Y.*Y+Z.*Z).*(10e6./(180./pi));
 end
 %% CONVERT TO XYZ FROM ELL AT SURFACE
 function [OOxyz]=conv2ell(Olat,Olon)
