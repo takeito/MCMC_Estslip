@@ -17,6 +17,8 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 SHOW_BLOCK_BOUND(BLK)
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
+% BLOCK MOTION BETWEEN TWO BLOCKS
+[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 % MAKE FIGURES
 MAKE_FIGS(BLK,OBS);
 % CALC. GREEN FUNCTION
@@ -27,8 +29,6 @@ MAKE_FIGS(BLK,OBS);
 [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,1);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
-% BLOCK MOTION BETWEEN TWO BLOCKS
-%[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 OUTPUT.DIR='./Result/';
 WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
 %
@@ -788,13 +788,13 @@ for N=1:BLK(1).NBlock
   OBS(N).EEV=EVne(1:2:end);
   OBS(N).ENV=EVne(2:2:end);
   fprintf('BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f \n',N,OBS(N).NBLK,Sig)
-  if OBS(N).NBLK>=2 
-    fprintf('OBS(E,N) ')
-    fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
-    fprintf('EST(E,N) ')
-    fprintf('%5.2f ',EVne)      ;fprintf('\n')
-  fprintf('\n')
-  end
+%   if OBS(N).NBLK>=2 
+%     fprintf('OBS(E,N) ')
+%     fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
+%     fprintf('EST(E,N) ')
+%     fprintf('%5.2f ',EVne)      ;fprintf('\n')
+%   fprintf('\n')
+%   end
 end
 AIC=(OBS(1).NOBS.*2).*log(TSig./(OBS(1).NOBS.*2))+2.*NumB.*3;
 cAIC=AIC+2.*NumB.*3.*(NumB.*3+1)./(OBS(1).NOBS.*2-NumB.*3-1);
