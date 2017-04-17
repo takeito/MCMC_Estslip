@@ -346,7 +346,8 @@ Mc.STD=Mc.INT.*ones(Mc.N,PRM.NPL,'single');
 Mp.STD=Mp.INT.*ones(Mp.N,PRM.NPL,'single');
 La.STD=La.INT.*ones(La.N,PRM.NPL,'single');
 Mc.OLD=   0.5.*ones(Mc.N,PRM.NPL,'single');
-Mp.OLD=       zeros(Mp.N,PRM.NPL,'single');
+% Mp.OLD=       zeros(Mp.N,PRM.NPL,'single');
+Mp.OLD=                        BLK(1).POLE;
 La.OLD=       zeros(La.N,PRM.NPL,'single');
 CHA.Mc=       zeros(Mc.N,LDIM,'single');
 CHA.Mp=       zeros(Mp.N,LDIM,'single');
@@ -770,6 +771,7 @@ end
 %% CALCLATION AIC AND BLOCK MOTION
 function [BLK,OBS]=CALC_AIC(BLK,OBS)
 TSig=0; NumB=0;
+BLK(1).POLE=[];
 for N=1:BLK(1).NBlock
   Sig=0;EVne=[];POLE=[0; 0; 0];
   OBS(N).EEV=OBS(N).Vne(1:2:end);
@@ -785,6 +787,7 @@ for N=1:BLK(1).NBlock
   end
   BLK(N).SIG=Sig;
   BLK(N).POL=POLE;
+  BLK(1).POLE=[BLK(1).POLE;BLK(N).POL];
   OBS(N).EEV=EVne(1:2:end);
   OBS(N).ENV=EVne(2:2:end);
   fprintf('BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f \n',N,OBS(N).NBLK,Sig)
