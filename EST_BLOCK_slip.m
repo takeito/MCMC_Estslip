@@ -434,7 +434,7 @@ while not(COUNT==5)
 %
   for BK=1:BLK(1).NBlock
     [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
-    fprintf('POLE OF BLOCK %2i = %7.2f %8.2f %9.2e \n',BK,mean(latp),mean(lonp),mean(ang));
+    fprintf('POLE OF BLOCK %2i = %7.2f deg. %8.2f deg. %9.2e deg./m.y. \n',BK,mean(latp),mean(lonp),mean(ang).*(10e6./(180./pi)));
   end
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
