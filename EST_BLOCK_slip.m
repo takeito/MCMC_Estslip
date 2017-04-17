@@ -640,13 +640,11 @@ for NB1=1:BLK(1).NBlock
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
-        [F,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
+        [F,DA,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
         TRI(1).BOUND(NB1,NB2).clat(N)=mean(BLK(1).BOUND(NB1,NB2).blat(N,:));
         TRI(1).BOUND(NB1,NB2).clon(N)=mean(BLK(1).BOUND(NB1,NB2).blon(N,:));
         TRI(1).BOUND(NB1,NB2).cdep(N)=mean(BLK(1).BOUND(NB1,NB2).bdep(N,:)); % up is plus
         TRI(1).BOUND(NB1,NB2).DA(N)=DA;
-        TRI(1).BOUND(NB1,NB2).STR(N)=STR;
-        TRI(1).BOUND(NB1,NB2).DIP(N)=DIP;
         TRI(1).BOUND(NB1,NB2).NV(N,:)=NV;
         TRI(1).BOUND(NB1,NB2).ST(N,:)=ST;
         TRI(1).BOUND(NB1,NB2).DP(N,:)=DP;
@@ -676,7 +674,7 @@ disp('PASS GREEN_TRI')
 disp('==================')
 end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
-function [FLOC,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(loc_f)
+function [FLOC,DA,NV,ST,DP]=EST_FAULT_TRI(loc_f)
 % Coded by Takeo Ito 2015/11/11 (ver 1.0)
 [DA]=AREA_TRI(loc_f(:,1),loc_f(:,2),loc_f(:,3));
 FLOC=mean(loc_f,2)';
