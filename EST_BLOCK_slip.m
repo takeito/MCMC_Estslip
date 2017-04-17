@@ -249,6 +249,7 @@ end
 %% MAKE MATRIX
 function [D,G]=COMB_GREEN(BLK,OBS,TRI)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
+% pole unit is mm
 NOBS=length(OBS(1).EVEC);
 TMP.OBS(1:3:3*NOBS)=OBS.EVEC;
 TMP.OBS(2:3:3*NOBS)=OBS.NVEC;
@@ -399,7 +400,7 @@ while not(COUNT==5)
             ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
             -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:????ï¿½????ï¿½????ï¿½[????ï¿½????ï¿½????ï¿½????ï¿½????ï¿½Ï‚ï¿½_????ï¿½????ï¿½????ï¿½B
+% TODO:?????½?????½?????½[?????½?????½?????½?????½?????½Ï‚ï¿½_?????½?????½?????½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -637,12 +638,12 @@ for NB1=1:BLK(1).NBlock
 %
       for N=1:NF
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
-        TRIz=BLK(1).BOUND(NB1,NB2).bdep(N,:);
+        TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
         [F,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
         TRI(1).BOUND(NB1,NB2).clat(N)=mean(BLK(1).BOUND(NB1,NB2).blat(N,:));
         TRI(1).BOUND(NB1,NB2).clon(N)=mean(BLK(1).BOUND(NB1,NB2).blon(N,:));
-        TRI(1).BOUND(NB1,NB2).cdep(N)=mean(BLK(1).BOUND(NB1,NB2).bdep(N,:));
+        TRI(1).BOUND(NB1,NB2).cdep(N)=mean(BLK(1).BOUND(NB1,NB2).bdep(N,:)); % up is plus
         TRI(1).BOUND(NB1,NB2).DA(N)=DA;
         TRI(1).BOUND(NB1,NB2).STR(N)=STR;
         TRI(1).BOUND(NB1,NB2).DIP(N)=DIP;
@@ -653,15 +654,15 @@ for NB1=1:BLK(1).NBlock
         U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,1,0,0);
         TRI(1).BOUND(NB1,NB2).GSTR(1:3:3*ND,N)=U.x; %E
         TRI(1).BOUND(NB1,NB2).GSTR(2:3:3*ND,N)=U.y; %N
-        TRI(1).BOUND(NB1,NB2).GSTR(3:3:3*ND,N)=U.z; %D
+        TRI(1).BOUND(NB1,NB2).GSTR(3:3:3*ND,N)=-U.z; %D
         U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,1,0);
         TRI(1).BOUND(NB1,NB2).GTNS(1:3:3*ND,N)=U.x; %E
         TRI(1).BOUND(NB1,NB2).GTNS(2:3:3*ND,N)=U.y; %N
-        TRI(1).BOUND(NB1,NB2).GTNS(3:3:3*ND,N)=U.z; %D 
+        TRI(1).BOUND(NB1,NB2).GTNS(3:3:3*ND,N)=-U.z; %D 
         U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,0,0,1);
         TRI(1).BOUND(NB1,NB2).GDIP(1:3:3*ND,N)=U.x; %E
         TRI(1).BOUND(NB1,NB2).GDIP(2:3:3*ND,N)=U.y; %N
-        TRI(1).BOUND(NB1,NB2).GDIP(3:3:3*ND,N)=U.z; %D
+        TRI(1).BOUND(NB1,NB2).GDIP(3:3:3*ND,N)=-U.z; %D
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
@@ -677,10 +678,9 @@ end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
 function [FLOC,DA,STR,DIP,NV,ST,DP]=EST_FAULT_TRI(loc_f)
 % Coded by Takeo Ito 2015/11/11 (ver 1.0)
-% [X,Y]=PLTXY(loc_f(:,2),loc_f(:,1),loc_f(1,2),loc_f(1,1));
 [DA]=AREA_TRI(loc_f(:,1),loc_f(:,2),loc_f(:,3));
 FLOC=mean(loc_f,2)';
-[STR,DIP,NV,ST,DP]=EST_STRDIP_TRI(loc_f(:,1),loc_f(:,2),loc_f(:,3));
+[NV,ST,DP]=EST_STRDIP_TRI(loc_f(:,1),loc_f(:,2),loc_f(:,3));
 end
 %% ESTIMATE AREA AT SUB-FAULT FOR TRI
 function [DA]=AREA_TRI(X,Y,Z)
@@ -693,21 +693,20 @@ S1=(LENG(1)+LENG(2)+LENG(3))./2;
 DA=sqrt(S1*(S1-LENG(1))*(S1-LENG(2))*(S1-LENG(3)));
 end
 %% ESTIMATE STRKE AND DIP FOR TRI FAULT
-function [STR,DIP,NV,ST,DP]=EST_STRDIP_TRI(X,Y,Z)
+function [NV,ST,DP]=EST_STRDIP_TRI(X,Y,Z)
 %==========
 % CALC. STR AND DIP ON FAULT
 % CODE BY T.ITO (2006/03/04)
 % Modified by T.ITO (2015/11/13)
 % Modified by T.ITO (2016/02/16)
-% DEPTH IS MINUS
+% Modified by Kimura(2017/04/17)
+% UP IS PLUS
 %==========
 NV=cross([X(2);Y(2);Z(2)]-[X(1);Y(1);Z(1)], [X(3);Y(3);Z(3)]-[X(1);Y(1);Z(1)]);
 NV=NV./norm(NV);
 if (NV(3) < 0); NV = -NV; end; % Enforce clockwise circulation
 ST=[-sin(atan2(NV(2),NV(1))) cos(atan2(NV(2),NV(1))) 0];
 DP=cross(NV,ST);
-STR=(180./pi).*atan2(NV(2),NV(1)); % <- NEED TO BE MODIFIED!!
-DIP=(180./pi).*acos(NV(3));
 end
 %% CALC MOTION BLOCKS
 function [BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS)
@@ -856,6 +855,7 @@ end
 function OBS=READ_OBS(FileOBS)
 %-------------------
 % INPUT format Observations:
+% unit is mm/yr
 % site_name lon lat EW_comp. NS_comp. UD_comp. ERR_EW ERR_NS ERR_UD 
 %-------------------
 Fid_OBS=fopen(FileOBS,'r');
