@@ -15,6 +15,12 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM);
 % SHOW BLOCK BOUNDARY MAP
 SHOW_BLOCK_BOUND(BLK)
+% CALC. ABIC AND BLOCK MOTION
+[BLK,OBS]=CALC_AIC(BLK,OBS);
+% BLOCK MOTION BETWEEN TWO BLOCKS
+[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
+% MAKE FIGURES
+MAKE_FIGS(BLK,OBS);
 % CALC. GREEN FUNCTION
 [TRI]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
@@ -23,10 +29,6 @@ SHOW_BLOCK_BOUND(BLK)
 [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,1);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
-% CALC. ABIC AND BLOCK MOTION
-%[BLK,OBS]=CALC_AIC(BLK,OBS);
-% BLOCK MOTION BETWEEN TWO BLOCKS
-%[BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 OUTPUT.DIR='./Result/';
 WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
 %
@@ -400,7 +402,7 @@ while not(COUNT==5)
             ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
             -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD)))+1;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:?????½?????½?????½[?????½?????½?????½?????½?????½Ï‚ï¿½_?????½?????½?????½B
+% TODO:?????ï¿½?????ï¿½?????ï¿½[?????ï¿½?????ï¿½?????ï¿½?????ï¿½?????ï¿½Ï‚ï¿½_?????ï¿½?????ï¿½?????ï¿½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
     IND_M=Pdf>rand(1,PRM.NPL,'single');
 %    IND_M=Pdf > U(iT);
@@ -736,8 +738,8 @@ for N=1:BLK(1).NBlock
   EVEL=[EVEL; OBS(N).EEV];
   NVEL=[NVEL; OBS(N).ENV];
 end
-text(OBS(1).ALON,OBS(1).ALAT,OBS(1).NAME) 
-hold on
+% text(OBS(1).ALON,OBS(1).ALAT,OBS(1).NAME) 
+% hold on
 quiver(PLON,PLAT,EVEL,NVEL);
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC);
@@ -786,13 +788,13 @@ for N=1:BLK(1).NBlock
   OBS(N).EEV=EVne(1:2:end);
   OBS(N).ENV=EVne(2:2:end);
   fprintf('BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f \n',N,OBS(N).NBLK,Sig)
-  if OBS(N).NBLK>=2 
-    fprintf('OBS(E,N) ')
-    fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
-    fprintf('EST(E,N) ')
-    fprintf('%5.2f ',EVne)      ;fprintf('\n')
-  fprintf('\n')
-  end
+%   if OBS(N).NBLK>=2 
+%     fprintf('OBS(E,N) ')
+%     fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
+%     fprintf('EST(E,N) ')
+%     fprintf('%5.2f ',EVne)      ;fprintf('\n')
+%   fprintf('\n')
+%   end
 end
 AIC=(OBS(1).NOBS.*2).*log(TSig./(OBS(1).NOBS.*2))+2.*NumB.*3;
 cAIC=AIC+2.*NumB.*3.*(NumB.*3+1)./(OBS(1).NOBS.*2-NumB.*3-1);
