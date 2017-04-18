@@ -774,8 +774,8 @@ TSig=0; NumB=0;
 BLK(1).POLE=[];
 for N=1:BLK(1).NBlock
   Sig=0;EVne=[];POLE=[0; 0; 0];
-  OBS(N).EEV=OBS(N).Vne(1:2:end);
-  OBS(N).ENV=OBS(N).Vne(2:2:end);
+  OBS(N).EEV=zeros(OBS(N).NBLK,1);
+  OBS(N).ENV=zeros(OBS(N).NBLK,1);
   if OBS(N).NBLK~=0
     Sig=0;
     EVne=[0 0];
