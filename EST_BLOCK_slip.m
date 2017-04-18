@@ -642,7 +642,7 @@ for NB1=1:BLK(1).NBlock
       for N=1:NF
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
-        F_LOC=[TRIx;TRIy;-1.*TRIz];
+        F_LOC=[TRIx;TRIy;TRIz];
         [F,DA,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
         TRI(1).BOUND(NB1,NB2).clat(N)=mean(BLK(1).BOUND(NB1,NB2).blat(N,:));
         TRI(1).BOUND(NB1,NB2).clon(N)=mean(BLK(1).BOUND(NB1,NB2).blon(N,:));
@@ -701,7 +701,7 @@ function [NV,ST,DP]=EST_STRDIP_TRI(X,Y,Z)
 % Modified by T.ITO (2015/11/13)
 % Modified by T.ITO (2016/02/16)
 % Modified by Kimura(2017/04/17)
-% UP IS PLUS
+% UP IS MINUS
 %==========
 NV=cross([X(2);Y(2);Z(2)]-[X(1);Y(1);Z(1)], [X(3);Y(3);Z(3)]-[X(1);Y(1);Z(1)]);
 NV=NV./norm(NV);
