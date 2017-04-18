@@ -305,8 +305,8 @@ for NB1=1:BLK(1).NBlock
     end
   end
   IND=OBS(1).ABLK==NB1;
-  NIND=[IND;zeros(size(IND));zeros(size(IND))]; NIND=logical(reshape(NIND',3*NOBS,1));
-  EIND=[zeros(size(IND));IND;zeros(size(IND))]; EIND=logical(reshape(EIND',3*NOBS,1));
+  NIND=[zeros(size(IND));IND;zeros(size(IND))]; NIND=logical(reshape(NIND',3*NOBS,1));
+  EIND=[IND;zeros(size(IND));zeros(size(IND))]; EIND=logical(reshape(EIND',3*NOBS,1));
   TMP.P(EIND,3*NB1-2)=-OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3);
   TMP.P(EIND,3*NB1-1)=-OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3);
   TMP.P(EIND,3*NB1  )= OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,2)                    +OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,1);
