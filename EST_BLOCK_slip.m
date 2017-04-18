@@ -347,7 +347,7 @@ Mp.STD=Mp.INT.*ones(Mp.N,PRM.NPL,'single');
 La.STD=La.INT.*ones(La.N,PRM.NPL,'single');
 Mc.OLD=   0.5.*ones(Mc.N,PRM.NPL,'single');
 % Mp.OLD=       zeros(Mp.N,PRM.NPL,'single');
-Mp.OLD=                        BLK(1).POLE;
+Mp.OLD=       single(BLK(1).POLE);
 La.OLD=       zeros(La.N,PRM.NPL,'single');
 CHA.Mc=       zeros(Mc.N,LDIM,'single');
 CHA.Mp=       zeros(Mp.N,LDIM,'single');
@@ -361,7 +361,7 @@ COUNT=0;
 fprintf('USE CPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
            PRM.CHA,PRM.NPL,PRM.ITR,Mc.N,Mp.N);
 %
-LO_Mc= 0;
+LO_Mc=-1;
 UP_Mc= 1;
 %PDF_Mc=1./(UP_Mc-LO_Mc);
 while not(COUNT==5)
@@ -588,7 +588,7 @@ for NB1=1:BLK(1).NBlock
         Bslon=p(:,1);
         Bslat=p(:,2);
         Bsdep=F(Bslon,Bslat);
-      else
+       else
         Bstri=[];
         LENG=length(BLK(1).BOUND(NB1,NB2).LON);
         if LENG~=0
@@ -961,7 +961,7 @@ function [lat,lon,ang]=xyzp2lla(X,Y,Z)
 % lat: deg, lon: deg, ang: deg/m.y.
 lat=atan2(Z,sqrt(X.*X+Y.*Y)).*180/pi;
 lon=atan2(Y,X).*180/pi;
-ang=sqrt(X.*X+Y.*Y+Z.*Z).*(10e6./(180./pi));
+ang=sqrt(X.*X+Y.*Y+Z.*Z).*(1e6./(180./pi));
 end
 %% CONVERT TO XYZ FROM ELL AT SURFACE
 function [OOxyz]=conv2ell(Olat,Olon)

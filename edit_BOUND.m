@@ -10,12 +10,20 @@ end
 %====================================================
 function WRITE_BLOCK_BOUND(BLK,oDIR)
 nBLK=BLK(1).NBlock;
-for NB=1:nBLK
-  fullname=fullfile(oDIR,BLK(NB).name);
-  fileID=fopen(fullname,'w'); 
-  fprintf(fileID,'%15.9f %15.9f \n',[BLK(NB).LON BLK(NB).LAT]');
+for NB1=1:nBLK
+  fullname=fullfile(oDIR,BLK(NB1).name);
+  fileID=fopen(fullname,'w');
+  fprintf(fileID,'%15.9f %15.9f \n',[BLK(NB1).LON BLK(NB1).LAT]');
   fclose(fileID);
-  fprintf('OUTPUT FILE : %s \n',fullname)
+  fprintf('OUTPUT BLOCK FILE : %s \n',fullname)
+  for NB2=NB1+1:nBLK
+    fname=strcat('BO_',int2str(NB1),'_',int2str(NB2),'.txt');
+    fullname=fullfile(oDIR,fname);
+    fileID=fopen(fullname,'w');
+    fprintf(fileID,'%15.9f %15.9f \n',[BLK(1).BOUND(NB1,NB2).LON BLK(1).BOUND(NB1,NB2).LAT]');
+    fclose(fileID);
+    fprintf('OUTPUT BOUNDAY FILE : %s \n',fullname)
+  end
 end
 end
 %====================================================
