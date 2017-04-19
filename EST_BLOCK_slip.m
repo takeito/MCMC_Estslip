@@ -5,7 +5,7 @@ function EST_BLOCK_slip
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
-devGPU=1;
+devGPU=99;
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
@@ -156,7 +156,8 @@ for NB=1:BLK(1).NBlock
   maxlon=max([BLK(NB).LON;maxlon]); 
 end
 %
-figure('Name','BLOCK_AND_BOUNDARY_MAP WIDE')
+figure(310); clf(310)
+%figure(310,'Name','BLOCK_AND_BOUNDARY_MAP WIDE')
 h = worldmap([minlat,maxlat],[minlon,maxlon]);
 getm(h, 'MapProjection');
 geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
@@ -168,7 +169,8 @@ for NB=1:BLK(1).NBlock
 end
 drawnow
 %
-figure('Name','BLOCK_AND_BOUNDARY_MAP REGIONAL')
+figure(320); clf(320)
+%figure('Name','BLOCK_AND_BOUNDARY_MAP REGIONAL')
 h = worldmap([minlatc,maxlatc],[minlonc,maxlonc]);
 getm(h, 'MapProjection');
 geoshow('landareas.shp', 'FaceColor', [0.15 0.5 0.15])
@@ -186,7 +188,8 @@ for NB1=1:BLK(1).NBlock
 end
 drawnow
 %
-figure('Name','BLOCK_AND_BOUNDARY_GEOMETRY')
+figure(330); clf(330)
+%figure('Name','BLOCK_AND_BOUNDARY_GEOMETRY')
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
@@ -464,8 +467,7 @@ while not(COUNT==3)
     cCHA.Mp=gather(CHA.Mp);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    cOBS=gather(OBS);
-    MAKE_FIG(cCHA,BLK,cOBS,PRM,RT)
+    MAKE_FIG(cCHA,BLK,OBS,PRM,RT)
   else
     MAKE_FIG(CHA,BLK,OBS,PRM,RT)
   end
