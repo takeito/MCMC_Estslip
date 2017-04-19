@@ -5,6 +5,7 @@ function EST_BLOCK_slip
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
+devGPU=99;
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
@@ -26,7 +27,7 @@ MAKE_FIGS(BLK,OBS);
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[CHA]=MH_MCMC(D,G,BLK,PRM,OBS,1);
+[CHA]=MH_MCMC(D,G,BLK,PRM,OBS,devGPU);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 OUTPUT.DIR='./Result/';
@@ -323,76 +324,86 @@ function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,devGPU)
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
 %
-% TODO: CHECK GPU etc.
-% GPU Initialize 
-%
-%g=gpuDevice(devGPU);
-% TODO: CHECK GPU MEMORY
-%g_men=g.TotalMemory
-%g_men=g.TotalMemory; %byte
-%reset(g);
-%
 RWD=PRM.RWD;
-LDIM=PRM.NPL.*PRM.KEP;
-%
 Mc.INT=1e-2;
 Mp.INT=1e-10;
 La.INT=1e+1;
 Mc.N=BLK(1).NB;
 Mp.N=3.*BLK(1).NBlock;
 La.N=1;
+Mc.STD=Mc.INT.*ones(Mc.N,1,'single');
+Mp.STD=Mp.INT.*ones(Mp.N,1,'single');
+La.STD=La.INT.*ones(La.N,1,'single');
+Mc.OLD=   0.1.*ones(Mc.N,1,'single');
+Mp.OLD= single(BLK(1).POLE);
+La.OLD= zeros(La.N,1,'single');
+CHA.Mc= zeros(Mc.N,PRM.KEP,'single');
+CHA.Mp= zeros(Mp.N,PRM.KEP,'single');
+CHA.La= zeros(La.N,PRM.KEP,'single');
 %
-Mc.STD=Mc.INT.*ones(Mc.N,PRM.NPL,'single');
-Mp.STD=Mp.INT.*ones(Mp.N,PRM.NPL,'single');
-La.STD=La.INT.*ones(La.N,PRM.NPL,'single');
-Mc.OLD=   0.1.*ones(Mc.N,PRM.NPL,'single');
-Mp.OLD=      single(BLK(1).POLE);
-La.OLD=       zeros(La.N,PRM.NPL,'single');
-CHA.Mc=       zeros(Mc.N,LDIM,'single');
-CHA.Mp=       zeros(Mp.N,LDIM,'single');
-CHA.La=       zeros(La.N,LDIM,'single');
-%
-RES.OLD=inf(1,PRM.NPL,'single');%gpuArray
-PRI.OLD=inf(1,PRM.NPL,'single');%gpuArray
+RES.OLD=inf(1,1,'single');
+PRI.OLD=inf(1,1,'single');
+% GPU Initialize 
+if devGPU~=99
+  g=gpuDevice(devGPU);
+  reset(g);
+  g_men=g.TotalMemory;
+  r_men=(Mc.N+Mp.N+La.N).*(PRM.KEP+2).*4;
+  res_m=g_men-r_men;
+  fprintf('USE GPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d res_Memory(GB)=%6.3f\n',...
+           PRM.CHA,PRM.ITR,Mc.N,Mp.N,res_m./(1024.*1024.*1024));      
+  CHA.Mc=gpuArray(CHA.Mc);
+  CHA.Mp=gpuArray(CHA.Mp);
+  CHA.La=gpuArray(CHA.La);
+  Mc.STD=gpuArray(Mc.STD);
+  Mp.STD=gpuArray(Mp.STD);
+  La.STD=gpuArray(La.STD);
+  Mc.OLD=gpuArray(Mc.OLD);
+  Mp.OLD=gpuArray(Mp.OLD);
+  La.OLD=gpuArray(La.OLD);
+  D(1).OBS=gpuArray(D(1).OBS);
+  D(1).ERR=gpuArray(D(1).ERR);
+  G.C=gpuArray(G.C);
+  G.T=gpuArray(G.T);
+  G.B=gpuArray(G.B);
+  G.P=gpuArray(G.P);
+else
+  fprintf('USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
+            PRM.CHA,PRM.ITR,Mc.N,Mp.N);
+end
 %
 RT=0;
 COUNT=0;
-fprintf('USE CPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
-           PRM.CHA,PRM.NPL,PRM.ITR,Mc.N,Mp.N);
 %
 LO_Mc=-1;
 UP_Mc= 1;
-%PDF_Mc=1./(UP_Mc-LO_Mc);
 while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
-  logU=log(rand(PRM.CHA,1,'single'));
-  rMc =rand(Mc.N,PRM.CHA,'single')-0.5;
-  rMp =rand(Mp.N,PRM.CHA,'single')-0.5;
-  rLa =rand(La.N,PRM.CHA,'single')-0.5;
+  if devGPU~=99
+    logU=log(rand(PRM.CHA,1,'single','gpuArray'));
+    rMc = rand(Mc.N,PRM.CHA,'single','gpuArray')-0.5;
+    rMp = rand(Mp.N,PRM.CHA,'single','gpuArray')-0.5;
+    rLa = rand(La.N,PRM.CHA,'single','gpuArray')-0.5;
+  else
+    logU=log(rand(PRM.CHA,1,'single'));
+    rMc =rand(Mc.N,PRM.CHA,'single')-0.5;
+    rMp =rand(Mp.N,PRM.CHA,'single')-0.5;
+    rLa =rand(La.N,PRM.CHA,'single')-0.5;
+  end
   for iT=1:PRM.CHA
 % SAMPLE SECTION
-    Mc.SMP=Mc.OLD+RWD.*Mc.STD.*rMc(:,iT);
+    McLimt=min(min(abs(LO_Mc-Mc.OLD),abs(UP_Mc-Mc.OLD)),Mc.STD);
+    Mc.SMP=Mc.OLD+RWD.*McLimt.*rMc(:,iT);
     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
-% RESAMPLE SECTION
-    IND_S=find(Mc.SMP<LO_Mc | Mc.SMP>UP_Mc);
-    while isempty(IND_S)==0
-      Mc.SMP(IND_S)=Mc.OLD(IND_S)+RWD.*Mc.STD(IND_S).*(rand(length(IND_S),1,'single')-0.5);
-      IND_S=find(Mc.SMP<LO_Mc | Mc.SMP>UP_Mc);
-      if isempty(IND_S)==1; break; end
-    end
-% CORRECTION FOR PDF DUE TO RESAMPLE EFFECT
-%   WD=RWD.*Mc.STD;
-%   Q_CORR=(min(Mc.OLD-LO_LIMIT,WD)+min(UP_LIMIT-Mc.OLD,WD))./...
-%          (min(Mc.SMP-LO_LIMIT,WD)+min(UP_LIMIT-Mc.SMP,WD));
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-   CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
+    CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
-   RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
+    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 % Mc is better Zero 
-   PRI.SMP=sum(abs(Mc.SMP),1);   
+    PRI.SMP=sum(abs(Mc.SMP),1);   
 %% MAKE Probably Density Function
 % $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$%%
 %  log(x(x>0));
@@ -400,15 +411,14 @@ while not(COUNT==3)
 %   q2 = logproppdf(y,x0);
 % this is a generic formula.
 %   rho = (q1+logpdf(y))-(q2+logpdf(x0));  
-   Pdf = -0.5.*...
+    Pdf = -0.5.*...
          ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
          -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
 % TODO:???????½???????½???????½[???????½???????½???????½???????½???????½Ï‚ï¿½_???????½???????½???????½B
-%    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
-    IND_M=Pdf>logU(iT);
-% REVISE SECTION
+    IND_M=Pdf > logU(iT);
     if sum(IND_M)~=0
+        whos
       Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
       Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
       La.OLD(:,IND_M) = La.SMP(:,IND_M);
@@ -416,28 +426,27 @@ while not(COUNT==3)
       PRI.OLD(IND_M)  = PRI.SMP(IND_M);
     end
 % KEEP SECTION
-    if iT > PRM.CHA-PRM.KEP
-      SN=(iT-(PRM.CHA-PRM.KEP)-1)*PRM.NPL+1;
-      EN=(iT-(PRM.CHA-PRM.KEP))  *PRM.NPL;
-      CHA.Mc(:,SN:EN)=Mc.SMP;
-      CHA.Mp(:,SN:EN)=Mp.SMP;
-      CHA.La(:,SN:EN)=La.SMP;
+    if iT >= PRM.CHA-PRM.KEP
+      CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
+      CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
+      CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
       NACC=NACC+sum(IND_M);
     end
   end
 %
-  CHA.AJR=NACC./LDIM;
+  CHA.AJR=NACC./PRM.CHA;
 %
-  Mc.STD=repmat(std(CHA.Mc,1,2),1,PRM.NPL);
-  Mp.STD=repmat(std(CHA.Mp,1,2),1,PRM.NPL);
-  La.STD=repmat(std(CHA.La,1,2),1,PRM.NPL);
+  Mc.STD=std(CHA.Mc,1,2);
+  Mp.STD=std(CHA.Mp,1,2);
+  La.STD=std(CHA.La,1,2);
 %
   fprintf('T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
            RT,1-RES.OLD./RR,100*CHA.AJR,RWD,toc)
 %
   for BK=1:BLK(1).NBlock
     [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
-    fprintf('POLE OF BLOCK %2i = lat:%7.2f deg. lon:%8.2f deg. ang:%9.2e deg./m.y. \n',BK,mean(latp),mean(lonp),mean(ang));
+    fprintf('POLE OF BLOCK %2i = lat:%7.2f deg. lon:%8.2f deg. ang:%9.2e deg./m.y. \n',...
+      BK,mean(latp),mean(lonp),mean(ang));
   end
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
@@ -451,8 +460,16 @@ while not(COUNT==3)
     COUNT=COUNT+1;
   end
   CHA.SMP=CAL.SMP;
-  MAKE_FIG(CHA,BLK,OBS,PRM,RT)
+  if devGPU~=99
+    cCHA=gather(CHA);
+    MAKE_FIG(cCHA,BLK,OBS,PRM,RT)
+  else
+    MAKE_FIG(CHA,BLK,OBS,PRM,RT)
+  end
   if RT > PRM.ITR; break; end;
+end
+if devGPU~=99
+  CHA=gather(CHA);
 end
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
@@ -741,9 +758,9 @@ for N=1:BLK(1).NBlock
 end
 % text(OBS(1).ALON,OBS(1).ALAT,OBS(1).NAME) 
 % hold on
-quiver(PLON,PLAT,EVEL,NVEL);
+quiver(PLON,PLAT,EVEL,NVEL,'green');
 hold on
-quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC);
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'blue');
 %
 figure(300); clf(300)
 LAT=[];LON=[];VEL=[];
