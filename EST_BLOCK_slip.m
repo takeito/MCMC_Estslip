@@ -288,13 +288,14 @@ for NB1=1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
 % Need Project to direction of relative plate motion estimated from Pole
+      TMP.LD=sqrt(diag(TRI(1).BOUND(NB1,NB2).DP(:,1)).^2+diag(TRI(1).BOUND(NB1,NB2).DP(:,2)).^2);
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
       G(1).T(MC   :MC+  NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,1));
-      G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1));
+      G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1)./TMP.LD);
       G(1).T(MC   :MC+  NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,2));
-      G(1).T(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2));
+      G(1).T(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2)./TMP.LD);
       G(1).B(MT   :MT+  NF-1,3*NB1-2)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
       G(1).B(MT   :MT+  NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
       G(1).B(MT   :MT+  NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
@@ -425,9 +426,9 @@ while not(COUNT==3)
          ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
          -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:???????�???????�???????�[???????�???????�???????�???????�???????�ς�_???????�???????�???????�B
-    IND_M=Pdf > logU(iT);
-    if ~isempty(IND_M)
+    ACC=Pdf > logU(iT);
+%     IND_M=Pdf > logU(iT);
+    if ACC
       Mc.OLD  = Mc.SMP;
       Mp.OLD  = Mp.SMP;
       La.OLD  = La.SMP;
@@ -439,7 +440,7 @@ while not(COUNT==3)
       CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
       CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
       CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
-      NACC=NACC+sum(IND_M);
+      if ACC; NACC=NACC+1; end;
     end
   end
 %
