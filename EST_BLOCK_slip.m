@@ -288,7 +288,8 @@ for NB1=1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
 % Need Project to direction of relative plate motion estimated from Pole
-      TMP.LD=sqrt(diag(TRI(1).BOUND(NB1,NB2).DP(:,1)).^2+diag(TRI(1).BOUND(NB1,NB2).DP(:,2)).^2);
+      TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
+      TMP.LD(TMP.LD==0)=1;
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
