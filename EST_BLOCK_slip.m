@@ -345,9 +345,8 @@ La.N=1;
 Mc.STD=Mc.INT.*ones(Mc.N,PRM.NPL,'single');
 Mp.STD=Mp.INT.*ones(Mp.N,PRM.NPL,'single');
 La.STD=La.INT.*ones(La.N,PRM.NPL,'single');
-Mc.OLD=   0.5.*ones(Mc.N,PRM.NPL,'single');
-% Mp.OLD=       zeros(Mp.N,PRM.NPL,'single');
-Mp.OLD=       single(BLK(1).POLE);
+Mc.OLD=   0.1.*ones(Mc.N,PRM.NPL,'single');
+Mp.OLD=      single(BLK(1).POLE);
 La.OLD=       zeros(La.N,PRM.NPL,'single');
 CHA.Mc=       zeros(Mc.N,LDIM,'single');
 CHA.Mp=       zeros(Mp.N,LDIM,'single');
@@ -364,15 +363,18 @@ fprintf('USE CPU Max Chain=%4d PP=%5d Nitr=%2d Mc=%4d Mp=%3d \n',...
 LO_Mc=-1;
 UP_Mc= 1;
 %PDF_Mc=1./(UP_Mc-LO_Mc);
-while not(COUNT==5)
+while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
-%  U   =log(rand(PRM.CHA,1));
+  logU=log(rand(PRM.CHA,1,'single'));
+  rMc =rand(Mc.N,PRM.CHA,'single')-0.5;
+  rMp =rand(Mp.N,PRM.CHA,'single')-0.5;
+  rLa =rand(La.N,PRM.CHA,'single')-0.5;
   for iT=1:PRM.CHA
 % SAMPLE SECTION
-    Mc.SMP=Mc.OLD+RWD.*Mc.STD.*(rand(Mc.N,PRM.NPL,'single')-0.5);
-    Mp.SMP=Mp.OLD+RWD.*Mp.STD.*(rand(Mp.N,PRM.NPL,'single')-0.5);
-    La.SMP=La.OLD+RWD.*La.STD.*(rand(La.N,PRM.NPL,'single')-0.5);
+    Mc.SMP=Mc.OLD+RWD.*Mc.STD.*rMc(:,iT);
+    Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
+    La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % RESAMPLE SECTION
     IND_S=find(Mc.SMP<LO_Mc | Mc.SMP>UP_Mc);
     while isempty(IND_S)==0
@@ -398,15 +400,13 @@ while not(COUNT==5)
 %   q2 = logproppdf(y,x0);
 % this is a generic formula.
 %   rho = (q1+logpdf(y))-(q2+logpdf(x0));  
-%   Pdf=expm1(0.5.*(-RES.SMP+RES.OLD))+1;
-   Pdf = expm1(-0.5.*...
-            ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
-            -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD)))+1;
+   Pdf = -0.5.*...
+         ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
+         -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:??????ï¿½??????ï¿½??????ï¿½[??????ï¿½??????ï¿½??????ï¿½??????ï¿½??????ï¿½Ï‚ï¿½_??????ï¿½??????ï¿½??????ï¿½B
+% TODO:???????½???????½???????½[???????½???????½???????½???????½???????½Ï‚ï¿½_???????½???????½???????½B
 %    IND_M=(Pdf.*Q_CORR)>rand(1,PRM.NPL,'single');
-    IND_M=Pdf>rand(1,PRM.NPL,'single');
-%    IND_M=Pdf > U(iT);
+    IND_M=Pdf>logU(iT);
 % REVISE SECTION
     if sum(IND_M)~=0
       Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
@@ -442,10 +442,10 @@ while not(COUNT==5)
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
   if CHA.AJR > 0.24
-    RWD=RWD*1.1;
+    RWD=RWD*1.01;
     COUNT=0;
   elseif CHA.AJR < 0.22
-    RWD=RWD*0.8;
+    RWD=RWD*0.9;
     COUNT=0;
   else
     COUNT=COUNT+1;
