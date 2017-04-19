@@ -5,7 +5,7 @@ function EST_BLOCK_slip
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
-devGPU=99;
+devGPU=1;
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
@@ -418,9 +418,8 @@ while not(COUNT==3)
          ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
          -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
-% TODO:???????½???????½???????½[???????½???????½???????½???????½???????½Ï‚ï¿½_???????½???????½???????½B
-    IND_M=Pdf > logU(iT);
-    if ~isempty(IND_M)
+    ACC=Pdf > logU(iT);
+    if ACC
       Mc.OLD  = Mc.SMP;
       Mp.OLD  = Mp.SMP;
       La.OLD  = La.SMP;
@@ -432,7 +431,7 @@ while not(COUNT==3)
       CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
       CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
       CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
-      NACC=NACC+sum(IND_M);
+      if ACC; NACC=NACC+1; end
     end
   end
 %
@@ -746,7 +745,7 @@ end
 end
 %% MAKE FIGURES
 function [BLK,OBS]=MAKE_FIGS(BLK,OBS)
-figure(100); clf(100)
+figure(200); clf(200)
 for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     hold on
@@ -754,7 +753,7 @@ for N=1:BLK(1).NBlock
   end
 end
 %
-figure(200); clf(200)
+figure(210); clf(210)
 PLON=[];PLAT=[];EVEL=[];NVEL=[];
 for N=1:BLK(1).NBlock
   plot(BLK(N).LON,BLK(N).LAT);
@@ -770,7 +769,7 @@ quiver(PLON,PLAT,EVEL,NVEL,'green');
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'blue');
 %
-figure(300); clf(300)
+figure(220); clf(220)
 LAT=[];LON=[];VEL=[];
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
