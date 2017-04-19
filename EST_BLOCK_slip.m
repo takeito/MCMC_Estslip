@@ -5,7 +5,7 @@ function EST_BLOCK_slip
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
-devGPU=99;
+devGPU=1;
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
@@ -417,13 +417,12 @@ while not(COUNT==3)
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
 % TODO:???????½???????½???????½[???????½???????½???????½???????½???????½Ï‚ï¿½_???????½???????½???????½B
     IND_M=Pdf > logU(iT);
-    if sum(IND_M)~=0
-        whos
-      Mc.OLD(:,IND_M) = Mc.SMP(:,IND_M);
-      Mp.OLD(:,IND_M) = Mp.SMP(:,IND_M);
-      La.OLD(:,IND_M) = La.SMP(:,IND_M);
-      RES.OLD(IND_M)  = RES.SMP(IND_M);
-      PRI.OLD(IND_M)  = PRI.SMP(IND_M);
+    if ~isempty(IND_M)
+      Mc.OLD  = Mc.SMP;
+      Mp.OLD  = Mp.SMP;
+      La.OLD  = La.SMP;
+      RES.OLD = RES.SMP;
+      PRI.OLD = PRI.SMP;
     end
 % KEEP SECTION
     if iT >= PRM.CHA-PRM.KEP
@@ -461,15 +460,22 @@ while not(COUNT==3)
   end
   CHA.SMP=CAL.SMP;
   if devGPU~=99
-    cCHA=gather(CHA);
-    MAKE_FIG(cCHA,BLK,OBS,PRM,RT)
+    cCHA.Mc=gather(CHA.Mc);
+    cCHA.Mp=gather(CHA.Mp);
+    cCHA.La=gather(CHA.La);
+    cCHA.SMP=gather(CHA.SMP);
+    cOBS=gather(OBS);
+    MAKE_FIG(cCHA,BLK,cOBS,PRM,RT)
   else
     MAKE_FIG(CHA,BLK,OBS,PRM,RT)
   end
   if RT > PRM.ITR; break; end;
 end
 if devGPU~=99
-  CHA=gather(CHA);
+  CHA.Mc=gather(CHA.Mc);
+  CHA.Mp=gather(CHA.Mp);
+  CHA.La=gather(CHA.La);
+  CHA.SMP=gather(CHA.SMP);
 end
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
