@@ -5,7 +5,7 @@ function EST_BLOCK_slip
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
-devGPU=1;
+devGPU=99;
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
@@ -37,6 +37,13 @@ end
 %% WIRTE OUTPUT FILE
 function WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
 %
+for DN=1:Inf
+  DDIR=['Test_',num2str(DN,'%02i')];
+  ADIR=fullfile(OUTPUT.DIR,DDIR);
+  EXID=exist(ADIR);
+  if EXID~=7; mkdir(ADIR); break; end
+end
+% 
 fprintf('Write OUTPUT FILE: %s \n',OUTPUT.DIR)
 dlmwrite(fullfile(OUTPUT.DIR,'Mp.txt'),CHA.Mp);
 dlmwrite(fullfile(OUTPUT.DIR,'Mc.txt'),CHA.Mc);
@@ -281,13 +288,15 @@ for NB1=1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
 % Need Project to direction of relative plate motion estimated from Pole
+      TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
+      TMP.LD(TMP.LD==0)=1;
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
       G(1).T(MC   :MC+  NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,1));
-      G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1));
+      G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1)./TMP.LD);
       G(1).T(MC   :MC+  NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,2));
-      G(1).T(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2));
+      G(1).T(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2)./TMP.LD);
       G(1).B(MT   :MT+  NF-1,3*NB1-2)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
       G(1).B(MT   :MT+  NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
       G(1).B(MT   :MT+  NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
@@ -308,9 +317,15 @@ for NB1=1:BLK(1).NBlock
       MT=MT+2*NF;
     end
   end
+  
+%   OBS(N).Vne=reshape([OBS(1).EVEC(IND); OBS(1).NVEC(IND)],OBS(N).NBLK.*2,1);
+%   
   IND=OBS(1).ABLK==NB1;
-  NIND=[zeros(size(IND));IND;zeros(size(IND))]; NIND=logical(reshape(NIND',3*NOBS,1));
-  EIND=[IND;zeros(size(IND));zeros(size(IND))]; EIND=logical(reshape(EIND',3*NOBS,1));
+%   NIND=reshape([IND;zeros(size(IND));zeros(size(IND))],)
+  
+  NIND=[zeros(size(IND)),IND,zeros(size(IND))]; NIND=logical(reshape(NIND',3*NOBS,1));
+  EIND=[IND,zeros(size(IND)),zeros(size(IND))]; EIND=logical(reshape(EIND',3*NOBS,1));
+% TODO: MODIFY TMP.P and G(1).P  
   TMP.P(EIND,3*NB1-2)=-OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3);
   TMP.P(EIND,3*NB1-1)=-OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3);
   TMP.P(EIND,3*NB1  )= OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,2)                    +OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,1);
@@ -419,6 +434,7 @@ while not(COUNT==3)
          -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
+%     IND_M=Pdf > logU(iT);
     if ACC
       Mc.OLD  = Mc.SMP;
       Mp.OLD  = Mp.SMP;
@@ -431,7 +447,7 @@ while not(COUNT==3)
       CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
       CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
       CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
-      if ACC; NACC=NACC+1; end
+      if ACC; NACC=NACC+1; end;
     end
   end
 %
@@ -668,6 +684,7 @@ for NB1=1:BLK(1).NBlock
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
         [F,DA,NV,ST,DP]=EST_FAULT_TRI(F_LOC);
+        NV(3)=-NV(3);DP(3)=-DP(3);
         TRI(1).BOUND(NB1,NB2).clat(N)=mean(BLK(1).BOUND(NB1,NB2).blat(N,:));
         TRI(1).BOUND(NB1,NB2).clon(N)=mean(BLK(1).BOUND(NB1,NB2).blon(N,:));
         TRI(1).BOUND(NB1,NB2).cdep(N)=mean(BLK(1).BOUND(NB1,NB2).bdep(N,:)); % up is plus
@@ -745,7 +762,7 @@ end
 end
 %% MAKE FIGURES
 function [BLK,OBS]=MAKE_FIGS(BLK,OBS)
-figure(200); clf(200)
+figure(100); clf(100)
 for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     hold on
@@ -753,7 +770,7 @@ for N=1:BLK(1).NBlock
   end
 end
 %
-figure(210); clf(210)
+figure(200); clf(200)
 PLON=[];PLAT=[];EVEL=[];NVEL=[];
 for N=1:BLK(1).NBlock
   plot(BLK(N).LON,BLK(N).LAT);
@@ -769,7 +786,7 @@ quiver(PLON,PLAT,EVEL,NVEL,'green');
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'blue');
 %
-figure(220); clf(220)
+figure(300); clf(300)
 LAT=[];LON=[];VEL=[];
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
