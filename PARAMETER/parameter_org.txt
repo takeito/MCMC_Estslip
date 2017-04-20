@@ -1,0 +1,8 @@
+HIROSE_PB_SWJ.txt       : LIST_MESH_TRI
+MTL_TRI80_NEW.txt       : LIST_MESH_TRI2
+test_data_SEA6.txt      : OBS_F
+1000                    : PP number of parallel computing 
+100                     : Max_Nitr
+1000                    : Max_chain
+10                      : KEEP < Max_chain
+1.0                     : Walk_dis
