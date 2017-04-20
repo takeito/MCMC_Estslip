@@ -38,10 +38,10 @@ end
 function WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
 %
 for DN=1:Inf
-  DIR=['Test_',num2str(DN,'%02i')];
-  DIR=fullfile(OUTPUT,DIR);
-  EXID=exist(DIR);
-  if EXID~=7; mkdir(DIR); break; end
+  DDIR=['Test_',num2str(DN,'%02i')];
+  ADIR=fullfile(OUTPUT.DIR,DDIR);
+  EXID=exist(ADIR);
+  if EXID~=7; mkdir(ADIR); break; end
 end
 % 
 fprintf('Write OUTPUT FILE: %s \n',OUTPUT.DIR)
