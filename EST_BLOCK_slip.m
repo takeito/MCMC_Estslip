@@ -5,7 +5,7 @@ function EST_BLOCK_slip
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
-devGPU=1;
+devGPU=99;
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
@@ -547,9 +547,9 @@ quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 %
 figure(106);clf(106)
 for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
-  hold on
   quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
+  hold on
+  quiver(OBS(1).BLON,OBS(1).BLAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
   axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
   title(['Iteration Number: ',num2str(RT)]);
@@ -880,6 +880,8 @@ for NB1=1:BLK(1).NBlock
   end
 end
 %
+OBS(1).BLAT=[];
+OBS(1).BLON=[];
 for N=1:BLK(1).NBlock
   IND=inpolygon(OBS(1).ALON,OBS(1).ALAT,BLK(N).LON,BLK(N).LAT);
   OBS(1).ABLK(IND)=N;
@@ -896,6 +898,8 @@ for N=1:BLK(1).NBlock
   OBS(N).OXYZ=conv2ell(OBS(N).LAT,OBS(N).LON);
   OBS(N).Vne=reshape([OBS(1).EVEC(IND); OBS(1).NVEC(IND)],OBS(N).NBLK.*2,1);
   OBS(N).Vww=reshape([OBS(1).EERR(IND); OBS(1).NERR(IND)],OBS(N).NBLK.*2,1);
+  OBS(1).BLAT=[OBS(1).BLAT,OBS(N).LAT];
+  OBS(1).BLON=[OBS(1).BLON,OBS(N).LON];
 end
 end
 %% READ OBSERVATION DATA
