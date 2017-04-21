@@ -316,15 +316,10 @@ for NB1=1:BLK(1).NBlock
       MT=MT+2*NF;
     end
   end
-  
-%   OBS(N).Vne=reshape([OBS(1).EVEC(IND); OBS(1).NVEC(IND)],OBS(N).NBLK.*2,1);
 %   
-  IND=OBS(1).ABLK==NB1;
-%   NIND=reshape([IND;zeros(size(IND));zeros(size(IND))],)
-  
+  IND=OBS(1).ABLK==NB1;  
   NIND=[zeros(size(IND)),IND,zeros(size(IND))]; NIND=logical(reshape(NIND',3*NOBS,1));
   EIND=[IND,zeros(size(IND)),zeros(size(IND))]; EIND=logical(reshape(EIND',3*NOBS,1));
-% TODO: MODIFY TMP.P and G(1).P  
   TMP.P(EIND,3*NB1-2)=-OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3);
   TMP.P(EIND,3*NB1-1)=-OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3);
   TMP.P(EIND,3*NB1  )= OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,2)                    +OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,1);
@@ -433,7 +428,6 @@ while not(COUNT==3)
          -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
-%     IND_M=Pdf > logU(iT);
     if ACC
       Mc.OLD  = Mc.SMP;
       Mp.OLD  = Mp.SMP;
