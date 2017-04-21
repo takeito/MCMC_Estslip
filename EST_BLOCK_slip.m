@@ -329,6 +329,7 @@ for NB1=1:BLK(1).NBlock
 end
 G(1).C=TMP.C(D(1).IND,:);
 G(1).P=TMP.P(D(1).IND,:);
+G(1).T=sparse(G(1).T);
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS)
