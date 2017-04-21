@@ -538,12 +538,11 @@ for NB=1:BLK(1).NBlock
   text(double(mean(lonp)),double(mean(latp)),int2str(NB))
   hold on
 end
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
+  quiver(OBS(1).BLON,OBS(1).BLAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
   hold on
 end
-quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
-% drawnow
 %
 figure(106);clf(106)
 for NPL=1:PRM.NPL
