@@ -5,7 +5,6 @@ function EST_BLOCK_slip
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
-devGPU=99;
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
@@ -27,7 +26,7 @@ MAKE_FIGS(BLK,OBS);
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[CHA]=MH_MCMC(D,G,BLK,PRM,OBS,devGPU);
+[CHA]=MH_MCMC(D,G,BLK,PRM,OBS);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 OUTPUT.DIR='./Result/';
@@ -228,7 +227,7 @@ DIRBlock_Interface=fscanf(Fid,'%s \n',[1,1]);
 PRM.DIRBlock_Interface=fullfile(PRM.HOME_D,DIRBlock_Interface);
 [~]=fgetl(Fid);
 %
-PRM.NPL=fscanf(Fid,'%d \n',[1,1]);
+PRM.GPU=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
 PRM.ITR=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
@@ -250,7 +249,7 @@ fprintf('HOME_D             : %s \n',PRM.HOME_D)
 fprintf('FileOBS            : %s \n',PRM.FileOBS) 
 fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
 fprintf('DIRBlock_Interface : %s \n',PRM.DIRBlock_Interface) 
-fprintf('NPL(PP)            : %i \n',PRM.NPL) 
+fprintf('GPUdev (CPU:99)    : %i \n',PRM.GPU) 
 fprintf('ITR(Max_Nitr)      : %i \n',PRM.ITR) 
 fprintf('CHA(Chain)         : %i \n',PRM.CHA) 
 fprintf('KEP(KEEP)          : %i \n',PRM.KEP) 
@@ -337,7 +336,7 @@ G(1).C=TMP.C(D(1).IND,:);
 G(1).P=TMP.P(D(1).IND,:);
 end
 %% Markov chain Monte Calro
-function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,devGPU)
+function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS)
 % Markov chain Monte Calro
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
@@ -362,8 +361,8 @@ CHA.La= zeros(La.N,PRM.KEP,'single');
 RES.OLD=inf(1,1,'single');
 PRI.OLD=inf(1,1,'single');
 % GPU Initialize 
-if devGPU~=99
-  g=gpuDevice(devGPU);
+if PRM.GPU~=99
+  g=gpuDevice(PRM.GPU);
   reset(g);
   g_men=g.TotalMemory;
   r_men=(Mc.N+Mp.N+La.N).*(PRM.KEP+2).*4;
@@ -393,12 +392,12 @@ end
 RT=0;
 COUNT=0;
 %
-LO_Mc=-1;
-UP_Mc= 1;
+LO_Mc=0;
+UP_Mc=1;
 while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
-  if devGPU~=99
+  if PRM.GPU~=99
     logU=log(rand(PRM.CHA,1,'single','gpuArray'));
     rMc = rand(Mc.N,PRM.CHA,'single','gpuArray')-0.5;
     rMp = rand(Mp.N,PRM.CHA,'single','gpuArray')-0.5;
@@ -477,18 +476,18 @@ while not(COUNT==3)
     COUNT=COUNT+1;
   end
   CHA.SMP=CAL.SMP;
-  if devGPU~=99
+  if PRM.GPU~=99
     cCHA.Mc=gather(CHA.Mc);
     cCHA.Mp=gather(CHA.Mp);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    MAKE_FIG(cCHA,BLK,OBS,PRM,RT)
+    MAKE_FIG(cCHA,BLK,OBS,RT)
   else
-    MAKE_FIG(CHA,BLK,OBS,PRM,RT)
+    MAKE_FIG(CHA,BLK,OBS,RT)
   end
   if RT > PRM.ITR; break; end;
 end
-if devGPU~=99
+if PRM.GPU~=99
   CHA.Mc=gather(CHA.Mc);
   CHA.Mp=gather(CHA.Mp);
   CHA.La=gather(CHA.La);
@@ -497,7 +496,7 @@ end
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,PRM,RT)
+function MAKE_FIG(CHA,BLK,OBS,RT)
 figure(100);clf(100)
 % BUG to wait zero
 NN=1;
@@ -539,20 +538,16 @@ for NB=1:BLK(1).NBlock
   hold on
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
-for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
-  hold on
-end
+quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
+hold on
 %
 figure(106);clf(106)
-for NPL=1:PRM.NPL
-  quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
-  hold on
-  quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end,NPL)',CHA.SMP(2:3:end,NPL)','blue')
-  hold on
-  axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
-  title(['Iteration Number: ',num2str(RT)]);
-end
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
+hold on
+quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
+hold on
+axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
+title(['Iteration Number: ',num2str(RT)]);
 drawnow
 end
 %% READ PLATE INTERFACE
