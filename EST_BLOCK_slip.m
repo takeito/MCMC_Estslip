@@ -938,7 +938,7 @@ for N=1:Nobs
   R(2.*N,2)  =-Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,3)-Oxyz(N,6).*Oxyz(N,1);
   R(2.*N,3)  = Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,2)-Oxyz(N,4).*Oxyz(N,5).*Oxyz(N,1);
 end
-[PL,~,Sigma]=lscov(R,Vne,w);
+[PL,~,Sigma]=lscov(R,Vne,1/w);
 EVne=R*PL;
 end
 %% PLATE MOTION DUE TO EULER POLE (XYZ)
