@@ -45,14 +45,14 @@ for DN=1:Inf
 end
 % 
 fprintf('Write OUTPUT FILE: %s \n',OUTPUT.DIR)
-dlmwrite(fullfile(OUTPUT.DIR,'Mp.txt'),CHA.Mp);
-dlmwrite(fullfile(OUTPUT.DIR,'Mc.txt'),CHA.Mc);
-dlmwrite(fullfile(OUTPUT.DIR,'La.txt'),CHA.La);
+dlmwrite(fullfile(ADIR,'Mp.txt'),CHA.Mp);
+dlmwrite(fullfile(ADIR,'Mc.txt'),CHA.Mc);
+dlmwrite(fullfile(ADIR,'La.txt'),CHA.La);
 %
-save(fullfile(OUTPUT.DIR,'CHA.mat'),'CHA')
-save(fullfile(OUTPUT.DIR,'BLK.mat'),'BLK')
-save(fullfile(OUTPUT.DIR,'TRI.mat'),'TRI')
-save(fullfile(OUTPUT.DIR,'PRM.mat'),'PRM')
+save(fullfile(ADIR,'CHA.mat'),'CHA')
+save(fullfile(ADIR,'BLK.mat'),'BLK')
+save(fullfile(ADIR,'TRI.mat'),'TRI')
+save(fullfile(ADIR,'PRM.mat'),'PRM')
 end
 %% UNIFORM MESH GENERATION
 function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
