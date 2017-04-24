@@ -15,6 +15,8 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM);
 % SHOW BLOCK BOUNDARY MAP
 SHOW_BLOCK_BOUND(BLK)
+% READ FIX EULER POLES
+[POL]=READ_EULER_POLES;
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -26,7 +28,7 @@ MAKE_FIGS(BLK,OBS);
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
-[CHA]=MH_MCMC(D,G,BLK,PRM,OBS);
+[CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 OUTPUT.DIR='./Result/';
@@ -337,7 +339,7 @@ G(1).T =   sparse(G(1).T);
 G(1).TB=    G(1).T*G(1).B;
 end
 %% Markov chain Monte Calro
-function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS)
+function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
 % Markov chain Monte Calro
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
@@ -657,6 +659,28 @@ for NB1=1:BLK(1).NBlock
     BLK(1).NB=BLK(1).NB+size(BLK(1).BOUND(NB1,NB2).blon,1);
   end
 end
+end
+%% READ FIX EULER POLES
+function [POL]=READ_EULER_POL
+% Fix euler poles at the block which has no observation site.
+% BLID  : Block ID that includes fix POLE
+% OMEGA : unit is deg/Myr
+READFILE='./PARAMETER/euler_poles_fix.txt';
+if exist(READFILE)~=2; return; end
+% 
+FID=fopen(READFILE,'r');
+TMP=fscanf(FID,'%f %f %f %f\n',[4,Inf]);
+POL.BLID =int64(TMP(1,:));
+POL.LAT  =TMP(2,:)       ;
+POL.LON  =TMP(3,:)       ;
+POL.OMEGA=TMP(4,:)       ;
+POL.LAT  =deg2rad(POL.LAT)        ;
+POL.LON  =deg2rad(POL.LON)        ;
+POL.OMEGA=deg2rad(POL.OMEGA.*1e-6);
+POL.wx=POL.OMEGA.*cos(POL.LAT).*cos(POL.LON);
+POL.wy=POL.OMEGA.*cos(POL.LAT).*sin(POL.LON);
+POL.wz=POL.OMEGA.*sin(POL.LAT)                ;
+% 
 end
 %% MAKE GREEN FUNCTION
 function [TRI]=GREEN_TRI(BLK,OBS)
