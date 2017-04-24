@@ -282,20 +282,22 @@ TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
 %
 MC=1;
 MT=1;
+MR=1;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
+      D(1).NF(MR)=NF;
 % Need Project to direction of relative plate motion estimated from Pole
-      TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
-      TMP.LD(TMP.LD==0)=1;
+%       TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
+%       TMP.LD(TMP.LD==0)=1;
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
       G(1).T(MC   :MC+  NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,1));
-      G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1)./TMP.LD);
+      G(1).T(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1));
       G(1).T(MC   :MC+  NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,2));
-      G(1).T(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2)./TMP.LD);
+      G(1).T(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2));
       G(1).B(MT   :MT+  NF-1,3*NB1-2)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
       G(1).B(MT   :MT+  NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
       G(1).B(MT   :MT+  NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
@@ -314,6 +316,7 @@ for NB1=1:BLK(1).NBlock
       G(1).B(MT+NF:MT+2*NF-1,3*NB2  )=-G(1).B(MT+NF:MT+2*NF-1,3*NB1  );           
       MC=MC+3*NF;
       MT=MT+2*NF;
+      MR=MR+1   ;
     end
   end
 %   
@@ -327,6 +330,7 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
 end
+% 
 G(1).C =TMP.C(D(1).IND,:);
 G(1).P =TMP.P(D(1).IND,:);
 G(1).T =   sparse(G(1).T);
@@ -412,8 +416,17 @@ while not(COUNT==3)
     Mc.SMP=Mc.OLD+RWD.*McLimt.*rMc(:,iT);
     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
+% MAKE Mc.SMPMAT
+    Mc.SMPMAT=zeros(sum(D.NF),1);
+    MC=1;
+    MN=1;
+    for NF=1:length(D.NF)
+      Mc.SMPMAT(MC:MC+3*(D.NF(NF))-1)=repmat(Mc.SMP(MN:MN+D.NF(NF)-1),3,1);
+      MC=MC+3*D.NF(NF);
+      MN=MN+1*NF;
+    end
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.SMP=G.C*((G.TB*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
+    CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;   
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
