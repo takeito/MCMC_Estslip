@@ -327,9 +327,10 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
 end
-G(1).C=TMP.C(D(1).IND,:);
-G(1).P=TMP.P(D(1).IND,:);
-G(1).T=sparse(G(1).T);
+G(1).C =TMP.C(D(1).IND,:);
+G(1).P =TMP.P(D(1).IND,:);
+G(1).T =   sparse(G(1).T);
+G(1).TB=    G(1).T*G(1).B;
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS)
@@ -377,8 +378,9 @@ if PRM.GPU~=99
   D(1).OBS=gpuArray(D(1).OBS);
   D(1).ERR=gpuArray(D(1).ERR);
   G.C=gpuArray(G.C);
-  G.T=gpuArray(G.T);
-  G.B=gpuArray(G.B);
+%   G.T=gpuArray(G.T);
+%   G.B=gpuArray(G.B);
+  G.TB=gpuArray(G.TB);
   G.P=gpuArray(G.P);
 else
   fprintf('USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
@@ -411,7 +413,7 @@ while not(COUNT==3)
     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.SMP=G.C*((G.T*G.B*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
+    CAL.SMP=G.C*((G.TB*Mp.SMP).*repmat(Mc.SMP,3,1))+G.P*Mp.SMP;   
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
