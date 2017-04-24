@@ -351,23 +351,23 @@ La.INT=1e+1;
 Mc.N=BLK(1).NB;
 Mp.N=3.*BLK(1).NBlock;
 La.N=1;
-Mc.STD=Mc.INT.*ones(Mc.N,1,'single');
+Mc.STD=Mc.INT.*ones(Mc.N,1,'double');
 Mp.STD=Mp.INT.*ones(Mp.N,1,'double');
-La.STD=La.INT.*ones(La.N,1,'single');
-Mc.OLD=   0.1.*ones(Mc.N,1,'single');
-Mp.OLD= single(BLK(1).POLE);
-La.OLD= zeros(La.N,1,'single');
-CHA.Mc= zeros(Mc.N,PRM.KEP,'single');
-CHA.Mp= zeros(Mp.N,PRM.KEP,'single');
-CHA.La= zeros(La.N,PRM.KEP,'single');
+La.STD=La.INT.*ones(La.N,1,'double');
+Mc.OLD=   0.1.*ones(Mc.N,1,'double');
+Mp.OLD= double(BLK(1).POLE);
+La.OLD= zeros(La.N,1,'double');
+CHA.Mc= zeros(Mc.N,PRM.KEP,'double');
+CHA.Mp= zeros(Mp.N,PRM.KEP,'double');
+CHA.La= zeros(La.N,PRM.KEP,'double');
 % Set FIX POLES if POL.FIXflag=1
 if POL.FIXflag==1
   Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
   Mp.STD(POL.ID)=0;
 end
 %
-RES.OLD=inf(1,1,'single');
-PRI.OLD=inf(1,1,'single');
+RES.OLD=inf(1,1,'double');
+PRI.OLD=inf(1,1,'double');
 % GPU Initialize 
 if PRM.GPU~=99
   g=gpuDevice(PRM.GPU);
@@ -407,15 +407,15 @@ while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
-    logU=log(rand(PRM.CHA,1,'single','gpuArray'));
-    rMc = rand(Mc.N,PRM.CHA,'single','gpuArray')-0.5;
-    rMp = rand(Mp.N,PRM.CHA,'single','gpuArray')-0.5;
-    rLa = rand(La.N,PRM.CHA,'single','gpuArray')-0.5;
+    logU=log(rand(PRM.CHA,1,'double','gpuArray'));
+    rMc = rand(Mc.N,PRM.CHA,'double','gpuArray')-0.5;
+    rMp = rand(Mp.N,PRM.CHA,'double','gpuArray')-0.5;
+    rLa = rand(La.N,PRM.CHA,'double','gpuArray')-0.5;
   else
-    logU=log(rand(PRM.CHA,1,'single'));
-    rMc =rand(Mc.N,PRM.CHA,'single')-0.5;
-    rMp =rand(Mp.N,PRM.CHA,'single')-0.5;
-    rLa =rand(La.N,PRM.CHA,'single')-0.5;
+    logU=log(rand(PRM.CHA,1,'double'));
+    rMc =rand(Mc.N,PRM.CHA,'double')-0.5;
+    rMp =rand(Mp.N,PRM.CHA,'double')-0.5;
+    rLa =rand(La.N,PRM.CHA,'double')-0.5;
   end
   for iT=1:PRM.CHA
 % SAMPLE SECTION
