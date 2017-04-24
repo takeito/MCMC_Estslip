@@ -16,7 +16,7 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 % SHOW BLOCK BOUNDARY MAP
 SHOW_BLOCK_BOUND(BLK)
 % READ FIX EULER POLES
-[POL]=READ_EULER_POLES;
+[POL]=READ_EULER_POLES(BLK);
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -360,6 +360,9 @@ La.OLD= zeros(La.N,1,'single');
 CHA.Mc= zeros(Mc.N,PRM.KEP,'single');
 CHA.Mp= zeros(Mp.N,PRM.KEP,'single');
 CHA.La= zeros(La.N,PRM.KEP,'single');
+% Set FIX POLES
+Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
+Mp.STD(POL.ID)=0;
 %
 RES.OLD=inf(1,1,'single');
 PRI.OLD=inf(1,1,'single');
@@ -661,7 +664,7 @@ for NB1=1:BLK(1).NBlock
 end
 end
 %% READ FIX EULER POLES
-function [POL]=READ_EULER_POL
+function [POL]=READ_EULER_POLES(BLK)
 % Fix euler poles at the block which has no observation site.
 % BLID  : Block ID that includes fix POLE
 % OMEGA : unit is deg/Myr
@@ -670,6 +673,8 @@ if exist(READFILE)~=2; return; end
 % 
 FID=fopen(READFILE,'r');
 TMP=fscanf(FID,'%f %f %f %f\n',[4,Inf]);
+POL.ID=zeros(1,BLK(1).NBlock);
+FIXw=zeros(BLK(1).NBlock,3);
 POL.BLID =int64(TMP(1,:));
 POL.LAT  =TMP(2,:)       ;
 POL.LON  =TMP(3,:)       ;
@@ -679,7 +684,13 @@ POL.LON  =deg2rad(POL.LON)        ;
 POL.OMEGA=deg2rad(POL.OMEGA.*1e-6);
 POL.wx=POL.OMEGA.*cos(POL.LAT).*cos(POL.LON);
 POL.wy=POL.OMEGA.*cos(POL.LAT).*sin(POL.LON);
-POL.wz=POL.OMEGA.*sin(POL.LAT)                ;
+POL.wz=POL.OMEGA.*sin(POL.LAT)              ;
+POL.ID(POL.BLID)=true;
+FIXw(POL.BLID,1)=POL.wx;
+FIXw(POL.BLID,2)=POL.wy;
+FIXw(POL.BLID,3)=POL.wz;
+POL.ID=logical(reshape(repmat(POL.ID,3,1),3*BLK(1).NBlock,1));
+POL.FIXw=reshape(FIXw',3*BLK(1).NBlock,1);
 % 
 end
 %% MAKE GREEN FUNCTION
