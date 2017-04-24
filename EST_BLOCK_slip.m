@@ -360,9 +360,11 @@ La.OLD= zeros(La.N,1,'single');
 CHA.Mc= zeros(Mc.N,PRM.KEP,'single');
 CHA.Mp= zeros(Mp.N,PRM.KEP,'single');
 CHA.La= zeros(La.N,PRM.KEP,'single');
-% Set FIX POLES
-Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
-Mp.STD(POL.ID)=0;
+% Set FIX POLES if POL.FIXflag=1
+if POL.FIXflag==1
+  Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
+  Mp.STD(POL.ID)=0;
+end
 %
 RES.OLD=inf(1,1,'single');
 PRI.OLD=inf(1,1,'single');
@@ -669,8 +671,9 @@ function [POL]=READ_EULER_POLES(BLK)
 % BLID  : Block ID that includes fix POLE
 % OMEGA : unit is deg/Myr
 READFILE='./PARAMETER/euler_poles_fix.txt';
-if exist(READFILE)~=2; return; end
+if exist(READFILE)~=2; POL.FIXflag=0; return; end
 % 
+POL.FIXflag=1;
 FID=fopen(READFILE,'r');
 TMP=fscanf(FID,'%f %f %f %f\n',[4,Inf]);
 POL.ID=zeros(1,BLK(1).NBlock);
