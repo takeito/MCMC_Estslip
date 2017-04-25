@@ -419,19 +419,22 @@ while not(COUNT==3)
   NACC=0;tic
   if PRM.GPU~=99
     logU=log(rand(PRM.CHA,1,'single','gpuArray'));
-    rMc = rand(Mc.N,PRM.CHA,'single','gpuArray')-0.5;
+    rMc = rand(Mc.N,PRM.CHA,'single','gpuArray');
     rMp = rand(Mp.N,PRM.CHA,'single','gpuArray')-0.5;
     rLa = rand(La.N,PRM.CHA,'single','gpuArray')-0.5;
   else
     logU=log(rand(PRM.CHA,1,'double'));
-    rMc =rand(Mc.N,PRM.CHA,'double')-0.5;
+    rMc =rand(Mc.N,PRM.CHA,'double');
     rMp =rand(Mp.N,PRM.CHA,'double')-0.5;
     rLa =rand(La.N,PRM.CHA,'double')-0.5;
   end
   for iT=1:PRM.CHA
 % SAMPLE SECTION
-    McLimt=min(min(abs(LO_Mc-Mc.OLD),abs(UP_Mc-Mc.OLD)),Mc.STD);
-    Mc.SMP=Mc.OLD+RWD.*McLimt.*rMc(:,iT);
+%    McLimt=min(min(abs(LO_Mc-Mc.OLD),abs(UP_Mc-Mc.OLD)),Mc.STD);
+%    Mc.SMP=Mc.OLD+RWD.*McLimt.*rMc(:,iT);
+    McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
+    McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
+    Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % MAKE Mc.SMPMAT
@@ -474,7 +477,7 @@ while not(COUNT==3)
 %
   CHA.AJR=NACC./PRM.CHA;
 %
-  Mc.STD=std(CHA.Mc,1,2);
+  Mc.STD=std(CHA.Mc,1,2); Mc.STD=Mc.STD./max(Mc.STD);
   Mp.STD=std(CHA.Mp,1,2);
   La.STD=std(CHA.La,1,2);
 %
