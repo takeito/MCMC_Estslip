@@ -275,6 +275,8 @@ TMP.ERR(3:3:3*NOBS)=OBS.HERR;
 D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
+D(1).MID=[];
+D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
 %
@@ -289,7 +291,10 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
-      D(1).NF(MR)=NF;
+      D(1).CNT=D(1).CNT+1;
+      D(1).mID=zeros(BLK(1).NB,1);
+      D(1).mID(MR:MR+NF-1)=1;
+      D(1).MID=[D(1).MID D(1).mID];
 % Need Project to direction of relative plate motion estimated from Pole
 %       TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
 %       TMP.LD(TMP.LD==0)=1;
@@ -318,7 +323,7 @@ for NB1=1:BLK(1).NBlock
       G(1).B(MT+NF:MT+2*NF-1,3*NB2  )=-G(1).B(MT+NF:MT+2*NF-1,3*NB1  );           
       MC=MC+3*NF;
       MT=MT+2*NF;
-      MR=MR+1   ;
+      MR=MR+  NF;
     end
   end
 %   
@@ -333,10 +338,11 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
 end
 % 
-G(1).C =TMP.C(D(1).IND,:);
-G(1).P =TMP.P(D(1).IND,:);
-G(1).T =   sparse(G(1).T);
-G(1).TB=    G(1).T*G(1).B;
+G(1).C  =TMP.C(D(1).IND,:);
+G(1).P  =TMP.P(D(1).IND,:);
+G(1).T  =   sparse(G(1).T);
+G(1).TB =    G(1).T*G(1).B;
+D(1).MID=logical(repmat(D(1).MID,3,1));
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
@@ -429,14 +435,8 @@ while not(COUNT==3)
     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % MAKE Mc.SMPMAT
-    Mc.SMPMAT=zeros(sum(D.NF),1);
-    MC=1;
-    MN=1;
-    for NF=1:length(D.NF)
-      Mc.SMPMAT(MC:MC+3*(D.NF(NF))-1)=repmat(Mc.SMP(MN:MN+D.NF(NF)-1),3,1);
-      MC=MC+3*D.NF(NF);
-      MN=MN+1*NF;
-    end
+    Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
+    Mc.SMPMAT=Mc.SMPMAT(D.MID);
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;   
 %   CAL.SMP=G.P*Mp.SMP;
