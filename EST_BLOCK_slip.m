@@ -535,6 +535,8 @@ for NB1=1:BLK(1).NBlock
     end
   end
 end
+colormap(hot);
+colorbar
 %
 figure(110);clf(110)
 % BUG to wait zero
@@ -549,24 +551,31 @@ for NB1=1:BLK(1).NBlock
     end
   end
 end
+colormap(parula)
+colorbar
 %
-figure(105);clf(105)
+figure(120);clf(120)
 for NB=1:BLK(1).NBlock
   plot(BLK(NB).LON,BLK(NB).LAT,'red')
   hold on
   text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB))
   hold on
   [latp,lonp,~]=xyzp2lla(CHA.Mp(3.*NB-2,:),CHA.Mp(3.*NB-1,:),CHA.Mp(3.*NB,:));
-  plot(mean(lonp),mean(latp),'x')
+  minlon=min(lonp); maxlon=max(lonp); 
+  minlat=min(latp); maxlat=max(latp); 
+  if maxlon-minlon < 0.5; binlon=[minlon maxlon]; else; binlon=minlon:0.5:maxlon; end  
+  if maxlat-minlat < 0.5; binlat=[minlat maxlat]; else; binlat=minlat:0.5:maxlat; end  
+  histogram2(lonp,latp,binlon,binlat,'Normalization','probability','FaceColor','flat')
   hold on
   text(double(mean(lonp)),double(mean(latp)),int2str(NB))
   hold on
 end
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
+colorbar
 hold on
 %
-figure(106);clf(106)
+figure(130);clf(130)
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
@@ -812,7 +821,7 @@ end
 end
 %% MAKE FIGURES
 function [BLK,OBS]=MAKE_FIGS(BLK,OBS)
-figure(100); clf(100)
+figure(200); clf(200)
 for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     hold on
@@ -820,7 +829,7 @@ for N=1:BLK(1).NBlock
   end
 end
 %
-figure(200); clf(200)
+figure(210); clf(210)
 PLON=[];PLAT=[];EVEL=[];NVEL=[];
 for N=1:BLK(1).NBlock
   plot(BLK(N).LON,BLK(N).LAT);
@@ -832,11 +841,11 @@ for N=1:BLK(1).NBlock
 end
 % text(OBS(1).ALON,OBS(1).ALAT,OBS(1).NAME) 
 % hold on
-quiver(PLON,PLAT,EVEL,NVEL,'green');
+quiver(PLON,PLAT,EVEL,NVEL,'blue');
 hold on
-quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'blue');
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green');
 %
-figure(300); clf(300)
+figure(220); clf(220)
 LAT=[];LON=[];VEL=[];
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
