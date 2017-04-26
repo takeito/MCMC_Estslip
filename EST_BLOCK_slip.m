@@ -399,10 +399,8 @@ if PRM.GPU~=99
   La.OLD=gpuArray(La.OLD);
   D(1).OBS=gpuArray(D(1).OBS);
   D(1).ERR=gpuArray(D(1).ERR);
-  G.C=gpuArray(G.C);
-%   G.T=gpuArray(G.T);
-%   G.B=gpuArray(G.B);
   G.TB=gpuArray(G.TB);
+  G.C=gpuArray(G.C);
   G.P=gpuArray(G.P);
 else
   fprintf('USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
@@ -430,8 +428,6 @@ while not(COUNT==3)
   end
   for iT=1:PRM.CHA
 % SAMPLE SECTION
-%    McLimt=min(min(abs(LO_Mc-Mc.OLD),abs(UP_Mc-Mc.OLD)),Mc.STD);
-%    Mc.SMP=Mc.OLD+RWD.*McLimt.*rMc(:,iT);
     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
@@ -477,8 +473,8 @@ while not(COUNT==3)
 %
   CHA.AJR=NACC./PRM.CHA;
 %
-  Mc.STD=std(CHA.Mc,1,2); Mc.STD=Mc.STD./max(Mc.STD);
-  Mp.STD=std(CHA.Mp,1,2);
+  Mc.STD=std(CHA.Mc,1,2);
+  Mp.STD=std(CHA.Mp,1,2); 
   La.STD=std(CHA.La,1,2);
 %
   fprintf('T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
@@ -492,7 +488,7 @@ while not(COUNT==3)
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
   if CHA.AJR > 0.24
-    RWD=RWD*1.01;
+    RWD=RWD*1.05;
     COUNT=0;
   elseif CHA.AJR < 0.22
     RWD=RWD*0.9;
