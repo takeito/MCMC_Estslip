@@ -764,7 +764,7 @@ for NB1=1:BLK(1).NBlock
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
       end
-      [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
+%       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
     end
   end
@@ -784,6 +784,11 @@ elseif sum(SFID1)<sum(SFID2)
   TRI(1).BOUND(NB1,NB2).DIRECTION=1;
 end
 
+strflt=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
+cent=[TRI(1).BOUND(NB1,NB2).clon TRI(1).BOUND(NB1,NB2).clat zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
+dipend=cent+1e-3+TRI(1).BOUND(NB1,NB2).DP(N,:);
+outdipend=inpolygon(dipend(:,1),dipend(:,2),BLK(NB2).LON,BLK(NB2).LAT);
+TRI(1).BOUND(NB1,NB2).antiSDT=strflt&outdipend;
 end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
 function [FLOC,DA,NV,ST,DP]=EST_FAULT_TRI(loc_f)
