@@ -764,6 +764,7 @@ for NB1=1:BLK(1).NBlock
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
       end
+      [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
     end
   end
@@ -771,6 +772,18 @@ end
 disp('==================')
 disp('PASS GREEN_TRI')
 disp('==================')
+end
+%% TODO: DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
+function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2)
+% Coded by H.Kimura 2017/4/28 (test ver.)
+SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
+SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
+if sum(SFID1)>sum(SFID2)
+  TRI(1).BOUND(NB1,NB2).DIRECTION=0;
+elseif sum(SFID1)<sum(SFID2)
+  TRI(1).BOUND(NB1,NB2).DIRECTION=1;
+end
+
 end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
 function [FLOC,DA,NV,ST,DP]=EST_FAULT_TRI(loc_f)
