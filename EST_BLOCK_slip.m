@@ -591,6 +591,7 @@ DIRBLK=PRM.DIRBlock_Interface;
 BLK(1).NB=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
+    BLK(1).BOUND(NB1,NB2).type=[];
     pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
     Fid=fopen(pre_tri_f,'r');
     if Fid >= 0
@@ -662,6 +663,7 @@ for NB1=1:BLK(1).NBlock
           Bstri(1:LENG-1     ,1:3)=[1     :LENG-1;     2:LENG    ;LENG+2:2*LENG]';
           Bstri(LENG:2*LENG-1,1:3)=[LENG+1:2*LENG;LENG+2:2*LENG+1;     1:  LENG]';
           fprintf('BLOCK INTERFACE: %2i  %2i AUTO SET %4i \n',NB1,NB2,(LENG-1)*2+1)
+          BLK(1).BOUND(NB1,NB2).type=5;
         else
           BLK(1).BOUND(NB1,NB2).blon=[];
           BLK(1).BOUND(NB1,NB2).blat=[];
@@ -776,6 +778,9 @@ end
 %% TODO: DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
 function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2)
 % Coded by H.Kimura 2017/4/28 (test ver.)
+% BLK(1).BOUND(NB1,NB2).type=5; %flag
+if BLK(1).BOUND(NB1,NB2).type==5
+end
 SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
 SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
 if sum(SFID1)>sum(SFID2)
