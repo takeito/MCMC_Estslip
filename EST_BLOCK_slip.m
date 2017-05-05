@@ -779,7 +779,15 @@ end
 function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 % BLK(1).BOUND(NB1,NB2).type=5; %flag
-if BLK(1).BOUND(NB1,NB2).type==5
+switch BLK(1).BOUND(NB1,NB2).type
+  case []
+    fprintf('%s\n','test')
+  case 5
+    ORTHO=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
+    CTRI =[TRI(1).BOUND(NB1,NB2).clon TRI(1).BOUND(NB1,NB2).clat zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
+    DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP(N,:);
+    IDOUT=inpolygon(DPEND(:,1),DPEND(:,2),BLK(NB2).LON,BLK(NB2).LAT);
+    TRI(1).BOUND(NB1,NB2).SDTINV=ORTHO&IDOUT;
 end
 SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
 SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
@@ -788,12 +796,7 @@ if sum(SFID1)>sum(SFID2)
 elseif sum(SFID1)<sum(SFID2)
   TRI(1).BOUND(NB1,NB2).DIRECTION=1;
 end
-
-strflt=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
-cent=[TRI(1).BOUND(NB1,NB2).clon TRI(1).BOUND(NB1,NB2).clat zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
-dipend=cent+1e-3+TRI(1).BOUND(NB1,NB2).DP(N,:);
-outdipend=inpolygon(dipend(:,1),dipend(:,2),BLK(NB2).LON,BLK(NB2).LAT);
-TRI(1).BOUND(NB1,NB2).antiSDT=strflt&outdipend;
+% 
 end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
 function [FLOC,DA,NV,ST,DP]=EST_FAULT_TRI(loc_f)
