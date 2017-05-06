@@ -782,12 +782,15 @@ function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2)
 switch BLK(1).BOUND(NB1,NB2).type
   case []
     fprintf('%s\n','test')
+    
   case 5
     ORTHO=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
     CTRI =[TRI(1).BOUND(NB1,NB2).clon TRI(1).BOUND(NB1,NB2).clat zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
     DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP(N,:);
     IDOUT=inpolygon(DPEND(:,1),DPEND(:,2),BLK(NB2).LON,BLK(NB2).LAT);
     TRI(1).BOUND(NB1,NB2).SDTINV=ORTHO&IDOUT;
+  otherwise
+    fprintf('%s\n','No fault.')
 end
 SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
 SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
