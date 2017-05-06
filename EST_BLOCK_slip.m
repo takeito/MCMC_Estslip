@@ -315,6 +315,14 @@ for NB1=1:BLK(1).NBlock
                                       -TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
       G(1).B(MT+NF:MT+2*NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
                                       -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+
+      G(1).B(MT   :MT+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-2);
+      G(1).B(MT   :MT+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-1);
+      G(1).B(MT   :MT+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1  );
+      G(1).B(MT+NF:MT+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
+      G(1).B(MT+NF:MT+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
+      G(1).B(MT+NF:MT+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1  );
+                                  
       G(1).B(MT   :MT+  NF-1,3*NB2-2)=-G(1).B(MT   :MT+  NF-1,3*NB1-2);
       G(1).B(MT   :MT+  NF-1,3*NB2-1)=-G(1).B(MT   :MT+  NF-1,3*NB1-1);
       G(1).B(MT   :MT+  NF-1,3*NB2  )=-G(1).B(MT   :MT+  NF-1,3*NB1  );
@@ -784,9 +792,9 @@ switch BLK(1).BOUND(NB1,NB2).type
     SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
     SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
     if sum(SFID1)>sum(SFID2)
-      TRI(1).BOUND(NB1,NB2).SDTINV=false(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
+      TRI(1).BOUND(NB1,NB2).SDTINV=    ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
     elseif sum(SFID1)<sum(SFID2)
-      TRI(1).BOUND(NB1,NB2).SDTINV= true(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
+      TRI(1).BOUND(NB1,NB2).SDTINV=-1.*ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
     end
   case 5
     ORTHO=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
@@ -794,7 +802,8 @@ switch BLK(1).BOUND(NB1,NB2).type
     COUT =inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB2).LON,BLK(NB2).LAT)&~inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB1).LON,BLK(NB1).LAT);
     DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP;
     IDOUT=inpolygon(DPEND(:,1),DPEND(:,2),BLK(NB2).LON,BLK(NB2).LAT);
-    TRI(1).BOUND(NB1,NB2).SDTINV=or(COUT,and(ORTHO,IDOUT));
+    TMPID=or(COUT,and(ORTHO,IDOUT));
+    TRI(1).BOUND(NB1,NB2).SDTINV=-1.*TMPID+~TMPID;
   otherwise
     fprintf('%s\n','No fault.')
 end
