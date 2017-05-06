@@ -591,7 +591,7 @@ DIRBLK=PRM.DIRBlock_Interface;
 BLK(1).NB=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
-    BLK(1).BOUND(NB1,NB2).type=[];
+    BLK(1).BOUND(NB1,NB2).type=1;
     pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
     Fid=fopen(pre_tri_f,'r');
     if Fid >= 0
@@ -766,7 +766,7 @@ for NB1=1:BLK(1).NBlock
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
       end
-%       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
+      [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
     end
   end
@@ -780,24 +780,23 @@ function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 % BLK(1).BOUND(NB1,NB2).type=5; %flag
 switch BLK(1).BOUND(NB1,NB2).type
-  case []
-    fprintf('%s\n','test')
-    
+  case 1
+    SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
+    SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
+    if sum(SFID1)>sum(SFID2)
+      TRI(1).BOUND(NB1,NB2).SDTINV=false(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
+    elseif sum(SFID1)<sum(SFID2)
+      TRI(1).BOUND(NB1,NB2).SDTINV= true(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
+    end
   case 5
     ORTHO=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
-    CTRI =[TRI(1).BOUND(NB1,NB2).clon TRI(1).BOUND(NB1,NB2).clat zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
-    DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP(N,:);
+    CTRI =[TRI(1).BOUND(NB1,NB2).clon' TRI(1).BOUND(NB1,NB2).clat' zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
+    COUT =inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB2).LON,BLK(NB2).LAT)&~inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB1).LON,BLK(NB1).LAT);
+    DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP;
     IDOUT=inpolygon(DPEND(:,1),DPEND(:,2),BLK(NB2).LON,BLK(NB2).LAT);
-    TRI(1).BOUND(NB1,NB2).SDTINV=ORTHO&IDOUT;
+    TRI(1).BOUND(NB1,NB2).SDTINV=or(COUT,and(ORTHO,IDOUT));
   otherwise
     fprintf('%s\n','No fault.')
-end
-SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
-SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
-if sum(SFID1)>sum(SFID2)
-  TRI(1).BOUND(NB1,NB2).DIRECTION=0;
-elseif sum(SFID1)<sum(SFID2)
-  TRI(1).BOUND(NB1,NB2).DIRECTION=1;
 end
 % 
 end
