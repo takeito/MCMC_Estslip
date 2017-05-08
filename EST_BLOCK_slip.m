@@ -510,9 +510,9 @@ while not(COUNT==3)
     cCHA.Mp=gather(CHA.Mp);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    MAKE_FIG(cCHA,BLK,OBS,RT)
+    MAKE_FIG(cCHA,BLK,OBS,RT,LO_Mc,UP_Mc)
   else
-    MAKE_FIG(CHA,BLK,OBS,RT)
+    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc)
   end
   if RT > PRM.ITR; break; end;
 end
@@ -525,7 +525,16 @@ end
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,RT)
+function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc)
+% Color palette(POLAR)
+red=[0:1/32:1 ones(1,32)]';
+green=[0:1/32:1 1-1/32:-1/32:0]';
+blue=[ones(1,32) 1:-1/32:0]';
+rwb=[red green blue];
+rw =rwb(33:end,:);
+if LO_Mc==-1; cmap=rwb;
+else; cmap=rw; end
+% 
 figure(100);clf(100)
 % BUG to wait zero
 NN=1;
@@ -539,7 +548,9 @@ for NB1=1:BLK(1).NBlock
     end
   end
 end
-colormap(hot);
+ax=gca;
+ax.CLim=[LO_Mc UP_Mc];
+colormap(cmap)
 colorbar
 %
 figure(110);clf(110)
