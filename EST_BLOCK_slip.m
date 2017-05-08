@@ -280,8 +280,11 @@ D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
 %
-G(1).T=zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
-G(1).B=zeros(2*TRI(1).TNF,3.*BLK(1).NBlock);
+G(1).T =zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
+G(1).Tt=zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
+G(1).B =zeros(2*TRI(1).TNF,3.*BLK(1).NBlock);
+G(1).B1=zeros(3*TRI(1).TNF,3.*BLK(1).NBlock);
+G(1).B2=zeros(3*TRI(1).TNF,3.*BLK(1).NBlock);
 TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
 %
 MC=1;
@@ -322,13 +325,83 @@ for NB1=1:BLK(1).NBlock
       G(1).B(MT+NF:MT+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
       G(1).B(MT+NF:MT+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
       G(1).B(MT+NF:MT+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1  );
-                                  
+      
       G(1).B(MT   :MT+  NF-1,3*NB2-2)=-G(1).B(MT   :MT+  NF-1,3*NB1-2);
       G(1).B(MT   :MT+  NF-1,3*NB2-1)=-G(1).B(MT   :MT+  NF-1,3*NB1-1);
       G(1).B(MT   :MT+  NF-1,3*NB2  )=-G(1).B(MT   :MT+  NF-1,3*NB1  );
       G(1).B(MT+NF:MT+2*NF-1,3*NB2-2)=-G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
       G(1).B(MT+NF:MT+2*NF-1,3*NB2-1)=-G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
       G(1).B(MT+NF:MT+2*NF-1,3*NB2  )=-G(1).B(MT+NF:MT+2*NF-1,3*NB1  );           
+% Transrate Matrix for dE and dN
+      G(1).Tt(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,1));
+      G(1).Tt(MC   :MC+  NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1));
+      G(1).Tt(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,2));
+      G(1).Tt(MC   :MC+  NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2));
+%       
+      G(1).B1(MC     :MC+  NF-1,3*NB1-2)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
+      G(1).B1(MC     :MC+  NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
+      G(1).B1(MC     :MC+  NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
+                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)= TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
+                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
+                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
+                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+      G(1).B1(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-2);
+      G(1).B1(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-1);
+      G(1).B1(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1  );
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+      G(1).B1(MC     :MC+  NF-1,3*NB1-2)=-G(1).B1(MC     :MC+  NF-1,3*NB1-2);
+      G(1).B1(MC     :MC+  NF-1,3*NB1-1)=-G(1).B1(MC     :MC+  NF-1,3*NB1-1);
+      G(1).B1(MC     :MC+  NF-1,3*NB1  )=-G(1).B1(MC     :MC+  NF-1,3*NB1  );
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+% 
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
+                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B2(MC     :MC+  NF-1,3*NB1-2)= TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
+                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2);
+      G(1).B2(MC     :MC+  NF-1,3*NB1-1)=-TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
+                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B2(MC     :MC+  NF-1,3*NB1  )= TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
+                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1);
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
+      G(1).B2(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-2);
+      G(1).B2(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-1);
+      G(1).B2(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1  );
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
+      G(1).B2(MC     :MC+  NF-1,3*NB1-2)=-G(1).B2(MC     :MC+  NF-1,3*NB1-2);
+      G(1).B2(MC     :MC+  NF-1,3*NB1-1)=-G(1).B2(MC     :MC+  NF-1,3*NB1-1);
+      G(1).B2(MC     :MC+  NF-1,3*NB1  )=-G(1).B2(MC     :MC+  NF-1,3*NB1  );
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+%       
       MC=MC+3*NF;
       MT=MT+2*NF;
       MR=MR+  NF;
@@ -350,6 +423,8 @@ G(1).C  =TMP.C(D(1).IND,:);
 G(1).P  =TMP.P(D(1).IND,:);
 G(1).T  =   sparse(G(1).T);
 G(1).TB =    G(1).T*G(1).B;
+G(1).Tt =  sparse(G(1).Tt);
+G(1).TtB=   G(1).Tt*G(1).B;
 D(1).MID=logical(repmat(D(1).MID,3,1));
 end
 %% Markov chain Monte Calro
@@ -444,8 +519,12 @@ while not(COUNT==3)
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(D.MID);
+% CONVERT dST and dDP (Coefficient MATRIX)
+    CF=sqrt((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2)./sqrt((G.TB*Mp.SMP).^2+(G.TtB*Mp.SMP).^2);
+    CF(isnan(CF))=1;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;   
+    CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT.*CF)+G.P*Mp.SMP;   
+%   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
@@ -1106,7 +1185,7 @@ function [lat,lon,ang]=xyzp2lla(X,Y,Z)
 % lat: deg, lon: deg, ang: deg/m.y.
 lat=atan2(Z,sqrt(X.*X+Y.*Y)).*180/pi;
 lon=atan2(Y,X).*180/pi;
-ang=sqrt(X.*X+Y.*Y+Z.*Z).*(1e6./(180./pi));
+ang=sqrt(X.*X+Y.*Y+Z.*Z).*(1e6.*(180./pi));
 end
 %% CONVERT TO XYZ FROM ELL AT SURFACE
 function [OOxyz]=conv2ell(Olat,Olon)
