@@ -788,13 +788,19 @@ if exist(READFILE)~=2; POL.FIXflag=0; return; end
 % 
 POL.FIXflag=1;
 FID=fopen(READFILE,'r');
-TMP=fscanf(FID,'%f %f %f %f\n',[4,Inf]);
+TMP=fscanf(FID,'%d %d %f %f %f\n',[5,Inf]);
 POL.ID=zeros(1,BLK(1).NBlock);
 FIXw=zeros(BLK(1).NBlock,3);
-POL.BLID =int64(TMP(1,:));
-POL.LAT  =TMP(2,:)       ;
-POL.LON  =TMP(3,:)       ;
-POL.OMEGA=TMP(4,:)       ;
+POL.FLAG =TMP(1,:);
+POL.BLID =TMP(2,:);
+POL.LAT  =TMP(3,:);
+POL.LON  =TMP(4,:);
+POL.OMEGA=TMP(5,:);
+POL.FLAG =logical(POL.FLAG);   % use or not
+POL.BLID =POL.BLID(POL.FLAG) ;
+POL.LAT  =POL.LAT(POL.FLAG)  ;
+POL.LON  =POL.LON(POL.FLAG)  ;
+POL.OMEGA=POL.OMEGA(POL.FLAG);
 POL.LAT  =deg2rad(POL.LAT)        ;
 POL.LON  =deg2rad(POL.LON)        ;
 POL.OMEGA=deg2rad(POL.OMEGA.*1e-6);
