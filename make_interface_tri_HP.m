@@ -1,26 +1,31 @@
-function make_interface_tri_HP(sfolder,pMESH,HP,Reducerate)
+function make_interface_tri_HP(sfolder,pMESH)
 % PRM.OBS_F='./data_set.txt';
-PRM.OBS_F='./geonet_jcg_nu.txt';
+PRM.OBS_F='./GEONET_seafloorGPSA2.txt';
 PRM.SUB_F='./plate_phs.txt';
 % PRM.BOU_F='./bound.txt';
 PRM.BOU_F='./phcont.txt';
 PRM.INIP_F='./initial_point.txt';
-savefolder=[sfolder,'Mesh'];
-anim_savefile=[sfolder,'tri_anim.gif'];
 
 % ------------------Parameter---------------------
 PRM.NMESH=pMESH;
-% Reducerate=0.01;                                      % Reduce rate of triangles
-HP=10^HP;                                             % Hyper Parameter of Fobs(object function).
+Reducerate=0.01;                                      % Reduce rate of triangles
+HP=10^0.4;                                             % Hyper Parameter of Fobs(object function).
 pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative to AM plate(REVEL)
 % --------------------------------------------------
+
+for Dii=1:Inf
+  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HP',num2str(log10(HP),'%2.1f'),'_It',num2str(Dii,'%2i'),'/'];
+  EXID=exist(sfolder);
+  if EXID~=7; mkdir(sfolder); break; end;
+end
+anim_savefile=[sfolder,'tri_anim.gif'];
 
 OBS=READ_OBS(PRM);
 ini_size=FIX_POINT(PRM.INIP_F);
 s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*5,ini_size);
 save([sfolder,'plate_phs_initial'],'s')
 
-s=DOWN_TRI(s,OBS,PRM.NMESH,savefolder,anim_savefile,Reducerate,ini_size,pole,HP);
+s=DOWN_TRI(s,OBS,PRM.NMESH,sfolder,anim_savefile,Reducerate,ini_size,pole,HP);
 
 [tarea,tcenter]=calc_tri_area(s);
 save([sfolder,'area_tri_',num2str(PRM.NMESH)],'tarea','tcenter');
@@ -53,31 +58,31 @@ while 1
 %     OBS(2).LON(N-194) =str2double(cellstr(str(2))); %LON
 %     OBS(2).HIG(N-194) =str2double(cellstr(str(4))); %HIG
 %   end
-%   OBS(1).NAME(N)=cellstr(str(1));
-%   OBS(1).ALAT(N) =str2double(cellstr(str(3))); %LAT
-%   OBS(1).ALON(N) =str2double(cellstr(str(2))); %LON
-%   OBS(1).AHIG(N) =str2double(cellstr(str(4))); %HIG
-%   OBS(1).EVEC(N) =str2double(cellstr(str(5))); %E-W
-%   OBS(1).NVEC(N) =str2double(cellstr(str(6))); %N-S
-%   OBS(1).HVEC(N) =str2double(cellstr(str(7))); %U-D
-%   OBS(1).YYY(3*N-2) =str2double(cellstr(str(5))); %E-W
-%   OBS(1).YYY(3*N-1) =str2double(cellstr(str(6))); %N-S
-%   OBS(1).YYY(3*N)   =str2double(cellstr(str(7))); %U-D
-%   OBS(1).EEE(3*N-2) =str2double(cellstr(str(8))); %E-W
-%   OBS(1).EEE(3*N-1) =str2double(cellstr(str(9))); %N-S
-%   OBS(1).EEE(3*N)   =str2double(cellstr(str(10))); %U-D
-  OBS(1).ALAT(N) =single(str2double(cellstr(str(3)))); %LAT
-  OBS(1).ALON(N) =single(str2double(cellstr(str(2)))); %LON
-  OBS(1).AHIG(N) =single(str2double(cellstr(str(4)))); %HIG
-  OBS(1).EVEC(N) =single(str2double(cellstr(str(5)))); %E-W
-  OBS(1).NVEC(N) =single(str2double(cellstr(str(6)))); %N-S
-  OBS(1).HVEC(N) =single(str2double(cellstr(str(7)))); %U-D
-  OBS(1).YYY(3*N-2) =single(str2double(cellstr(str(5)))); %E-W
-  OBS(1).YYY(3*N-1) =single(str2double(cellstr(str(6)))); %N-S
-  OBS(1).YYY(3*N)   =single(str2double(cellstr(str(7)))); %U-D
-  OBS(1).EEE(3*N-2) =single(str2double(cellstr(str(8)))); %E-W
-  OBS(1).EEE(3*N-1) =single(str2double(cellstr(str(9)))); %N-S
-  OBS(1).EEE(3*N)   =single(str2double(cellstr(str(10)))); %U-D
+  OBS(1).NAME(N)=cellstr(str(1));
+  OBS(1).ALAT(N) =str2double(cellstr(str(3))); %LAT
+  OBS(1).ALON(N) =str2double(cellstr(str(2))); %LON
+  OBS(1).AHIG(N) =str2double(cellstr(str(4))); %HIG
+  OBS(1).EVEC(N) =str2double(cellstr(str(5))); %E-W
+  OBS(1).NVEC(N) =str2double(cellstr(str(6))); %N-S
+  OBS(1).HVEC(N) =str2double(cellstr(str(7))); %U-D
+  OBS(1).YYY(3*N-2) =str2double(cellstr(str(5))); %E-W
+  OBS(1).YYY(3*N-1) =str2double(cellstr(str(6))); %N-S
+  OBS(1).YYY(3*N)   =str2double(cellstr(str(7))); %U-D
+  OBS(1).EEE(3*N-2) =str2double(cellstr(str(8))); %E-W
+  OBS(1).EEE(3*N-1) =str2double(cellstr(str(9))); %N-S
+  OBS(1).EEE(3*N)   =str2double(cellstr(str(10))); %U-D
+%   OBS(1).ALAT(N) =single(str2double(cellstr(str(3)))); %LAT
+%   OBS(1).ALON(N) =single(str2double(cellstr(str(2)))); %LON
+%   OBS(1).AHIG(N) =single(str2double(cellstr(str(4)))); %HIG
+%   OBS(1).EVEC(N) =single(str2double(cellstr(str(5)))); %E-W
+%   OBS(1).NVEC(N) =single(str2double(cellstr(str(6)))); %N-S
+%   OBS(1).HVEC(N) =single(str2double(cellstr(str(7)))); %U-D
+%   OBS(1).YYY(3*N-2) =single(str2double(cellstr(str(5)))); %E-W
+%   OBS(1).YYY(3*N-1) =single(str2double(cellstr(str(6)))); %N-S
+%   OBS(1).YYY(3*N)   =single(str2double(cellstr(str(7)))); %U-D
+%   OBS(1).EEE(3*N-2) =single(str2double(cellstr(str(8)))); %E-W
+%   OBS(1).EEE(3*N-1) =single(str2double(cellstr(str(9)))); %N-S
+%   OBS(1).EEE(3*N)   =single(str2double(cellstr(str(10)))); %U-D
 end
 fprintf('==================\nNumber of observation site : %i \n',N)
 end
@@ -248,7 +253,7 @@ while Ntri > n_mesh
   triplot(S.tri,S.lon,S.lat);
   title(['Number of triangels= ',num2str(Ntri)]);
   if ffanim == 1;
-      print('-depsc',[saveloc,num2str(Ntri)]);
+      print('-depsc',[saveloc,'Mesh',num2str(Ntri)]);
   end  
   fprintf('Number of triangels=%4.0f \n',Ntri)
   frame=getframe(fig30);
@@ -281,7 +286,7 @@ plot(OBS(1).ALON,OBS(1).ALAT,'.g');
 triplot(S.tri,S.lon,S.lat);
 title(['Number of triangels= ',num2str(Ntri)]);
 fprintf('Number of triangels=%4.0f \n ',Ntri)
-print(Fid,'-depsc ',[saveloc,num2str(Ntri)]);
+print(Fid,'-depsc ',[saveloc,'Mesh',num2str(Ntri)]);
 close(Fid)
 
 end
