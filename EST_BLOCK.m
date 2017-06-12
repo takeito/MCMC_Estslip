@@ -1,4 +1,4 @@
-function EST_BLOCK
+function EST_BLOCK(DIRBlock)
 % Estimate BLOCK MOTION
 % Code by T.ITO 2016/03/02
 
@@ -11,6 +11,7 @@ INPUT_SET='./PARAMETER/parameter.txt';
 % READ OBSERVATION FILE
 OBS=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY 
+PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
 [BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
@@ -19,7 +20,7 @@ OBS=READ_OBS(PRM.FileOBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 [BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 % MAKE FIGURES
-MAKE_FIGS(BLK,OBS);
+% MAKE_FIGS(BLK,OBS);
 %
 end
 %% MAKE FIGURES
@@ -101,7 +102,7 @@ for N=1:BLK(1).NBlock
   BLK(N).POL=POLE;
   OBS(N).EEV=EVne(1:2:end);
   OBS(N).ENV=EVne(2:2:end);
-  fprintf('BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f \n',N,OBS(N).NBLK,Sig)
+%   fprintf('BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f \n',N,OBS(N).NBLK,Sig)
 %   if OBS(N).NBLK>=2 
 %     fprintf('OBS(E,N) ')
 %     fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
@@ -127,12 +128,12 @@ DIRBlock=fscanf(Fid,'%s \n',[1,1]);
 PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
 fclose(Fid);
 %====================================================
-fprintf('==================\nINPUT PARAMETERS\n==================\n') 
-fprintf('HOME_D             : %s \n',PRM.HOME_D) 
-fprintf('FileOBS            : %s \n',PRM.FileOBS) 
-fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
+% fprintf('==================\nINPUT PARAMETERS\n==================\n') 
+% fprintf('HOME_D             : %s \n',PRM.HOME_D) 
+% fprintf('FileOBS            : %s \n',PRM.FileOBS) 
+% fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
 %====================================================
-disp('PASS READ_PARAMETERS')
+% disp('PASS READ_PARAMETERS')
 end
 %% READ BLOCK BOUNDARY DATA
 function [BLK,OBS]=READ_BLOCK_BOUND(DIR,OBS)
@@ -163,7 +164,7 @@ for NB1=1:BLK(1).NBlock
       BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
-      fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
+%       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
       plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
       hold on
     end
