@@ -32,7 +32,7 @@ for DN=1:Inf
   DIR=['MODEL_',num2str(DN,'%02i')];
   DIR=fullfile(DIR1,DIR);
   EXID=exist(DIR);
-  if EXID~=7; mkdir(DIR); break; end
+  if EXID~=7; mkdir(DIR); fprintf('%s\n',['Export folder: ',DIR]); break; end
 end
 NB=1;
 for FN=1:BLK(1).NBlock
