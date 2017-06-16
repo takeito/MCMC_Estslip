@@ -601,6 +601,8 @@ if PRM.GPU~=99
   CHA.La=gather(CHA.La);
   CHA.SMP=gather(CHA.SMP);
 end
+CHA.Res=RES.SMP;
+fprintf('RMS=: %8.3f\n',CHA.Res)
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Show results for makeing FIGURES
