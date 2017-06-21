@@ -557,6 +557,7 @@ while not(COUNT==3)
       if ACC; NACC=NACC+1; end;
     end
   end
+  CHA=COMPRESS_DATA(CHA,it);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -604,6 +605,38 @@ end
 CHA.Res=RES.SMP;
 fprintf('RMS=: %8.3f\n',CHA.Res)
 fprintf('=== FINISHED MH_MCMC ===\n')
+end
+%% Compress CHA sampling
+function CHA=COMPRESS_DATA(CHA,ITR)
+% 
+% load('./Result_red/Test_07/CHA.mat'); % test
+% 
+McMAX=max(CHA.Mc,[],2);
+McMIN=min(CHA.Mc,[],2);
+MpMAX=max(CHA.Mp,[],2);
+MpMIN=min(CHA.Mp,[],2);
+% 
+Mcscale=single(100./(McMAX-McMIN));
+McBASE=(CHA.Mc-McMIN).*Mcscale*1.27;
+Mcint8=int8(McBASE);
+Mpscale=single(100./(MpMAX-MpMIN));
+MpBASE=(CHA.Mp-MpMIN).*Mpscale*1.27;
+Mpint8=int8(MpBASE);
+% 
+binedge=int8(0:127);
+% 
+for ii=1:size(Mcint8,1)
+  CHA.McCOMPRESS(ITR).NFLT(ii).McMAX=McMAX(ii);
+  CHA.McCOMPRESS(ITR).NFLT(ii).McMIN=McMIN(ii);
+  CHA.McCOMPRESS(ITR).NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
+end
+% 
+for ii=1:size(Mpint8,1)
+  CHA.MpCOMPRESS(ITR).NPOL(ii).MpMAX=MpMAX(ii);
+  CHA.MpCOMPRESS(ITR).NPOL(ii).MpMIN=MpMIN(ii);
+  CHA.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
+end
+% 
 end
 %% Show results for makeing FIGURES
 function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc)
