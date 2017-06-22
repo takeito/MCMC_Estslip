@@ -639,6 +639,8 @@ for ii=1:size(Mpint8,1)
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
 end
 % 
+% save('./Result_red/Test_07/CHA_test.mat','CHA'); % test
+% 
 end
 %% Show results for makeing FIGURES
 function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc)
