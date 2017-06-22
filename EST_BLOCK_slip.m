@@ -455,9 +455,11 @@ CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
 CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
 CHA.La= zeros(La.N,PRM.KEP,precision);
 % Set FIX POLES if POL.FIXflag=1
+% MpScale=Mp.INT.*ones(Mp.N,1,precision);
 if POL.FIXflag==1
   Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
   Mp.STD(POL.ID)=0;
+%   MpScale(POL.ID)=0;
 end
 %
 RES.OLD=inf(1,1,precision);
@@ -495,6 +497,7 @@ COUNT=0;
 %
 LO_Mc=0;
 UP_Mc=1;
+McScale=0.05;
 while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
@@ -505,16 +508,19 @@ while not(COUNT==3)
     rLa = rand(La.N,PRM.CHA,'single','gpuArray')-0.5;
   else
     logU=log(rand(PRM.CHA,1,'double'));
-    rMc =rand(Mc.N,PRM.CHA,'double');
+    rMc =rand(Mc.N,PRM.CHA,'double')-0.5;
     rMp =rand(Mp.N,PRM.CHA,'double')-0.5;
     rLa =rand(La.N,PRM.CHA,'double')-0.5;
   end
   for iT=1:PRM.CHA
 % SAMPLE SECTION
-    McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
-    McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
-    Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
+%     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
+%     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
+%     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
+    McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMc(:,iT);
+    Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
+%     Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
