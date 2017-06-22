@@ -626,12 +626,14 @@ Mpint8=int8(MpBASE);
 binedge=int8(0:127);
 % 
 for ii=1:size(Mcint8,1)
+  CHA.McCOMPRESS(ITR).NFLT(ii).Mcscale=Mcscale(ii);
   CHA.McCOMPRESS(ITR).NFLT(ii).McMAX=McMAX(ii);
   CHA.McCOMPRESS(ITR).NFLT(ii).McMIN=McMIN(ii);
   CHA.McCOMPRESS(ITR).NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
 end
 % 
 for ii=1:size(Mpint8,1)
+  CHA.McCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpMAX=MpMAX(ii);
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpMIN=MpMIN(ii);
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
