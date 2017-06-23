@@ -1,4 +1,4 @@
-function make_interface_tri_HP(pMESH,hp)
+function make_interface_tri_HP0(pMESH)
 % 
 warning('off')
 % PRM.OBS_F='./data_set.txt';
@@ -11,12 +11,12 @@ PRM.INIP_F='./initial_point.txt';
 % ------------------Parameter---------------------
 PRM.NMESH=pMESH;
 Reducerate=0.001;                                      % Reduce rate of triangles
-HP=10^hp;                                             % Hyper Parameter of Fobs(object function).
-pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative to AM plate(REVEL)
+HP=0;                                                  % Hyper Parameter of Fobs(object function).
+pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;    % PH plate motion relative to AM plate(REVEL)
 % --------------------------------------------------
 
 for Dii=1:Inf
-  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HP',num2str(hp,'%2.1f'),'_It',num2str(Dii,'%2i'),'/'];
+  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HPnon_It',num2str(Dii,'%2i'),'/'];
   EXID=exist(sfolder);
   if EXID~=7; mkdir(sfolder); break; end;
 end
