@@ -118,6 +118,9 @@ Ua=zeros(length(S.tri(:,1)),1);
 minAng=zeros(length(S.tri),1);maxAng=zeros(length(S.tri),1);
 minLeng=zeros(length(S.tri),1);maxLeng=zeros(length(S.tri),1);
 tri_Ang=zeros(length(S.tri),3);
+stritmp=sort(S.tri,2);
+[~,stritmpsort]=sort(stritmp(:,1));
+S.tri=stritmp(stritmpsort,:);
 parfor n=1:length(S.tri)
 % for n=1:length(S.tri)        % <<--------- use in debug test
     [SDT]=SDTvec(sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)));
@@ -167,6 +170,8 @@ while Ntri > n_mesh
   S.lat=S.lat(r_index);
   S.lon=S.lon(r_index);
   S.dep=S.dep(r_index);
+  S=change_index(S,r_index,minAng,maxAng,minLeng,maxLeng);
+  Stmp=S;
   S.tri=delaunay(S.lon,S.lat);
   [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
   sz=S.dep;
@@ -194,25 +199,25 @@ while Ntri > n_mesh
   minLeng=zeros(length(Stri),1);maxLeng=zeros(length(Stri),1);
   tri_Ang=zeros(length(Stri),3);
   
-  parfor n=1:nn
-      %     for n=1:nn   %    <<----------------- use in debug test
-      if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-          [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
-          PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
-          PMcom=PMcom./norm(PMcom);
-          [Ang,Leng]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
-          tri_Ang(n,:)=Ang(:);
-          minAng(n,1)=min(Ang); maxAng(n,1)=max(Ang);
-          minLeng(n,1)=min(Leng); maxLeng(n,1)=max(Leng);
-          %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
-          [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
-          Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-      else
-          Ua(n)=Ua_tmp(n);
-          tri_Ang(n,:)=tri_Ang_tmp(n,:);
-          minAng(n,1)=minAng_tmp(n,1); maxAng(n,1)=maxAng_tmp(n,1);
-          minLeng(n,1)=minLeng_tmp(n,1); maxLeng(n,1)=maxLeng_tmp(n,1);
-      end
+%   parfor n=1:nn
+  for n=1:nn   %    <<----------------- use in debug test
+    if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
+      [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
+      PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
+      PMcom=PMcom./norm(PMcom);
+      [Ang,Leng]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
+      tri_Ang(n,:)=Ang(:);
+      minAng(n,1)=min(Ang); maxAng(n,1)=max(Ang);
+      minLeng(n,1)=min(Leng); maxLeng(n,1)=max(Leng);
+      %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+    else
+      Ua(n)=Ua_tmp(n);
+      tri_Ang(n,:)=tri_Ang_tmp(n,:);
+      minAng(n,1)=minAng_tmp(n,1); maxAng(n,1)=maxAng_tmp(n,1);
+      minLeng(n,1)=minLeng_tmp(n,1); maxLeng(n,1)=maxLeng_tmp(n,1);
+    end
   end
   clear n;
 
@@ -290,6 +295,19 @@ title(['Number of triangels= ',num2str(Ntri)]);
 fprintf('Number of triangels=%4.0f \n ',Ntri)
 print(Fid,'-depsc ',[saveloc,'Mesh',num2str(Ntri)]);
 close(Fid)
+
+end
+%====================================================
+function S=change_index(S,remID,minA,maxA,minL,maxL)
+
+ID=unique(sort(find(remID==0)));
+Nrem=length(ID);
+for ii=1:Nrem
+  [idIDrow,idIDcol]=find(S.tri==ID(ii));
+  S.tri(idIDrow,:)=[];
+  minA(id)
+  S.tri(S.tri>ID(ii))=S.tri(S.tri>ID(ii))-1;
+end
 
 end
 %====================================================
