@@ -16,7 +16,7 @@ pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative
 % --------------------------------------------------
 
 for Dii=1:Inf
-  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HP',num2str(hp,'%2.1f'),'_It',num2str(Dii,'%2i'),'/'];
+  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HP',num2str(hp,'%3.1f'),'_It',num2str(Dii,'%2i'),'/'];
   EXID=exist(sfolder);
   if EXID~=7; mkdir(sfolder); break; end;
 end
