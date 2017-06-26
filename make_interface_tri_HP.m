@@ -360,7 +360,10 @@ s.dep=ini_point(:,3);
 %-----------------------------
 % n=0;
 n=ini_size;
-while n<int_mesh
+ntri=ini_size;
+adn=0;
+while ntri<int_mesh
+while n<int_mesh*(0.5+adn/10)
   slat=(max_lat-min_lat).*rand(1)+min_lat;
   slon=(max_lon-min_lon).*rand(1)+min_lon;
   ID=inpolygon(slon,slat,bound(:,1),bound(:,2));
@@ -375,6 +378,7 @@ while n<int_mesh
 %     end
   end
 end
+adn=adn+1;
 % plot3(s.lon,s.lat,s.dep,'.')
 %====================================================
 tri = delaunay(s.lon,s.lat);
@@ -384,6 +388,8 @@ glat=mean(s.lat(tri),2);
 ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
 ID1ind=find(ID==1);
 s.tri=tri(ID1ind,:);
+ntri=size(s.tri,1);
+end
 
 figure(20); clf
 plot(OBS(1).ALON,OBS(1).ALAT,'.g');
