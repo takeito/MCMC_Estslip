@@ -24,7 +24,7 @@ anim_savefile=[sfolder,'tri_anim.gif'];
 
 OBS=READ_OBS(PRM);
 ini_size=FIX_POINT(PRM.INIP_F);
-s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*20,ini_size);
+s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, OBS, sfolder, PRM.INIP_F, PRM.NMESH.*20,ini_size);
 save([sfolder,'plate_phs_initial'],'s')
 
 s=DOWN_TRI(s,OBS,PRM.NMESH,sfolder,anim_savefile,Reducerate,ini_size,pole,HP);
@@ -139,7 +139,7 @@ H=(minAng./maxAng).*(minLeng./maxLeng);
 Fobs=Ua+arpha.*H;             % Object function
 
 Ntri=length(S.tri);
-ffanim=0;
+% ffanim=0;
 while Ntri > n_mesh
   Redu_tri=ceil(Ntri*Rr);
   r_index=ones(length(S.lat),1);
@@ -237,7 +237,7 @@ while Ntri > n_mesh
   S.tri=Stri;
   Ntri=length([S.tri]);
   
-  ffanim=ffanim+1;
+%   ffanim=ffanim+1;
 % figure view and save each down_tri roop ------------
 %     Fid=figure('visible','off');
 %     plot(S.bound(:,1),S.bound(:,2),'r');
@@ -259,29 +259,29 @@ while Ntri > n_mesh
 %   pause(.1)
 
 % GIF animation test -----------
-  if ffanim==1
-      fig30=figure;
-  else
-      fig30=figure('visible','off');
-  end
-  plot(S.bound(:,1),S.bound(:,2),'r');
-  hold on;
-  plot(OBS(1).ALON,OBS(1).ALAT,'.g');
-  triplot(S.tri,S.lon,S.lat);
-  title(['Number of triangels= ',num2str(Ntri)]);
-  if ffanim == 1;
-      print('-depsc',[saveloc,'Mesh',num2str(Ntri)]);
-  end  
+%   if ffanim==1
+%       fig30=figure;
+%   else
+%       fig30=figure('visible','off');
+%   end
+%   plot(S.bound(:,1),S.bound(:,2),'r');
+%   hold on;
+%   plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+%   triplot(S.tri,S.lon,S.lat);
+%   title(['Number of triangels= ',num2str(Ntri)]);
+%   if ffanim == 1;
+%       print('-depsc',[saveloc,'Mesh',num2str(Ntri)]);
+%   end  
   fprintf('Number of triangels=%4.0f \n',Ntri)
-  frame=getframe(fig30);
-  im=frame2im(frame);
-  [A,map]=rgb2ind(im,256);
-  if ffanim == 1;
-      imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
-  else
-      imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
-  end
-  hold off;clf;
+%   frame=getframe(fig30);
+%   im=frame2im(frame);
+%   [A,map]=rgb2ind(im,256);
+%   if ffanim == 1;
+%       imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
+%   else
+%       imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
+%   end
+%   hold off;clf;
 end
 
 % export when exit roop
@@ -293,18 +293,23 @@ S.F=Fobs;
 S.H=H;
 
 % save figure at the number of n-mesh
-close(fig30)
-clear ffanim;
+% close(fig30)
+% clear ffanim;
 
-Fid=figure('visible','off');
+% Fid=figure('visible','off');
+figure(30); clf
 plot(S.bound(:,1),S.bound(:,2),'r');
-hold on;
+hold on
 plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+hold on
 triplot(S.tri,S.lon,S.lat);
 title(['Number of triangels= ',num2str(Ntri)]);
+saveas(figure(30),[saveloc,'Mesh',num2str(Ntri),'.eps'],'epsc')
+pause(.1)
+close(figure(30))
 fprintf('Number of triangels=%4.0f \n ',Ntri)
-print(Fid,'-depsc ',[saveloc,'Mesh',num2str(Ntri)]);
-close(Fid)
+% print(Fid,'-depsc ',[saveloc,'Mesh',num2str(Ntri)]);
+% close(Fid)
 
 end
 %====================================================
@@ -325,7 +330,7 @@ end
 
 end
 %====================================================
-function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,inip_f,int_mesh,ini_size)
+function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,OBS,saveloc,inip_f,int_mesh,ini_size)
 %====================================================
 Fid=fopen(sub_f);
 dep_sub=textscan(Fid,'%f%f%f');
@@ -345,9 +350,9 @@ ini_point=cell2mat(ini_point);
 F=scatteredInterpolant(dep_sub(:,1),dep_sub(:,2),dep_sub(:,3),'natural');
 min_lon=min(bound(:,1)); max_lon=max(bound(:,1));
 min_lat=min(bound(:,2)); max_lat=max(bound(:,2));
-figure(10); clf
-plot(bound(:,1),bound(:,2),'r')
-hold on
+% figure(10); clf
+% plot(bound(:,1),bound(:,2),'r')
+% hold on
 % initial straint point-------
 s.lon=ini_point(:,1);
 s.lat=ini_point(:,2);
@@ -364,13 +369,13 @@ while n<int_mesh
     s.lat(n)=slat;
     s.lon(n)=slon;
     s.dep(n)=F(slon,slat);
-    if rem(n,round(int_mesh/10))==1;
-      plot3(s.lon,s.lat,s.dep,'.')
-      pause(.1)
-    end
+%     if rem(n,round(int_mesh/10))==1;
+%       plot3(s.lon,s.lat,s.dep,'.')
+%       pause(.1)
+%     end
   end
 end
-plot3(s.lon,s.lat,s.dep,'.')
+% plot3(s.lon,s.lat,s.dep,'.')
 %====================================================
 tri = delaunay(s.lon,s.lat);
 %====================================================
@@ -381,11 +386,11 @@ ID1ind=find(ID==1);
 s.tri=tri(ID1ind,:);
 
 figure(20); clf
+plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+hold on
 plot(bound(:,1),bound(:,2),'r')
 hold on
 triplot(s.tri,s.lon,s.lat)
-hold on
-plot(OBS(1).ALON,OBS(1).ALAT,'.g');
 title(['Number of triangels= ',num2str(int_mesh)]);
 saveas(figure(20),[saveloc,'Mesh',num2str(int_mesh),'.eps'],'epsc')
 pause(.1)
