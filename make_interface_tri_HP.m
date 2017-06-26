@@ -384,7 +384,13 @@ figure(20); clf
 plot(bound(:,1),bound(:,2),'r')
 hold on
 triplot(s.tri,s.lon,s.lat)
+hold on
+plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+title(['Number of triangels= ',num2str(int_mesh)]);
+saveas(figure(20),[saveloc,'Mesh',num2str(int_mesh),'.eps'],'epsc')
 pause(.1)
+close(figure(20))
+
 s.bound=bound;
 s.dep_sub=dep_sub;
 end
