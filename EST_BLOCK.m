@@ -113,7 +113,7 @@ for N=1:BLK(1).NBlock
 end
 AIC=(OBS(1).NOBS.*2).*log(TSig./(OBS(1).NOBS.*2))+2.*NumB.*3;
 cAIC=AIC+2.*NumB.*3.*(NumB.*3+1)./(OBS(1).NOBS.*2-NumB.*3-1);
-fprintf('Sigma^2=%8.3f AIC=%7.3f cAIC=%7.3f K=%2d\n',TSig./(OBS(1).NOBS.*2),AIC,cAIC,NumB.*3)
+fprintf('Sigma^2= %8.3f AIC= %7.3f cAIC= %7.3f K= %2d\n',TSig./(OBS(1).NOBS.*2),AIC,cAIC,NumB.*3)
 %
 end
 %% READ PARAMETER FILE 
