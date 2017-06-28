@@ -21,18 +21,18 @@ PRM.DIRBlock=BDIR;
 % COMBINE BLOCKS
 [BLK]=COMBINE_BOUND(BLK,BNO1,BNO2);
 % SAVE COMBINED BLOCK FILE TO 'BLOCK_MODEL' FOLDER
-B=WRITE_FILE(BLK,BNO1,BNO2);
+[B,DIR]=WRITE_FILE(BLK,BNO1,BNO2);
 % MAKE_FIGS(BLK);
-MAKE_FIGS(BLK,B,BNO1,BNO2);
+MAKE_FIGS(BLK,B,BNO1,BNO2,DIR);
 end
 %% Write blocks in txt format
-function B=WRITE_FILE(BLK,BNO1,BNO2)
+function [B,DIR]=WRITE_FILE(BLK,BNO1,BNO2)
 DIR1='BLOCK_MODEL';
 for DN=1:Inf
   DIR=['MODEL_',num2str(DN,'%02i')];
-  DIR=fullfile(DIR1,DIR);
-  EXID=exist(DIR);
-  if EXID~=7; mkdir(DIR); fprintf('%s\n',['Export folder: ',DIR]); break; end
+  FDIR=fullfile(DIR1,DIR);
+  EXID=exist(FDIR);
+  if EXID~=7; mkdir(FDIR); fprintf('%s\n',['Export folder: ',FDIR]); break; end
 end
 NB=1;
 for FN=1:BLK(1).NBlock
@@ -42,14 +42,14 @@ for FN=1:BLK(1).NBlock
   if B(FN).NO==BNO1; BNO1=FN; continue; end
   if B(FN).NO==BNO2; BNO2=FN; continue; end
   rename=[num2str(NB,'%02i'),'_',B(FN).NAME,'.txt'];
-  copyfile(BLK(FN).fullname,fullfile(DIR,rename));
+  copyfile(BLK(FN).fullname,fullfile(FDIR,rename));
   NB=NB+1;
 end
 B(BLK(1).NBlock+1).NO=B(BLK(1).NBlock).NO+1;
 B(BLK(1).NBlock+1).NAME=[B(BNO1).NAME,'-',B(BNO2).NAME];
 newfile=[num2str(NB,'%02i'),'_',B(BLK(1).NBlock+1).NAME,'.txt'];
-NEWFILE=fullfile(DIR,newfile);
-LOGFILE=fullfile(DIR,'combine.log');
+NEWFILE=fullfile(FDIR,newfile);
+LOGFILE=fullfile(FDIR,'combine.log');
 FID=fopen(NEWFILE,'w');
 fprintf(FID,'%15.9f %15.9f \n',[BLK(BLK(1).NBlock+1).LON BLK(BLK(1).NBlock+1).LAT]');
 fclose(FID);
@@ -59,7 +59,7 @@ fprintf(FID,'%s\n',['And then BLOCK ',num2str(NB,'%02i'),' ( ',newfile, ' ) ' 'w
 fclose(FIDl);
 end
 %% MAKE FIGURES
-function MAKE_FIGS(BLK,B,BNO1,BNO2)
+function MAKE_FIGS(BLK,B,BNO1,BNO2,DIR)
 % figure('Name','OBS_vector'); clf
 % for N=1:BLK(1).NBlock
 %   if OBS(N).NBLK~=0
@@ -84,7 +84,7 @@ function MAKE_FIGS(BLK,B,BNO1,BNO2)
 % hold on
 % quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC);
 %
-figure('Name','BLOCK_BOUNDARY, BLOCK_SHARED_POINT'); clf
+figure('Name',DIR); clf
 % LAT=[];LON=[];VEL=[];
 % for NB1=1:BLK(1).NBlock
 %   if NB1==BNO1||NB1==BNO2; continue; end
@@ -146,7 +146,7 @@ for NB=1:BLK(1).NBlock
   BLK(NB).LAT=tmp(:,2);
 end
 fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
-figure('Name','BLOCK_BOUNDARY_LINE')
+% figure('Name','BLOCK_BOUNDARY_LINE')
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
@@ -163,8 +163,8 @@ for NB1=1:BLK(1).NBlock
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
       BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
       fprintf('BLOCK BOUNDARY : %2i %2i \n',NB1,NB2)
-      plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
-      hold on
+%       plot(BLK(1).BOUND(NB1,NB2).LON,BLK(1).BOUND(NB1,NB2).LAT)
+%       hold on
     end
   end
 end
