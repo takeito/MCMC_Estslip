@@ -448,7 +448,7 @@ La.N=1;
 Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
-Mc.OLD=   0.1.*ones(Mc.N,1,precision);
+Mc.OLD=   0.5.*ones(Mc.N,1,precision);
 Mp.OLD= double(BLK(1).POLE);
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
@@ -495,7 +495,7 @@ end
 RT=0;
 COUNT=0;
 %
-LO_Mc=0;
+LO_Mc=-1;
 UP_Mc=1;
 McScale=0.05;
 while not(COUNT==3)
@@ -563,7 +563,7 @@ while not(COUNT==3)
       if ACC; NACC=NACC+1; end;
     end
   end
-  CHA=COMPRESS_DATA(CHA,it);
+  CHA=COMPRESS_DATA(CHA,iT);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
