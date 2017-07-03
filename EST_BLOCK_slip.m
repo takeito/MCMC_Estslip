@@ -563,7 +563,7 @@ while not(COUNT==3)
       if ACC; NACC=NACC+1; end;
     end
   end
-  CHA=COMPRESS_DATA(CHA,iT);
+  CHA=COMPRESS_DATA(CHA,RT);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -645,7 +645,7 @@ for ii=1:size(Mpint8,1)
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
 end
 % 
-% save('./Result_red/Test_07/CHA_test.mat','CHA'); % test
+save('./Result/CHA_test.mat','CHA'); % test
 % 
 end
 %% Show results for makeing FIGURES
@@ -729,7 +729,7 @@ function [BLK]=READ_BLOCK_INTERFACE(BLK,PRM)
 %
 int_tri=50;
 dep_limit=-100;
-dep_limit_low=-10;
+dep_limit_low=-20;
 DIRBLK=PRM.DIRBlock_Interface;
 BLK(1).NB=0;
 for NB1=1:BLK(1).NBlock
