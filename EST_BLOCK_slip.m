@@ -869,7 +869,7 @@ ND=size(OBS(1).ALAT,2);
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
-OBSz=OBS(1).AHIG;
+OBSz=1e-3.*OBS(1).AHIG;
 %
 TRI(1).TNF=0;
 for NB1=1:BLK(1).NBlock
@@ -1239,11 +1239,12 @@ lon=atan2(Y,X).*180/pi;
 ang=sqrt(X.*X+Y.*Y+Z.*Z).*(1e6.*(180./pi));
 end
 %% CONVERT TO XYZ FROM ELL AT SURFACE
-function [OOxyz]=conv2ell(Olat,Olon)
+function [OOxyz]=conv2ell(Olat,Olon,Ohig)
 Olat=Olat(:);
 Olon=Olon(:);
+Ohig=Ohig(:);
 deg2rad=pi/180;
-[Oxyz(:,1),Oxyz(:,2),Oxyz(:,3)]=ell2xyz(Olat,Olon,0);
+[Oxyz(:,1),Oxyz(:,2),Oxyz(:,3)]=ell2xyz(Olat,Olon,Ohig);
 Oxyz = Oxyz*1e3;
 OOxyz=[Oxyz sin(Olat*deg2rad) sin(Olon*deg2rad) cos(Olat*deg2rad) cos(Olon*deg2rad)];
 end
