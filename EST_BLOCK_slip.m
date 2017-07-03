@@ -898,7 +898,7 @@ for NB1=1:BLK(1).NBlock
         TRI(1).BOUND(NB1,NB2).NV(N,:)=NV;
         TRI(1).BOUND(NB1,NB2).ST(N,:)=ST;
         TRI(1).BOUND(NB1,NB2).DP(N,:)=DP;
-        TRI(1).BOUND(NB1,NB2).OXYZ(N,:)=conv2ell(TRI(1).BOUND(NB1,NB2).clat(N),TRI(1).BOUND(NB1,NB2).clon(N));
+        TRI(1).BOUND(NB1,NB2).OXYZ(N,:)=conv2ell(TRI(1).BOUND(NB1,NB2).clat(N),TRI(1).BOUND(NB1,NB2).clon(N),1e3.*TRI(1).BOUND(NB1,NB2).cdep(N));
         U=CalcTriDisps(OBSx,OBSy,OBSz,TRIx,TRIy,TRIz,PR,1,0,0);
         TRI(1).BOUND(NB1,NB2).GSTR(1:3:3*ND,N)=U.x; %E
         TRI(1).BOUND(NB1,NB2).GSTR(2:3:3*ND,N)=U.y; %N
@@ -1108,7 +1108,7 @@ for NB1=1:BLK(1).NBlock
       end
       BLK(1).BOUND(NB1,NB2).LAT=BLK(NB1).LAT(Ca);
       BLK(1).BOUND(NB1,NB2).LON=BLK(NB1).LON(Ca);
-      BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON);
+      BLK(1).BOUND(NB1,NB2).BXYZ=conv2ell(BLK(1).BOUND(NB1,NB2).LAT,BLK(1).BOUND(NB1,NB2).LON,zeros(size(BLK(1).BOUND(NB1,NB2).LON)));
     end
   end
 end
@@ -1126,7 +1126,7 @@ for N=1:BLK(1).NBlock
   OBS(N).EER=OBS(1).EERR(IND);
   OBS(N).NER=OBS(1).NERR(IND);
   OBS(N).HER=OBS(1).HERR(IND);
-  OBS(N).OXYZ=conv2ell(OBS(N).LAT,OBS(N).LON);
+  OBS(N).OXYZ=conv2ell(OBS(N).LAT,OBS(N).LON,OBS(N).HIG);
   OBS(N).Vne=reshape([OBS(1).EVEC(IND); OBS(1).NVEC(IND)],OBS(N).NBLK.*2,1);
   OBS(N).Vww=reshape([OBS(1).EERR(IND); OBS(1).NERR(IND)],OBS(N).NBLK.*2,1);
 end
@@ -1155,7 +1155,7 @@ while 1
   OBS(1).EERR(N) =str2double(cellstr(str(8))); %E-W
   OBS(1).NERR(N) =str2double(cellstr(str(9))); %N-S
   OBS(1).HERR(N) =str2double(cellstr(str(10))); %U-D
-  OBS(1).AXYZ(N,:)=conv2ell(OBS(1).ALAT(N),OBS(1).ALON(N));
+  OBS(1).AXYZ(N,:)=conv2ell(OBS(1).ALAT(N),OBS(1).ALON(N),OBS(1).AHIG(N));
 end
 OBS(1).NOBS=N;
 OBS(1).ABLK=zeros(OBS(1).NOBS,1);
