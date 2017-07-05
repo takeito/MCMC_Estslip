@@ -529,7 +529,7 @@ while not(COUNT==3)
     CF=sqrt((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2)./sqrt((G.TB*Mp.SMP).^2+(G.TtB*Mp.SMP).^2);
     CF(isnan(CF))=1;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT.*CF)+G.P*Mp.SMP;   
+    CAL.SMP=-1.*G.C*((G.TB*Mp.SMP).*Mc.SMPMAT.*CF)+G.P*Mp.SMP;   
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
@@ -731,7 +731,7 @@ axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
 title(['Iteration Number: ',num2str(RT)]);
 % 
 % debug----------
-figure(150)
+figure(150);clf(150)
 quiver(OBS(1).ALON,OBS(1).ALAT,vec.rig(1:3:end)',vec.rig(2:3:end)','k')
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,vec.ela(1:3:end)',vec.ela(2:3:end)','r')
