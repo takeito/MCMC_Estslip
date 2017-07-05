@@ -591,14 +591,22 @@ while not(COUNT==3)
     COUNT=COUNT+1;
   end
   CHA.SMP=CAL.SMP;
+  % debug-----------
+  poltmp=mean(CHA.Mp,2);
+  cptmp=mean(CHA.Mc,2);
+  cptmprep=repmat(cptmp,3,D.CNT);cptmprep=cptmprep(D.MID);
+  vec.rig=G.P*poltmp;
+  vec.ela=G.C*((G.TB*poltmp).*cptmprep.*CF);
+  vec.rel=G.C*((G.TB*poltmp).*CF);
+  % debug-----------
   if PRM.GPU~=99
     cCHA.Mc=gather(CHA.Mc);
     cCHA.Mp=gather(CHA.Mp);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    MAKE_FIG(cCHA,BLK,OBS,RT,LO_Mc,UP_Mc)
+    MAKE_FIG(cCHA,BLK,OBS,RT,LO_Mc,UP_Mc,vec)
   else
-    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc)
+    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,vec)
   end
   if RT > PRM.ITR; break; end;
 end
@@ -649,7 +657,7 @@ save('./Result/CHA_test.mat','CHA'); % test
 % 
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc)
+function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,vec)
 % Color palette(POLAR)
 red=[0:1/32:1 ones(1,32)]';
 green=[0:1/32:1 1-1/32:-1/32:0]';
@@ -721,6 +729,17 @@ quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
 hold on
 axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
 title(['Iteration Number: ',num2str(RT)]);
+% 
+% debug----------
+figure(150)
+quiver(OBS(1).ALON,OBS(1).ALAT,vec.rig(1:3:end)',vec.rig(2:3:end)','k')
+hold on
+quiver(OBS(1).ALON,OBS(1).ALAT,vec.ela(1:3:end)',vec.ela(2:3:end)','r')
+hold on
+quiver(OBS(1).ALON,OBS(1).ALAT,vec.rel(1:3:end)',vec.rel(2:3:end)','m')
+axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
+title(['Iteration Number: ',num2str(RT)]);
+% debug----------
 drawnow
 end
 %% READ PLATE INTERFACE
