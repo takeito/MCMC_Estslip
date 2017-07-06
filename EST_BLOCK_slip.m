@@ -512,7 +512,14 @@ while not(COUNT==3)
     rMp =rand(Mp.N,PRM.CHA,'double')-0.5;
     rLa =rand(La.N,PRM.CHA,'double')-0.5;
   end
-  for iT=1:PRM.CHA
+  if RT==1
+    NCHA=10.*PRM.CHA;
+    NKEP=10.*NKEP;
+  else
+    NCHA=PRM.CHA;
+    NKEP=PRM.KEP;
+  end
+  for iT=1:NCHA
 % SAMPLE SECTION
 %     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
 %     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
@@ -556,16 +563,16 @@ while not(COUNT==3)
       PRI.OLD = PRI.SMP;
     end
 % KEEP SECTION
-    if iT >= PRM.CHA-PRM.KEP
-      CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
-      CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
-      CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
-      if ACC; NACC=NACC+1; end;
+    if iT >= NCHA-NKEP
+      CHA.Mc(:,iT-(NCHA-NKEP)+1)=Mc.SMP;
+      CHA.Mp(:,iT-(NCHA-NKEP)+1)=Mp.SMP;
+      CHA.La(:,iT-(NCHA-NKEP)+1)=La.SMP;
+      if ACC; NACC=NACC+1; end
     end
   end
   CHA=COMPRESS_DATA(CHA,RT);
 %
-  CHA.AJR=NACC./PRM.CHA;
+  CHA.AJR=NACC./NCHA;
 %
   Mc.STD=std(CHA.Mc,1,2);
   Mp.STD=std(CHA.Mp,1,2); 
