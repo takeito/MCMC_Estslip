@@ -32,11 +32,11 @@ MAKE_FIGS(BLK,OBS);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 OUTPUT.DIR='./Result/';
-WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
+WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT,D,G)
 %
 end
 %% WIRTE OUTPUT FILE
-function WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT)
+function WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT,D,G)
 %
 for DN=1:Inf
   DDIR=['Test_',num2str(DN,'%02i')];
@@ -54,6 +54,7 @@ save(fullfile(ADIR,'CHA.mat'),'CHA')
 save(fullfile(ADIR,'BLK.mat'),'BLK')
 save(fullfile(ADIR,'TRI.mat'),'TRI')
 save(fullfile(ADIR,'PRM.mat'),'PRM')
+save(fullfile(ADIR,'GRN.mat'),'D','G')
 end
 %% UNIFORM MESH GENERATION
 function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
