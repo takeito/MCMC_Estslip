@@ -648,7 +648,7 @@ for ii=1:size(Mcint8,1)
 end
 % 
 for ii=1:size(Mpint8,1)
-  CHA.McCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
+  CHA.MpCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpMAX=MpMAX(ii);
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpMIN=MpMIN(ii);
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
