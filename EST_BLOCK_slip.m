@@ -277,6 +277,7 @@ D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
+D(1).CFID=false(3*TRI(1).TNF,1);
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
@@ -299,6 +300,7 @@ for NB1=1:BLK(1).NBlock
       D(1).mID=zeros(BLK(1).NB,1);
       D(1).mID(MR:MR+NF-1)=1;
       D(1).MID=[D(1).MID D(1).mID];
+      if BLK(1).BOUND(NB1,NB2).type==5;D(1).CFID(MC:MC+3*NF-1)=true;end
 % Need Project to direction of relative plate motion estimated from Pole
 %       TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
 %       TMP.LD(TMP.LD==0)=1;
@@ -528,7 +530,7 @@ while not(COUNT==3)
     Mc.SMPMAT=Mc.SMPMAT(D.MID);
 % CONVERT dST and dDP (Coefficient MATRIX)
     CF=sqrt((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2)./sqrt((G.TB*Mp.SMP).^2+(G.TtB*Mp.SMP).^2);
-    CF(isnan(CF))=1;
+    CF(or(isnan(CF),D.CFID))=1;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT.*CF)+G.P*Mp.SMP;   
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
