@@ -16,7 +16,7 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 % SHOW BLOCK BOUNDARY MAP
 SHOW_BLOCK_BOUND(BLK)
 % READ FIX EULER POLES
-[POL]=READ_EULER_POLES(BLK);
+[POL,PRM]=READ_EULER_POLES(BLK,PRM);
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -844,7 +844,7 @@ for NB1=1:BLK(1).NBlock
 end
 end
 %% READ FIX EULER POLES
-function [POL]=READ_EULER_POLES(BLK)
+function [POL,PRM]=READ_EULER_POLES(BLK,PRM)
 % Fix euler poles at the block which has no observation site.
 % BLID  : Block ID that includes fix POLE
 % OMEGA : unit is deg/Myr
@@ -878,6 +878,8 @@ FIXw(POL.BLID,2)=POL.wy;
 FIXw(POL.BLID,3)=POL.wz;
 POL.ID=logical(reshape(repmat(POL.ID,3,1),3*BLK(1).NBlock,1));
 POL.FIXw=reshape(FIXw',3*BLK(1).NBlock,1);
+% 
+PRM.APRIORIPOLE=TMP';
 % 
 end
 %% MAKE GREEN FUNCTION
