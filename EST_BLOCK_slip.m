@@ -566,7 +566,7 @@ while not(COUNT==3)
       if ACC; NACC=NACC+1; end;
     end
   end
-  CHA=COMPRESS_DATA(CHA,RT);
+  CHA=COMPRESS_DATA(CHA,PRM,RT);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -624,9 +624,19 @@ fprintf('RMS=: %8.3f\n',CHA.Res)
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Compress CHA sampling
-function CHA=COMPRESS_DATA(CHA,ITR)
+function CHA=COMPRESS_DATA(CHA,PRM,ITR)
 % 
 % load('./Result_red/Test_07/CHA.mat'); % test
+% 
+if PRM.GPU==99&&gpuDeviceCount==0
+  COVMc=cov(CHA.Mc');
+  COVMp=cov(CHA.Mc');
+else
+  gCHA.Mc=gpuArray(CHA.Mc);
+  gCHA.Mp=gpuArray(CHA.Mp);
+  COVMc=cov(gCHA.Mc');COVMc=gather(COVMc);
+  COVMp=cov(gCHA.Mp');COVMp=gather(COVMp);
+end
 % 
 McMAX=max(CHA.Mc,[],2);
 McMIN=min(CHA.Mc,[],2);
@@ -648,6 +658,7 @@ for ii=1:size(Mcint8,1)
   CHA.McCOMPRESS(ITR).NFLT(ii).McMIN=McMIN(ii);
   CHA.McCOMPRESS(ITR).NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
 end
+CHA.McCOMPRESS(ITR).COVMc=COVMc;
 % 
 for ii=1:size(Mpint8,1)
   CHA.MpCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
@@ -655,6 +666,7 @@ for ii=1:size(Mpint8,1)
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpMIN=MpMIN(ii);
   CHA.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
 end
+CHA.MpCOMPRESS(ITR).COVMp=COVMp;
 % 
 save('./Result/CHA_test.mat','CHA'); % test
 % 
