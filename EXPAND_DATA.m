@@ -43,7 +43,7 @@ for ii=1:NIT
       NDATAPOL(jj)=NDATAPOL(jj)+ncha;
     end
   end
-  SUMPOLPAIR=SUMPOLPAIR+ncha.*(CHA.MpCOMPRESS(ii).COVMp-(sumpol./ncha)*(sumpol./ncha)');
+  SUMPOLPAIR=SUMPOLPAIR+(ncha-1).*CHA.MpCOMPRESS(ii).COVMp+ncha.*(sumpol./ncha)*(sumpol./ncha)';
   for kk=1:NFLT
     infid=CHA.McCOMPRESS(ii).NFLT(kk).Mcscale==Inf;
     if ~infid
@@ -65,7 +65,7 @@ for ii=1:NIT
       NDATAFLT(kk)=NDATAFLT(kk)+ncha;
     end
   end
-  SUMFLTPAIR=SUMFLTPAIR+ncha.*(CHA.McCOMPRESS(ii).COVMc+(sumflt./ncha)*(sumflt./ncha)');
+  SUMFLTPAIR=SUMFLTPAIR+(ncha-1).*CHA.McCOMPRESS(ii).COVMc+ncha.*(sumflt./ncha)*(sumflt./ncha)';
 end
 % 
 AVEPOL=SUMPOL./NDATAPOL;
