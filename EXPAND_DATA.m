@@ -20,26 +20,27 @@ NDATAPOL=zeros(NPOL,1);
 NDATAFLT=zeros(NFLT,1);
 % 
 binnum=[0.5:1:127];
+Mpbin=[-10^9:10^7:10^9];
+Mcbin=[-1:0.02:1];
+MpHIST=zeros(NPOL,size(Mpbin,2));
+McHIST=zeros(NPOL,size(Mcbin,2));
 
 for ii=1:NIT
   for jj=1:NPOL
     infid=CHA.MpCOMPRESS(ii).NPOL(jj).Mpscale==Inf;
+    estpol=[];
     if ~infid
       cbin=binnum./CHA.MpCOMPRESS(ii).NPOL(jj).Mpscale+CHA.MpCOMPRESS(ii).NPOL(jj).MpMIN;
-      datasum=sum(cbin.*CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST);
-      datasum2=sum(cbin.^2.*CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST);
+      for ll=1:length(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST)
+        estpol=[estpol ones(1,CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST(ll)).*cbin(ll)];
+      end
+      MpHIST(jj)=MpHIST(jj)+histcounts(estpol,Mpbin);
       ncha=sum(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST);
-      sumpol(jj)=datasum;
-      SUMPOL(jj)=SUMPOL(jj)+datasum;
-      SUMPOL2(jj)=SUMPOL2(jj)+datasum2;
       NDATAPOL(jj)=NDATAPOL(jj)+ncha;
     else
       ncha=sum(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST);
-      datasum=ncha*CHA.MpCOMPRESS(ii).NPOL(jj).MpMAX;
-      datasum2=ncha*CHA.MpCOMPRESS(ii).NPOL(jj).MpMAX^2;
-      sumpol(jj)=datasum;
-      SUMPOL(jj)=SUMPOL(jj)+datasum;
-      SUMPOL2(jj)=SUMPOL2(jj)+datasum2;
+      estpol=ones(1,ncha).*CHA.MpCOMPRESS(ii).POL(jj).MpMAX;
+      MPHIST(jj)=MpHIST(jj)+histcounts(estpol,Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+ncha;
     end
   end
