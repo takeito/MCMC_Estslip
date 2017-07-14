@@ -8,11 +8,9 @@ load(file)
 NIT=length(CHA.McCOMPRESS);
 NPOL=length(CHA.MpCOMPRESS(1).NPOL);
 NFLT=length(CHA.McCOMPRESS(1).NFLT);
-sumpol=zeros(NPOL,1);
 SUMPOL=zeros(NPOL,1);
 SUMPOL2=zeros(NPOL,1);
 SUMPOLPAIR=zeros(NPOL,NPOL);
-sumflt=zeros(NFLT,1);
 SUMFLT=zeros(NFLT,1);
 SUMFLT2=zeros(NFLT,1);
 SUMFLTPAIR=zeros(NFLT,NFLT);
@@ -44,37 +42,36 @@ for ii=1:NIT
       NDATAPOL(jj)=NDATAPOL(jj)+ncha;
     end
   end
+  SUMPOL=SUMPOL+ncha.*CHA.MpCOMPRESS(ii).MEANMp;
   SUMPOLPAIR=SUMPOLPAIR+(ncha-1).*CHA.MpCOMPRESS(ii).COVMp+ncha.*CHA.MpCOMPRESS(ii).MEANMp*CHA.MpCOMPRESS(ii).MEANMp';
   for kk=1:NFLT
     infid=CHA.McCOMPRESS(ii).NFLT(kk).Mcscale==Inf;
+    estflt=[];
     if ~infid
       cbin=binnum./CHA.McCOMPRESS(ii).NFLT(kk).Mcscale+CHA.McCOMPRESS(ii).NFLT(kk).McMIN;
-      datasum=sum(cbin.*CHA.McCOMPRESS(ii).NFLT(kk).McHIST);
-      datasum2=sum(cbin.^2.*CHA.McCOMPRESS(ii).NFLT(kk).McHIST);
+      for mm=1:length(CHA.McCOMPRESS(ii).NFLT(kk).McHIST)
+        estflt=[estflt ones(1,CHA.McCOMPRESS(ii).NFLT(kk).McHIST(mm)).*cbin(mm)];
+      end
+      McHIST(kk)=McHIST(kk)+histcounts(estflt,Mcbin);
       ncha=sum(CHA.McCOMPRESS(ii).NFLT(kk).McHIST);
-      sumflt(kk)=datasum;
-      SUMFLT(kk)=SUMFLT(kk)+datasum;
-      SUMFLT2(kk)=SUMFLT2(kk)+datasum2;
       NDATAFLT(kk)=NDATAFLT(kk)+ncha;
     else
       ncha=sum(CHA.McCOMPRESS(ii).NFLT(kk).MpHIST);
-      datasum=ncha*CHA.McCOMPRESS(ii).NFLT(kk).McMAX;
-      datasum2=ncha*CHA.McCOMPRESS(ii).NFLT(kk).McMAX^2;
-      sumflt(kk)=datasum;
-      SUMFLT(kk)=SUMFLT(kk)+datasum;
-      SUMFLT2(kk)=SUMFLT2(kk)+datasum2;
+      estflt=ones(1,ncha).*CHA.McCOMPRESS(ii).FLT(kk).McMAX;
+      McHIST(kk)=McHIST(kk)+histcounts(estflt,Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+ncha;
     end
   end
-  SUMFLTPAIR=SUMFLTPAIR+(ncha-1).*CHA.McCOMPRESS(ii).COVMc+ncha.*(sumflt./ncha)*(sumflt./ncha)';
+  SUMFLT=SUMFLT+ncha.*CHA.McCOMPRESS(ii).MEANMc;
+  SUMFLTPAIR=SUMFLTPAIR+(ncha-1).*CHA.McCOMPRESS(ii).COVMc+ncha.*CHA.McCOMPRESS(ii).MEANMc*CHA.McCOMPRESS(ii).MEANMc';
 end
 % 
 AVEPOL=SUMPOL./NDATAPOL;
 AVEFLT=SUMFLT./NDATAFLT;
-STDPOL=SUMPOL2./NDATAPOL-AVEPOL.^2;
-STDFLT=SUMFLT2./NDATAFLT-AVEFLT.^2;
-COVPOL=SUMPOLPAIR./NDATAPOL-AVEPOL*AVEPOL';
-COVFLT=SUMFLTPAIR./NDATAFLT-AVEFLT*AVEFLT';
+COVPOL=SUMPOLPAIR./NDATAPOL-(SUMPOL./NDATAPOL)*(SUMPOL./NDATAPOL)';
+COVFLT=SUMFLTPAIR./NDATAFLT-(SUMFLT./NDATAFLT)*(SUMFLT./NDATAFLT)';
+STDPOL=diag(COVPOL);
+STDFLT=diag(COVFLT);
 CORPOL=COVPOL./(sqrt(STDPOL)*sqrt(STDPOL'));
 CORFLT=COVFLT./(sqrt(STDFLT)*sqrt(STDFLT'));
 % 
@@ -86,6 +83,8 @@ TCHA.COVPOL=COVPOL;
 TCHA.COVFLT=COVFLT;
 TCHA.CORPOL=CORPOL;
 TCHA.CORFLT=CORFLT;
+TCHA.HISTPOL=MpHIST;
+TCHA.HISTFLT=McHIST;
 % 
 outfile=[dir,'/TCHA.mat'];
 save(outfile,'TCHA');
