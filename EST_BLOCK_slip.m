@@ -632,7 +632,7 @@ if PRM.GPU==99&&gpuDeviceCount==0
   MEANMc=mean(CHA.Mc,2);
   MEANMp=mean(CHA.Mp,2);
   COVMc=cov(CHA.Mc');
-  COVMp=cov(CHA.Mc');
+  COVMp=cov(CHA.Mp');
 else
   gCHA.Mc=gpuArray(CHA.Mc);
   gCHA.Mp=gpuArray(CHA.Mp);
