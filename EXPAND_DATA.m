@@ -40,11 +40,11 @@ for ii=1:NIT
     else
       ncha=sum(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST);
       estpol=ones(1,ncha).*CHA.MpCOMPRESS(ii).POL(jj).MpMAX;
-      MPHIST(jj)=MpHIST(jj)+histcounts(estpol,Mpbin);
+      MpHIST(jj)=MpHIST(jj)+histcounts(estpol,Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+ncha;
     end
   end
-  SUMPOLPAIR=SUMPOLPAIR+(ncha-1).*CHA.MpCOMPRESS(ii).COVMp+ncha.*(sumpol./ncha)*(sumpol./ncha)';
+  SUMPOLPAIR=SUMPOLPAIR+(ncha-1).*CHA.MpCOMPRESS(ii).COVMp+ncha.*CHA.MpCOMPRESS(ii).MEANMp*CHA.MpCOMPRESS(ii).MEANMp';
   for kk=1:NFLT
     infid=CHA.McCOMPRESS(ii).NFLT(kk).Mcscale==Inf;
     if ~infid
