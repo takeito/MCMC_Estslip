@@ -21,7 +21,7 @@ binnum=[0.5:1:127];
 Mpbin=[-10^10:10^8:10^10];
 Mcbin=[-1:0.02:1];
 MpHIST=zeros(NPOL,size(Mpbin,2)-1);
-McHIST=zeros(NPOL,size(Mcbin,2)-1);
+McHIST=zeros(NFLT,size(Mcbin,2)-1);
 
 for ii=1:NIT
   for jj=1:NPOL
