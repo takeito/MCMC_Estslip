@@ -18,10 +18,10 @@ NDATAPOL=zeros(NPOL,1);
 NDATAFLT=zeros(NFLT,1);
 % 
 binnum=[0.5:1:127];
-Mpbin=[-10^9:10^7:10^9];
+Mpbin=[-10^10:10^8:10^10];
 Mcbin=[-1:0.02:1];
-MpHIST=zeros(NPOL,size(Mpbin,2));
-McHIST=zeros(NPOL,size(Mcbin,2));
+MpHIST=zeros(NPOL,size(Mpbin,2)-1);
+McHIST=zeros(NPOL,size(Mcbin,2)-1);
 
 for ii=1:NIT
   for jj=1:NPOL
@@ -32,13 +32,13 @@ for ii=1:NIT
       for ll=1:length(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST)
         estpol=[estpol ones(1,CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST(ll)).*cbin(ll)];
       end
-      MpHIST(jj)=MpHIST(jj)+histcounts(estpol,Mpbin);
+      MpHIST(jj,:)=MpHIST(jj,:)+histcounts(estpol,Mpbin);
       ncha=sum(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST);
       NDATAPOL(jj)=NDATAPOL(jj)+ncha;
     else
       ncha=sum(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST);
-      estpol=ones(1,ncha).*CHA.MpCOMPRESS(ii).POL(jj).MpMAX;
-      MpHIST(jj)=MpHIST(jj)+histcounts(estpol,Mpbin);
+      estpol=ones(1,ncha).*CHA.MpCOMPRESS(ii).NPOL(jj).MpMAX;
+      MpHIST(jj,:)=MpHIST(jj,:)+histcounts(estpol,Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+ncha;
     end
   end
@@ -52,13 +52,13 @@ for ii=1:NIT
       for mm=1:length(CHA.McCOMPRESS(ii).NFLT(kk).McHIST)
         estflt=[estflt ones(1,CHA.McCOMPRESS(ii).NFLT(kk).McHIST(mm)).*cbin(mm)];
       end
-      McHIST(kk)=McHIST(kk)+histcounts(estflt,Mcbin);
+      McHIST(kk,:)=McHIST(kk,:)+histcounts(estflt,Mcbin);
       ncha=sum(CHA.McCOMPRESS(ii).NFLT(kk).McHIST);
       NDATAFLT(kk)=NDATAFLT(kk)+ncha;
     else
       ncha=sum(CHA.McCOMPRESS(ii).NFLT(kk).MpHIST);
-      estflt=ones(1,ncha).*CHA.McCOMPRESS(ii).FLT(kk).McMAX;
-      McHIST(kk)=McHIST(kk)+histcounts(estflt,Mcbin);
+      estflt=ones(1,ncha).*CHA.McCOMPRESS(ii).NFLT(kk).McMAX;
+      McHIST(kk,:)=McHIST(kk,:)+histcounts(estflt,Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+ncha;
     end
   end
