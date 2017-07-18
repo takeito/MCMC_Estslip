@@ -15,7 +15,7 @@ SUMFLTPAIR=zeros(NFLT,NFLT);
 NDATAPOL=zeros(NPOL,1);
 NDATAFLT=zeros(NFLT,1);
 % 
-binnum=[0.5:1:127];
+binnum=[-127.5:1:127];
 Mpbin=[-10^10:10^8:10^10];
 Mcbin=[-1:0.02:1];
 MpHIST=zeros(NPOL,size(Mpbin,2)-1);
@@ -26,7 +26,7 @@ for ii=1:NIT
     infid=CHA.MpCOMPRESS(ii).NPOL(jj).Mpscale==Inf;
     estpol=[];
     if ~infid
-      cbin=binnum./CHA.MpCOMPRESS(ii).NPOL(jj).Mpscale+CHA.MpCOMPRESS(ii).NPOL(jj).MpMIN;
+      cbin=(binnum+128)./(2.55.*CHA.MpCOMPRESS(ii).NPOL(jj).Mpscale)+CHA.MpCOMPRESS(ii).NPOL(jj).MpMIN;
       for ll=1:length(CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST)
         estpol=[estpol ones(1,CHA.MpCOMPRESS(ii).NPOL(jj).MpHIST(ll)).*cbin(ll)];
       end
@@ -46,7 +46,7 @@ for ii=1:NIT
     infid=CHA.McCOMPRESS(ii).NFLT(kk).Mcscale==Inf;
     estflt=[];
     if ~infid
-      cbin=binnum./CHA.McCOMPRESS(ii).NFLT(kk).Mcscale+CHA.McCOMPRESS(ii).NFLT(kk).McMIN;
+      cbin=(binnum+128)./(2.55.*CHA.McCOMPRESS(ii).NFLT(kk).Mcscale)+CHA.McCOMPRESS(ii).NFLT(kk).McMIN;
       for mm=1:length(CHA.McCOMPRESS(ii).NFLT(kk).McHIST)
         estflt=[estflt ones(1,CHA.McCOMPRESS(ii).NFLT(kk).McHIST(mm)).*cbin(mm)];
       end
