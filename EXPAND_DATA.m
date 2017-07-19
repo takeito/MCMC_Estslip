@@ -17,7 +17,7 @@ NDATAFLT=zeros(NFLT,1);
 % 
 binnum=[-127.5:1:127];
 Mpbin=[-10^10:10^8:10^10];
-Mcbin=[-1:0.02:1];
+Mcbin=[-1:0.01:1];
 MpHIST=zeros(NPOL,size(Mpbin,2)-1);
 McHIST=zeros(NFLT,size(Mcbin,2)-1);
 
