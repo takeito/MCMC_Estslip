@@ -636,10 +636,14 @@ if PRM.GPU==99&&gpuDeviceCount==0
 else
   gCHA.Mc=gpuArray(CHA.Mc);
   gCHA.Mp=gpuArray(CHA.Mp);
-  MEANMc=mean(CHA.Mc,2);
-  MEANMp=mean(CHA.Mp,2);
-  COVMc=cov(gCHA.Mc');COVMc=gather(COVMc);
-  COVMp=cov(gCHA.Mp');COVMp=gather(COVMp);
+  MEANMc=mean(gCHA.Mc,2);
+  MEANMp=mean(gCHA.Mp,2);
+  COVMc=cov(gCHA.Mc');
+  COVMp=cov(gCHA.Mp');
+  MEANMc=gather(MEANMc);
+  MEANMp=gather(MEANMp);
+  COVMc=gather(COVMc);
+  COVMp=gather(COVMp);
 end
 % 
 McMAX=max(CHA.Mc,[],2);
