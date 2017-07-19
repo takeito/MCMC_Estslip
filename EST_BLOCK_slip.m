@@ -654,7 +654,7 @@ Mpscale=single(100./(MpMAX-MpMIN));
 MpBASE=(CHA.Mp-MpMIN).*Mpscale*2.55-128;
 Mpint8=int8(MpBASE);
 % 
-binedge=int8(0:127);
+binedge=int8(-128:127);
 % 
 for ii=1:size(Mcint8,1)
   CHA.McCOMPRESS(ITR).NFLT(ii).Mcscale=Mcscale(ii);
