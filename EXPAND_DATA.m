@@ -54,7 +54,7 @@ for ii=1:NIT
       ncha=sum(CHA.McCOMPRESS(ii).NFLT(kk).McHIST);
       NDATAFLT(kk)=NDATAFLT(kk)+ncha;
     else
-      ncha=sum(CHA.McCOMPRESS(ii).NFLT(kk).MpHIST);
+      ncha=sum(CHA.McCOMPRESS(ii).NFLT(kk).McHIST);
       estflt=ones(1,ncha).*CHA.McCOMPRESS(ii).NFLT(kk).McMAX;
       McHIST(kk,:)=McHIST(kk,:)+histcounts(estflt,Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+ncha;
