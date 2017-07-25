@@ -20,7 +20,7 @@ Mpbin=[-10^10:10^8:10^10];
 Mcbin=[-1:0.01:1];
 MpHIST=zeros(NPOL,size(Mpbin,2)-1);
 McHIST=zeros(NFLT,size(Mcbin,2)-1);
-BURNIN=ceil(burnin*NIT/100);
+BURNIN=floor(burnin*NIT/100)+1;
 
 for ii=BURNIN:NIT
   for jj=1:NPOL
