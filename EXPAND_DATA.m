@@ -1,5 +1,5 @@
-function EXPAND_DATA(dir)
-% 
+function EXPAND_DATA(dir,burnin)
+% burnin: enter for percent scale
 file=[dir,'/CHA_test.mat'];
 load(file)
 % 
@@ -20,7 +20,7 @@ Mpbin=[-10^10:10^8:10^10];
 Mcbin=[-1:0.01:1];
 MpHIST=zeros(NPOL,size(Mpbin,2)-1);
 McHIST=zeros(NFLT,size(Mcbin,2)-1);
-BURNIN=ceil(NIT/10);
+BURNIN=ceil(burnin*NIT/100);
 
 for ii=BURNIN:NIT
   for jj=1:NPOL
