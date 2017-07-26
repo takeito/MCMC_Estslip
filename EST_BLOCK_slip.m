@@ -457,6 +457,7 @@ La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
 CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
 CHA.La= zeros(La.N,PRM.KEP,precision);
+cha=[];
 % Set FIX POLES if POL.FIXflag=1
 % MpScale=Mp.INT.*ones(Mp.N,1,precision);
 if POL.FIXflag==1
@@ -567,7 +568,7 @@ while not(COUNT==3)
       if ACC; NACC=NACC+1; end;
     end
   end
-  CHA=COMPRESS_DATA(CHA,PRM,RT);
+  cha=COMPRESS_DATA(CHA,cha,PRM,RT);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -625,7 +626,7 @@ fprintf('RMS=: %8.3f\n',CHA.Res)
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Compress CHA sampling
-function CHA=COMPRESS_DATA(CHA,PRM,ITR)
+function cha=COMPRESS_DATA(CHA,cha,PRM,ITR)
 % 
 % load('./Result_red/Test_07/CHA.mat'); % test
 % 
