@@ -681,7 +681,7 @@ end
 cha.MpCOMPRESS(ITR).COVMp=COVMp;
 cha.MpCOMPRESS(ITR).MEANMp=MEANMp;
 % 
-save('./Result/CHA_test.mat','cha'); % test
+save('./Result/CHA_test.mat','cha','-v7.3'); % test
 % 
 end
 %% Show results for makeing FIGURES
