@@ -50,11 +50,11 @@ dlmwrite(fullfile(ADIR,'Mp.txt'),CHA.Mp);
 dlmwrite(fullfile(ADIR,'Mc.txt'),CHA.Mc);
 dlmwrite(fullfile(ADIR,'La.txt'),CHA.La);
 %
-save(fullfile(ADIR,'CHA.mat'),'CHA')
-save(fullfile(ADIR,'BLK.mat'),'BLK')
-save(fullfile(ADIR,'TRI.mat'),'TRI')
-save(fullfile(ADIR,'PRM.mat'),'PRM')
-save(fullfile(ADIR,'GRN.mat'),'D','G')
+save(fullfile(ADIR,'CHA.mat'),'CHA','-v7.3')
+save(fullfile(ADIR,'BLK.mat'),'BLK','-v7.3')
+save(fullfile(ADIR,'TRI.mat'),'TRI','-v7.3')
+save(fullfile(ADIR,'PRM.mat'),'PRM','-v7.3')
+save(fullfile(ADIR,'GRN.mat'),'D','G','-v7.3')
 end
 %% UNIFORM MESH GENERATION
 function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
