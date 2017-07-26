@@ -501,7 +501,7 @@ COUNT=0;
 LO_Mc=-1;
 UP_Mc=1;
 McScale=0.05;
-MpScale=5E-10;
+MpScale=5E-10.*ones(Mp.N,1,precision).*~POL.ID;
 while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
@@ -663,24 +663,24 @@ Mpint8=int8(MpBASE);
 binedge=int8(-128:127);
 % 
 for ii=1:size(Mcint8,1)
-  CHA.McCOMPRESS(ITR).NFLT(ii).Mcscale=Mcscale(ii);
-  CHA.McCOMPRESS(ITR).NFLT(ii).McMAX=McMAX(ii);
-  CHA.McCOMPRESS(ITR).NFLT(ii).McMIN=McMIN(ii);
-  CHA.McCOMPRESS(ITR).NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
+  cha.McCOMPRESS(ITR).NFLT(ii).Mcscale=Mcscale(ii);
+  cha.McCOMPRESS(ITR).NFLT(ii).McMAX=McMAX(ii);
+  cha.McCOMPRESS(ITR).NFLT(ii).McMIN=McMIN(ii);
+  cha.McCOMPRESS(ITR).NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
 end
-CHA.McCOMPRESS(ITR).COVMc=COVMc;
-CHA.McCOMPRESS(ITR).MEANMc=MEANMc;
+cha.McCOMPRESS(ITR).COVMc=COVMc;
+cha.McCOMPRESS(ITR).MEANMc=MEANMc;
 % 
 for ii=1:size(Mpint8,1)
-  CHA.MpCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
-  CHA.MpCOMPRESS(ITR).NPOL(ii).MpMAX=MpMAX(ii);
-  CHA.MpCOMPRESS(ITR).NPOL(ii).MpMIN=MpMIN(ii);
-  CHA.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
+  cha.MpCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
+  cha.MpCOMPRESS(ITR).NPOL(ii).MpMAX=MpMAX(ii);
+  cha.MpCOMPRESS(ITR).NPOL(ii).MpMIN=MpMIN(ii);
+  cha.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
 end
-CHA.MpCOMPRESS(ITR).COVMp=COVMp;
-CHA.MpCOMPRESS(ITR).MEANMp=MEANMp;
+cha.MpCOMPRESS(ITR).COVMp=COVMp;
+cha.MpCOMPRESS(ITR).MEANMp=MEANMp;
 % 
-save('./Result/CHA_test.mat','CHA'); % test
+save('./Result/CHA_test.mat','cha'); % test
 % 
 end
 %% Show results for makeing FIGURES
