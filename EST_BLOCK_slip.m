@@ -501,6 +501,7 @@ COUNT=0;
 LO_Mc=-1;
 UP_Mc=1;
 McScale=0.05;
+MpScale=5E-10;
 while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
@@ -522,8 +523,8 @@ while not(COUNT==3)
 %     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
     McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMc(:,iT);
     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
-    Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
-%     Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
+%     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
+    Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
