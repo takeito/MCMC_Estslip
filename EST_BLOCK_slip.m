@@ -629,7 +629,8 @@ function CHA=COMPRESS_DATA(CHA,PRM,ITR)
 % 
 % load('./Result_red/Test_07/CHA.mat'); % test
 % 
-if PRM.GPU==99&&gpuDeviceCount==0
+% if PRM.GPU==99&&gpuDeviceCount==0
+if PRM.GPU==99
   MEANMc=mean(CHA.Mc,2);
   MEANMp=mean(CHA.Mp,2);
   COVMc=cov(CHA.Mc');
