@@ -1,8 +1,8 @@
-% function EXPAND_ALLSAMPLE(dir,burnin)
-function EXPAND_ALLSAMPLE(cha,burnin)
+function EXPAND_ALLSAMPLE(dir,burnin)
+% function EXPAND_ALLSAMPLE(cha,burnin)
 % burnin: enter for percent scale
-% file=[dir,'/CHA_test.mat'];
-% load(file)
+file=[dir,'/CHA_test.mat'];
+load(file)
 % 
 % load('./Result/Test_06/CHA_test.mat'); % test
 % 
