@@ -671,7 +671,7 @@ for ii=1:size(Mcint8,1)
 end
 cha.McCOMPRESS(ITR).COVMc=COVMc;
 cha.McCOMPRESS(ITR).MEANMc=MEANMc;
-cha.McCOMPRESS(ITR).SMPMc=McBASE;
+cha.McCOMPRESS(ITR).SMPMc=int8(McBASE);
 % 
 for ii=1:size(Mpint8,1)
   cha.MpCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
@@ -681,7 +681,7 @@ for ii=1:size(Mpint8,1)
 end
 cha.MpCOMPRESS(ITR).COVMp=COVMp;
 cha.MpCOMPRESS(ITR).MEANMp=MEANMp;
-cha.MpCOMPRESS(ITR).SMPMp=MpBASE;
+cha.MpCOMPRESS(ITR).SMPMp=int8(MpBASE);
 % 
 save('./Result/CHA_test.mat','cha','-v7.3'); % test
 % 
