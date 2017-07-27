@@ -35,12 +35,12 @@ for ii=BURNIN:NIT
   for jj=1:NPOL
     infid=cha.MpCOMPRESS(ii).NPOL(jj).Mpscale==Inf;
     if ~infid
-      smppol(jj,:)=double((cha.MpCOMPRESS(ii).SMPMp+128))./(2.55.*cha.MpCOMPRESS(ii).NPOL(jj).Mpscale)+cha.MpCOMPRESS(ii).NPOL(jj).MpMIN;
-      MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol,Mpbin);
+      smppol(jj,:)=(double(cha.MpCOMPRESS(ii).SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS(ii).NPOL(jj).Mpscale)+cha.MpCOMPRESS(ii).NPOL(jj).MpMIN;
+      MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol(jj,:),Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+NCH;
     else
       smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS(ii).NPOL(jj).MpMAX;
-      MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol,Mpbin);
+      MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol(jj,:),Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+NCH;
     end
   end
@@ -50,12 +50,12 @@ for ii=BURNIN:NIT
   for kk=1:NFLT
     infid=cha.McCOMPRESS(ii).NFLT(kk).Mcscale==Inf;
     if ~infid
-      smpflt(kk,:)=double((cha.McCOMPRESS(ii).SMPMc+128))./(2.55.*cha.McCOMPRESS(ii).NFLT(kk).Mcscale)+cha.McCOMPRESS(ii).NFLT(kk).McMIN;
-      MpHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt,Mcbin);
+      smpflt(kk,:)=(double(cha.McCOMPRESS(ii).SMPMc(kk,:)+128))./(2.55.*cha.McCOMPRESS(ii).NFLT(kk).Mcscale)+cha.McCOMPRESS(ii).NFLT(kk).McMIN;
+      MpHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt(kk,:),Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     else
       smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS(ii).NFLT(kk).McMAX;
-      McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt,Mcbin);
+      McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt(kk,:),Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     end
   end
@@ -85,8 +85,8 @@ TCHA.HISTPOL=MpHIST;
 TCHA.HISTFLT=McHIST;
 TCHA.NDATPOL=NDATAPOL;
 TCHA.NDATFLT=NDATAFLT;
-TCHA.SMPPOL=SMPPPOL;
-TCHA.SMPFLT=SMPPFLT;
+TCHA.SMPPOL=SMPPOL;
+TCHA.SMPFLT=SMPFLT;
 % 
 outfile=[dir,'/TCHA.mat'];
 save(outfile,'TCHA');
