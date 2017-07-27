@@ -1,12 +1,13 @@
-function EXPAND_ALLSAMPLE(dir,burnin)
+% function EXPAND_ALLSAMPLE(dir,burnin)
+function EXPAND_ALLSAMPLE(cha,burnin)
 % burnin: enter for percent scale
-file=[dir,'/CHA_test.mat'];
-load(file)
+% file=[dir,'/CHA_test.mat'];
+% load(file)
 % 
 % load('./Result/Test_06/CHA_test.mat'); % test
 % 
 NIT=length(cha.McCOMPRESS);
-NCH=size(cha.McCOMPRESS(1).SMPMp,2);
+NCH=size(cha.MpCOMPRESS(1).SMPMp,2);
 NPOL=length(cha.MpCOMPRESS(1).NPOL);
 NFLT=length(cha.McCOMPRESS(1).NFLT);
 SUMPOL=zeros(NPOL,1);
@@ -16,7 +17,6 @@ SUMFLTPAIR=zeros(NFLT,NFLT);
 NDATAPOL=zeros(NPOL,1);
 NDATAFLT=zeros(NFLT,1);
 % 
-binnum=[-127.5:1:127];
 Mpbin=[-1E-7:1E-10:1E-7];
 Mcbin=[-1:0.001:1];
 SMPINT=50; % sampling interval
@@ -25,6 +25,7 @@ McHIST=zeros(NFLT,size(Mcbin,2)-1);
 BURNIN=floor(burnin*NIT/100)+1;
 SMPID=[1:SMPINT:NCH];
 smppol=zeros(NPOL,NCH);
+smpflt=zeros(NFLT,NCH);
 SMPPOL=[];
 SMPFLT=[];
 % infid=zeros(NPOL,1);
@@ -33,22 +34,11 @@ SMPFLT=[];
 for ii=BURNIN:NIT
   for jj=1:NPOL
     infid=cha.MpCOMPRESS(ii).NPOL(jj).Mpscale==Inf;
-%     infid(jj)=cha.MpCOMPRESS(ii).NPOL(jj).Mpscale==Inf;
-%     mpscale(jj)=cha.MpCOMPRESS(ii).NPOL(jj).Mpscale;
-%     mpmin(jj)=cha.MpCOMPRESS(ii).NPOL(jj).MpMIN;
-%     estpol=[];
     if ~infid
-%       cbin=(binnum+128)./(2.55.*cha.MpCOMPRESS(ii).NPOL(jj).Mpscale)+cha.MpCOMPRESS(ii).NPOL(jj).MpMIN;
-      smppol(jj,:)=(cha.MpCOMPRESS(ii).SMPMp+128)./(2.55.*cha.MpCOMPRESS(ii).NPOL(jj).Mpscale)+cha.MpCOMPRESS(ii).NPOL(jj).MpMIN;
-%       for ll=1:length(cha.MpCOMPRESS(ii).NPOL(jj).MpHIST)
-%         estpol=[estpol ones(1,cha.MpCOMPRESS(ii).NPOL(jj).MpHIST(ll)).*cbin(ll)];
-%       end
-%       MpHIST(jj,:)=MpHIST(jj,:)+histcounts(estpol,Mpbin);
+      smppol(jj,:)=double((cha.MpCOMPRESS(ii).SMPMp+128))./(2.55.*cha.MpCOMPRESS(ii).NPOL(jj).Mpscale)+cha.MpCOMPRESS(ii).NPOL(jj).MpMIN;
       MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol,Mpbin);
-%       NCH=sum(cha.MpCOMPRESS(ii).NPOL(jj).MpHIST);
       NDATAPOL(jj)=NDATAPOL(jj)+NCH;
     else
-%       NCH=sum(cha.MpCOMPRESS(ii).NPOL(jj).MpHIST);
       smppol=ones(1,NCH).*cha.MpCOMPRESS(ii).NPOL(jj).MpMAX;
       MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol,Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+NCH;
@@ -59,25 +49,19 @@ for ii=BURNIN:NIT
   SMPPOL=[SMPPOL smppol(:,SMPID)];
   for kk=1:NFLT
     infid=cha.McCOMPRESS(ii).NFLT(kk).Mcscale==Inf;
-    estflt=[];
     if ~infid
-      cbin=(binnum+128)./(2.55.*cha.McCOMPRESS(ii).NFLT(kk).Mcscale)+cha.McCOMPRESS(ii).NFLT(kk).McMIN;
-      for mm=1:length(cha.McCOMPRESS(ii).NFLT(kk).McHIST)
-        estflt=[estflt ones(1,cha.McCOMPRESS(ii).NFLT(kk).McHIST(mm)).*cbin(mm)];
-      end
-      McHIST(kk,:)=McHIST(kk,:)+histcounts(estflt,Mcbin);
-%       NCH=sum(cha.McCOMPRESS(ii).NFLT(kk).McHIST);
+      smpflt(kk,:)=double((cha.McCOMPRESS(ii).SMPMc+128))./(2.55.*cha.McCOMPRESS(ii).NFLT(kk).Mcscale)+cha.McCOMPRESS(ii).NFLT(kk).McMIN;
+      MpHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt,Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     else
-%       NCH=sum(cha.McCOMPRESS(ii).NFLT(kk).McHIST);
-      estflt=ones(1,NCH).*cha.McCOMPRESS(ii).NFLT(kk).McMAX;
-      McHIST(kk,:)=McHIST(kk,:)+histcounts(estflt,Mcbin);
+      smpflt=ones(1,NCH).*cha.McCOMPRESS(ii).NFLT(kk).McMAX;
+      McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt,Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     end
   end
   SUMFLT=SUMFLT+NCH.*cha.McCOMPRESS(ii).MEANMc;
   SUMFLTPAIR=SUMFLTPAIR+(NCH-1).*cha.McCOMPRESS(ii).COVMc+NCH.*cha.McCOMPRESS(ii).MEANMc*cha.McCOMPRESS(ii).MEANMc';
-  SMPFLT=[SMPFLT cha.McCOMPRESS(ii).Mcscale.*cha.McCOMPRESS(ii).SMPMc(:,SMPID)];
+  SMPFLT=[SMPFLT smpflt(:,SMPID)];
 end
 % 
 AVEPOL=SUMPOL./NDATAPOL;
@@ -101,6 +85,8 @@ TCHA.HISTPOL=MpHIST;
 TCHA.HISTFLT=McHIST;
 TCHA.NDATPOL=NDATAPOL;
 TCHA.NDATFLT=NDATAFLT;
+TCHA.SMPPOL=SMPPPOL;
+TCHA.SMPFLT=SMPPFLT;
 % 
 outfile=[dir,'/TCHA.mat'];
 save(outfile,'TCHA');
