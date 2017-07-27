@@ -51,7 +51,7 @@ for ii=BURNIN:NIT
     infid=cha.McCOMPRESS(ii).NFLT(kk).Mcscale==Inf;
     if ~infid
       smpflt(kk,:)=(double(cha.McCOMPRESS(ii).SMPMc(kk,:)+128))./(2.55.*cha.McCOMPRESS(ii).NFLT(kk).Mcscale)+cha.McCOMPRESS(ii).NFLT(kk).McMIN;
-      MpHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt(kk,:),Mcbin);
+      McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt(kk,:),Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     else
       smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS(ii).NFLT(kk).McMAX;
