@@ -39,7 +39,7 @@ for ii=BURNIN:NIT
       MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol,Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+NCH;
     else
-      smppol=ones(1,NCH).*cha.MpCOMPRESS(ii).NPOL(jj).MpMAX;
+      smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS(ii).NPOL(jj).MpMAX;
       MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol,Mpbin);
       NDATAPOL(jj)=NDATAPOL(jj)+NCH;
     end
@@ -54,7 +54,7 @@ for ii=BURNIN:NIT
       MpHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt,Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     else
-      smpflt=ones(1,NCH).*cha.McCOMPRESS(ii).NFLT(kk).McMAX;
+      smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS(ii).NFLT(kk).McMAX;
       McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt,Mcbin);
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     end
