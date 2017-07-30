@@ -99,7 +99,7 @@ while 1
     dgx=(dist_bo([p(ix,1)+deps,p(ix,2)],bo)-d(ix))/deps;
     dgy=(dist_bo([p(ix,1),p(ix,2)+deps],bo)-d(ix))/deps;
     dXY=d(ix)./(dgx.^2+dgy.^2);
-    p(ix,:)=p(ix,:)-dXY.*[dgx dgy];
+    p(ix,:)=p(ix,:)-[dXY dXY].*[dgx dgy];
   end
   max_change=max(sqrt(sum(delt*Ftot(d<-deps,:).^2,2))/int_bo);
   if mod(count,100)==0
@@ -878,7 +878,8 @@ function [POL,PRM]=READ_EULER_POLES(BLK,PRM)
 % BLID  : Block ID that includes fix POLE
 % OMEGA : unit is deg/Myr
 READFILE='./PARAMETER/euler_poles_fix.txt';
-if exist(READFILE)~=2; POL.FIXflag=0; return; end
+POL.ID=false;
+if exist(READFILE,'file')~=2; POL.FIXflag=0; return; end
 % 
 POL.FIXflag=1;
 FID=fopen(READFILE,'r');
