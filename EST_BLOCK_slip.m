@@ -55,6 +55,9 @@ save(fullfile(ADIR,'BLK.mat'),'BLK','-v7.3')
 save(fullfile(ADIR,'TRI.mat'),'TRI','-v7.3')
 save(fullfile(ADIR,'PRM.mat'),'PRM','-v7.3')
 save(fullfile(ADIR,'GRN.mat'),'D','G','-v7.3')
+% 
+movefile('./Result/CHA_test*.mat',ADIR)
+% 
 end
 %% UNIFORM MESH GENERATION
 function [p,t]=mesh2D_uni(bou,int_bo,p_fix)
@@ -457,7 +460,6 @@ La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
 CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
 CHA.La= zeros(La.N,PRM.KEP,precision);
-cha=[];
 % Set FIX POLES if POL.FIXflag=1
 % MpScale=Mp.INT.*ones(Mp.N,1,precision);
 if POL.FIXflag==1
@@ -568,7 +570,7 @@ while not(COUNT==3)
       if ACC; NACC=NACC+1; end;
     end
   end
-  cha=COMPRESS_DATA(CHA,cha,PRM,RT);
+  COMPRESS_DATA(CHA,PRM,RT);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -626,7 +628,7 @@ fprintf('RMS=: %8.3f\n',CHA.Res)
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Compress CHA sampling
-function cha=COMPRESS_DATA(CHA,cha,PRM,ITR)
+function COMPRESS_DATA(CHA,PRM,ITR)
 % 
 % load('./Result_red/Test_07/CHA.mat'); % test
 % 
@@ -664,26 +666,26 @@ Mpint8=int8(MpBASE);
 binedge=int8(-128:127);
 % 
 for ii=1:size(Mcint8,1)
-  cha.McCOMPRESS(ITR).NFLT(ii).Mcscale=Mcscale(ii);
-  cha.McCOMPRESS(ITR).NFLT(ii).McMAX=McMAX(ii);
-  cha.McCOMPRESS(ITR).NFLT(ii).McMIN=McMIN(ii);
-  cha.McCOMPRESS(ITR).NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
+  cha.McCOMPRESS.NFLT(ii).Mcscale=Mcscale(ii);
+  cha.McCOMPRESS.NFLT(ii).McMAX=McMAX(ii);
+  cha.McCOMPRESS.NFLT(ii).McMIN=McMIN(ii);
+  cha.McCOMPRESS.NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
 end
-cha.McCOMPRESS(ITR).COVMc=COVMc;
-cha.McCOMPRESS(ITR).MEANMc=MEANMc;
-cha.McCOMPRESS(ITR).SMPMc=int8(McBASE);
+cha.McCOMPRESS.COVMc=COVMc;
+cha.McCOMPRESS.MEANMc=MEANMc;
+cha.McCOMPRESS.SMPMc=int8(McBASE);
 % 
 for ii=1:size(Mpint8,1)
-  cha.MpCOMPRESS(ITR).NPOL(ii).Mpscale=Mpscale(ii);
-  cha.MpCOMPRESS(ITR).NPOL(ii).MpMAX=MpMAX(ii);
-  cha.MpCOMPRESS(ITR).NPOL(ii).MpMIN=MpMIN(ii);
-  cha.MpCOMPRESS(ITR).NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
+  cha.MpCOMPRESS.NPOL(ii).Mpscale=Mpscale(ii);
+  cha.MpCOMPRESS.NPOL(ii).MpMAX=MpMAX(ii);
+  cha.MpCOMPRESS.NPOL(ii).MpMIN=MpMIN(ii);
+  cha.MpCOMPRESS.NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
 end
-cha.MpCOMPRESS(ITR).COVMp=COVMp;
-cha.MpCOMPRESS(ITR).MEANMp=MEANMp;
-cha.MpCOMPRESS(ITR).SMPMp=int8(MpBASE);
+cha.MpCOMPRESS.COVMp=COVMp;
+cha.MpCOMPRESS.MEANMp=MEANMp;
+cha.MpCOMPRESS.SMPMp=int8(MpBASE);
 % 
-save('./Result/CHA_test.mat','cha','-v7.3'); % test
+save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
 % 
 end
 %% Show results for makeing FIGURES
