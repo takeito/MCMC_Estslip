@@ -2,6 +2,7 @@ function edit_BOUND
 BLK=READ_BLOCK_BOUND('./BLOCK/');
 PAR=READ_PARAMETERS('./PARAMETER/opt_bound_par.txt');
 for nB=1:PAR(1).num
+  if size(BLK(1).BOUND(PAR(1).B1(nB),PAR(1).B2(nB)).LON)==0;continue;end
   BLK=OPT_BLOCK_BOUND(BLK,PAR(1).B1(nB),PAR(1).B2(nB),PAR(1).INT(nB));
 end
 SHOW_BLOCK_BOUND(BLK);
