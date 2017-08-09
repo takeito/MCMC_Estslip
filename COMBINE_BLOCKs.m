@@ -84,7 +84,7 @@ function MAKE_FIGS(BLK,B,BNO1,BNO2,DIR)
 % hold on
 % quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC);
 %
-figure('Name',DIR); clf
+figure(90); clf(90)
 % LAT=[];LON=[];VEL=[];
 % for NB1=1:BLK(1).NBlock
 %   if NB1==BNO1||NB1==BNO2; continue; end
@@ -112,6 +112,7 @@ for N=1:BLK(1).NBlock+1
   NB=NB+1;
   hold on
 end
+title(DIR);
 end
 %% READ PARAMETER FILE 
 function [PRM]=READ_PARAMETERS(INPUT_SET)
