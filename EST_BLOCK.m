@@ -113,7 +113,7 @@ for N=1:BLK(1).NBlock
 end
 AIC=(OBS(1).NOBS.*2).*log(TSig./(OBS(1).NOBS.*2))+2.*NumB.*3;
 cAIC=AIC+2.*NumB.*3.*(NumB.*3+1)./(OBS(1).NOBS.*2-NumB.*3-1);
-fprintf('Sigma^2= %8.3f AIC= %7.3f cAIC= %7.3f K= %2d\n',TSig./(OBS(1).NOBS.*2),AIC,cAIC,NumB.*3)
+fprintf('Sigma^2= %8.3f AIC= %7.3f cAIC= %7.3f K= %2d NB= %2d\n',TSig./(OBS(1).NOBS.*2),AIC,cAIC,NumB.*3,BLK(1).NBlock)
 %
 end
 %% READ PARAMETER FILE 
@@ -147,8 +147,8 @@ for NB=1:BLK(1).NBlock
   BLK(NB).LON=tmp(:,1);
   BLK(NB).LAT=tmp(:,2);
 end
-fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
-figure('Name','BLOCK_BOUNDARY_LINE')
+% fprintf('READ BLOCK FILES : %4i \n',BLK(1).NBlock)
+figure(10); clf(10)
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LAT=[];
@@ -170,6 +170,7 @@ for NB1=1:BLK(1).NBlock
     end
   end
 end
+title('BLOCK BOUNDARY LINE')
 for N=1:BLK(1).NBlock
   IND=inpolygon(OBS(1).ALON,OBS(1).ALAT,BLK(N).LON,BLK(N).LAT);
   OBS(1).ABLK(IND)=N;
