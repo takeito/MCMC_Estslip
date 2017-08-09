@@ -187,7 +187,7 @@ for NB1=1:BLK(1).NBlock
     BLK(1).BOUND(NB1,NB2).LON=[];
     LCa=inpolygon(BLK(NB1).LON,BLK(NB1).LAT,BLK(NB2).LON,BLK(NB2).LAT);
     Ca=find(LCa);
-    if ~isempty(Ca)
+    if ~isempty(Ca) && sum(LCa)~=1
       if and(LCa(1),LCa(end))
         Ca0=find(LCa~=true,1,'last')+1:length(LCa)-1;
         Ca1=1:find(LCa~=true,1,'first')-1;
