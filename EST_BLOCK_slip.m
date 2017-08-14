@@ -505,7 +505,7 @@ LO_Mc=-1;
 UP_Mc=1;
 McScale=0.05;
 MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
-while not(COUNT==3)
+while not(COUNT==5)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
