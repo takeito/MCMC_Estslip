@@ -454,7 +454,7 @@ La.N=1;
 Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
-Mc.OLD=     0.*ones(Mc.N,1,precision);
+Mc.OLD=     1.*ones(Mc.N,1,precision);
 Mp.OLD= zeros(size(BLK(1).POLE),precision);
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
@@ -505,7 +505,7 @@ LO_Mc=-1;
 UP_Mc=1;
 McScale=0.05;
 MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
-while not(COUNT==5)
+while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
