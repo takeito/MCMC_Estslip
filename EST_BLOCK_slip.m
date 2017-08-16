@@ -483,8 +483,8 @@ La.N=1;
 Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
-Mc.OLD=     1.*ones(Mc.N,1,precision);
-Mp.OLD= zeros(size(BLK(1).POLE),precision);
+Mc.OLD=   0.5.*ones(Mc.N,1,precision);
+Mp.OLD= double(BLK(1).POLE);
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
 CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
@@ -691,10 +691,10 @@ McMIN=min(CHA.Mc,[],2);
 MpMAX=max(CHA.Mp,[],2);
 MpMIN=min(CHA.Mp,[],2);
 % 
-Mcscale=single(100./(McMAX-McMIN));
+Mcscale=100./(McMAX-McMIN);
 McBASE=(CHA.Mc-McMIN).*Mcscale*2.55-128;
 Mcint8=int8(McBASE);
-Mpscale=single(100./(MpMAX-MpMIN));
+Mpscale=100./(MpMAX-MpMIN);
 MpBASE=(CHA.Mp-MpMIN).*Mpscale*2.55-128;
 Mpint8=int8(MpBASE);
 % 
