@@ -283,6 +283,7 @@ D(1).MID=[];
 D(1).OBSID=zeros(3*NOBS,BLK(1).NBlock);
 D(1).TRA=zeros(TRI.TNF,BLK(1).NBlock);
 D(1).CFID=false(3*TRI(1).TNF,1);
+D(1).CFDIPID=true(3*TRI(1).TNF,1);
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
@@ -306,6 +307,8 @@ for NB1=1:BLK(1).NBlock
       D(1).mID(MR:MR+NF-1)=1;
       D(1).MID=[D(1).MID D(1).mID];
       if BLK(1).BOUND(NB1,NB2).type==5;D(1).CFID(MC:MC+3*NF-1)=true;end
+      D(1).CFDIPID(MC+NF:MC+2*NF-1,1)=false;
+      D(1).CFDIPID(MC+NF:MC+2*NF-1,1)=false;
 % Need Project to direction of relative plate motion estimated from Pole
 %       TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
 %       TMP.LD(TMP.LD==0)=1;
@@ -365,18 +368,18 @@ for NB1=1:BLK(1).NBlock
       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-      G(1).B1(MC     :MC+  NF-1,3*NB1-2)=-G(1).B1(MC     :MC+  NF-1,3*NB1-2);
-      G(1).B1(MC     :MC+  NF-1,3*NB1-1)=-G(1).B1(MC     :MC+  NF-1,3*NB1-1);
-      G(1).B1(MC     :MC+  NF-1,3*NB1  )=-G(1).B1(MC     :MC+  NF-1,3*NB1  );
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+%       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+%       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+%       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+      G(1).B1(MC     :MC+  NF-1,3*NB2-2)=-G(1).B1(MC     :MC+  NF-1,3*NB1-2);
+      G(1).B1(MC     :MC+  NF-1,3*NB2-1)=-G(1).B1(MC     :MC+  NF-1,3*NB1-1);
+      G(1).B1(MC     :MC+  NF-1,3*NB2  )=-G(1).B1(MC     :MC+  NF-1,3*NB1  );
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB2-2)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB2-1)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
+      G(1).B1(MC+  NF:MC+2*NF-1,3*NB2  )=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB2-2)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB2-1)=0;
+      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB2  )=0;
 % 
       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3));
       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3));
@@ -397,18 +400,18 @@ for NB1=1:BLK(1).NBlock
       G(1).B2(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-2);
       G(1).B2(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-1);
       G(1).B2(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1  );
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
-      G(1).B2(MC     :MC+  NF-1,3*NB1-2)=-G(1).B2(MC     :MC+  NF-1,3*NB1-2);
-      G(1).B2(MC     :MC+  NF-1,3*NB1-1)=-G(1).B2(MC     :MC+  NF-1,3*NB1-1);
-      G(1).B2(MC     :MC+  NF-1,3*NB1  )=-G(1).B2(MC     :MC+  NF-1,3*NB1  );
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+%       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
+%       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
+%       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB2-2)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB2-1)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
+      G(1).B2(MC+  NF:MC+2*NF-1,3*NB2  )=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
+      G(1).B2(MC     :MC+  NF-1,3*NB2-2)=-G(1).B2(MC     :MC+  NF-1,3*NB1-2);
+      G(1).B2(MC     :MC+  NF-1,3*NB2-1)=-G(1).B2(MC     :MC+  NF-1,3*NB1-1);
+      G(1).B2(MC     :MC+  NF-1,3*NB2  )=-G(1).B2(MC     :MC+  NF-1,3*NB1  );
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB2-2)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB2-1)=0;
+      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB2  )=0;
 %       
       MC=MC+3*NF;
       MT=MT+2*NF;
@@ -558,11 +561,16 @@ while not(COUNT==3)
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(D.MID);
-% CONVERT dST and dDP (Coefficient MATRIX)
-    CF=sqrt((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2)./sqrt((G.TB*Mp.SMP).^2+(G.TtB*Mp.SMP).^2);
-    CF(or(isnan(CF),D.CFID))=1;
+% Calc Dip coefficient.
+    CF=sqrt(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2));
+%     CF=sqrt((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2)./sqrt((G.TB*Mp.SMP).^2+(G.TtB*Mp.SMP).^2);
+    CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT.*CF)+G.P*Mp.SMP;   
+    CAL.RIG=G.P*Mp.SMP;
+    CAL.ela=G.C*(repmat((G.TB*Mp.SMP),1,BLK(1).NBlock).*D.TRA.*repmat(Mc.SMPMAT,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
+    CAL.ELA=sum(CAL.ela.*D.OBSID,2);
+    CAL.SMP=CAL.RIG+CAL.ELA;
+%     CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT.*CF)+G.P*Mp.SMP;   
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
@@ -625,11 +633,12 @@ while not(COUNT==3)
   end
   CHA.SMP=CAL.SMP;
   % debug-----------
-  poltmp=mean(CHA.Mp,2);
-  cptmp=mean(CHA.Mc,2);
-  cptmprep=repmat(cptmp,3,D.CNT);cptmprep=cptmprep(D.MID);
-  vec.rig=G.P*poltmp;
-  vec.ela=G.C*((G.TB*poltmp).*cptmprep.*CF);
+  Mpmean=mean(CHA.Mp,2);
+  Mcmean=mean(CHA.Mc,2);
+  Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
+  VEC.RIG=G.P*Mpmean;
+  VEC.ela=G.C*(repmat((G.TB*Mpmean),1,BLK(1).NBlock).*D.TRA.*repmat(Mcmeanrep,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
+  VEC.ELA=sum(CAL.ela.*D.OBSID,2);
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
   if PRM.GPU~=99
@@ -637,9 +646,9 @@ while not(COUNT==3)
     cCHA.Mp=gather(CHA.Mp);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    MAKE_FIG(cCHA,BLK,OBS,RT,LO_Mc,UP_Mc,vec)
+    MAKE_FIG(cCHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC)
   else
-    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,vec)
+    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC)
   end
   if RT > PRM.ITR; break; end;
 end
@@ -715,7 +724,7 @@ save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
 % 
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,vec)
+function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC)
 % Color palette(POLAR)
 red=[0:1/32:1 ones(1,32)]';
 green=[0:1/32:1 1-1/32:-1/32:0]';
@@ -790,9 +799,9 @@ title(['Iteration Number: ',num2str(RT)]);
 % 
 % debug----------
 figure(140);clf(140)
-quiver(OBS(1).ALON,OBS(1).ALAT,vec.rig(1:3:end)',vec.rig(2:3:end)','k')
+quiver(OBS(1).ALON,OBS(1).ALAT,VEC.RIG(1:3:end)',VEC.RIG(2:3:end)','k')
 hold on
-quiver(OBS(1).ALON,OBS(1).ALAT,vec.ela(1:3:end)',vec.ela(2:3:end)','r')
+quiver(OBS(1).ALON,OBS(1).ALAT,VEC.ELA(1:3:end)',VEC.ELA(2:3:end)','r')
 % hold on
 % quiver(OBS(1).ALON,OBS(1).ALAT,vec.rel(1:3:end)',vec.rel(2:3:end)','m')
 axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
