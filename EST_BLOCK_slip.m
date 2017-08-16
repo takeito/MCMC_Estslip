@@ -280,6 +280,8 @@ D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
+D(1).OBSID=zeros(3*NOBS,BLK(1).NBlock);
+D(1).TRA=zeros(TRI.TNF,BLK(1).NBlock);
 D(1).CFID=false(3*TRI(1).TNF,1);
 D(1).CNT=0;
 %
@@ -423,6 +425,30 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
+end
+% 
+for BL=1:BLK(1).NBlock
+  D(1).obsid=zeros(1,NOBS);
+  D(1).obsid(1,OBS(1).ABLK==BL)=true;
+  D(1).OBSID(:,BL)=reshape(repmat(D(1).obsid,3,1),3*NOBS,1);
+  MC=1;
+  MT=1;
+  MR=1;
+  for NB1=1:BLK(1).NBlock
+    for NB2=NB1+1:BLK(1).NBlock
+      NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
+      if NF~=0
+        if NB2==BL && NB1<NB2
+          D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+        else
+          D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+        end
+        MC=MC+3*NF;
+        MT=MT+2*NF;
+        MR=MR+  NF;
+      end
+    end
+  end
 end
 % 
 G(1).C  =TMP.C(D(1).IND,:);
