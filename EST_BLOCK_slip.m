@@ -623,10 +623,10 @@ while not(COUNT==3)
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
   if CHA.AJR > 0.24
-    RWD=RWD*1.05;
+%     RWD=RWD*1.05;
     COUNT=0;
   elseif CHA.AJR < 0.22
-    RWD=RWD*0.9;
+%     RWD=RWD*0.9;
     COUNT=0;
   else
     COUNT=COUNT+1;
