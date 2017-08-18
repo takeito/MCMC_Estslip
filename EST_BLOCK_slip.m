@@ -17,16 +17,16 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 SHOW_BLOCK_BOUND(BLK)
 % READ FIX EULER POLES
 [POL,PRM]=READ_EULER_POLES(BLK,PRM);
+% CALC. GREEN FUNCTION
+[TRI,OBS]=GREEN_TRI(BLK,OBS);
+% Combain to Green function
+[D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CALC. ABIC AND BLOCK MOTION
 [BLK,OBS]=CALC_AIC(BLK,OBS);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 [BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 % MAKE FIGURES
 MAKE_FIGS(BLK,OBS);
-% CALC. GREEN FUNCTION
-[TRI]=GREEN_TRI(BLK,OBS);
-% Combain to Green function
-[D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CAL Markov chain Monte Calro
 [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL);
 % MAKE FIGURES
@@ -950,16 +950,21 @@ PRM.APRIORIPOLE=TMP';
 % 
 end
 %% MAKE GREEN FUNCTION
-function [TRI]=GREEN_TRI(BLK,OBS)
+function [TRI,OBS]=GREEN_TRI(BLK,OBS)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
 PR=0.25;
 ND=size(OBS(1).ALAT,2);
 %
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
+OBSMTR=[OBS(1).AXYZ(:,1:3) ones(OBS(1).NOBS,1)];
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 OBSz=1e-3.*OBS(1).AHIG;
 %
+TRI(1).OBSDIS=[];
+% TRI(1).AXYZ=[];
+% TRI(1).NORMXYZ=[];
+% TRI(1).PLANED=[];
 TRI(1).TNF=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
@@ -975,6 +980,13 @@ for NB1=1:BLK(1).NBlock
       fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
       for N=1:NF
+        TRIEDGE=zeros(3,7);
+        for Nn=1:3
+          TRIEDGE(Nn,:)=conv2ell(BLK(1).BOUND(NB1,NB2).blat(N,Nn),BLK(1).BOUND(NB1,NB2).blon(N,Nn),BLK(1).BOUND(NB1,NB2).bdep(N,Nn));
+        end
+        TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:)=cross(TRIEDGE(1,1:3),TRIEDGE(2,1:3));
+        TRI(1).BOUND(NB1,NB2).PLANED(N,1)=-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)*TRIEDGE(1,1)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)*TRIEDGE(1,2)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)*TRIEDGE(1,3);
+        TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)=abs(OBSMTR*[TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:) TRI(1).BOUND(NB1,NB2).PLANED(N,1)]')./sqrt(TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)^2);
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
@@ -1006,6 +1018,11 @@ for NB1=1:BLK(1).NBlock
       end
       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
+      TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
+      OBS(1).Gw=(1./min(TRI(1).OBSDIS,[],2))./max(1./min(TRI(1).OBSDIS,[],2));
+%       TRI(1).NORMXYZ=[TRI(1).NORMXYZ; TRI(1).BOUND(NB1,NB2).NORMXYZ];
+%       TRI(1).PLANED=[TRI(1).PLANED; TRI(1).BOUND(NB1,NB2).PLANED];
+%       TRI(1).AXYZ=[TRI(1).AXYZ; TRI(1).BOUND(NB1,NB2).OXYZ];
     end
   end
 end
@@ -1146,7 +1163,9 @@ for N=1:BLK(1).NBlock
     EVne=[0 0];
     if OBS(N).NBLK>=1
       NumB=NumB+1;
-      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww);
+      OBS(N).GRweight=OBS(1).Gw(OBS(1).ABLK==N);
+      OBS(N).GRweight=reshape(repmat(OBS(1).Gw(OBS(1).ABLK==N),1,2)',2*size(OBS(N).GRweight,1),1);
+      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww.*OBS(N).GRweight);
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     end
   end
