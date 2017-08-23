@@ -90,7 +90,9 @@ STDPOL=diag(COVPOL);
 STDFLT=diag(COVFLT);
 CORPOL=COVPOL./(sqrt(STDPOL)*sqrt(STDPOL'));
 CORFLT=COVFLT./(sqrt(STDFLT)*sqrt(STDFLT'));
-% 
+% Output
+TCHA.Mpbin=[Mpbin(1),Mpbin(2)-Mpbin(1),Mpbin(end)];
+TCHA.Mcbin=[Mcbin(1),Mcbin(2)-Mcbin(1),Mcbin(end)];
 TCHA.AVEPOL=AVEPOL;
 TCHA.AVEFLT=AVEFLT;
 TCHA.STDPOL=STDPOL;
