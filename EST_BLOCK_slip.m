@@ -232,6 +232,9 @@ PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
 DIRBlock_Interface=fscanf(Fid,'%s \n',[1,1]);
 PRM.DIRBlock_Interface=fullfile(PRM.HOME_D,DIRBlock_Interface);
 [~]=fgetl(Fid);
+FilePole=fscanf(Fid,'%s \n',[1,1]);
+PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
+[~]=fgetl(Fid);
 %
 PRM.GPU=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
@@ -914,12 +917,11 @@ function [POL,PRM]=READ_EULER_POLES(BLK,PRM)
 % Fix euler poles at the block which has no observation site.
 % BLID  : Block ID that includes fix POLE
 % OMEGA : unit is deg/Myr
-READFILE='./PARAMETER/euler_poles_fix.txt';
 POL.ID=false;
-if exist(READFILE,'file')~=2; POL.FIXflag=0; return; end
+if exist(PRM.FilePole,'file')~=2; POL.FIXflag=0; return; end
 % 
 POL.FIXflag=1;
-FID=fopen(READFILE,'r');
+FID=fopen(PRM.FilePole,'r');
 TMP=fscanf(FID,'%d %d %f %f %f\n',[5,Inf]);
 POL.ID=zeros(1,BLK(1).NBlock);
 FIXw=zeros(BLK(1).NBlock,3);
