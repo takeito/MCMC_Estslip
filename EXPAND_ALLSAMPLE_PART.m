@@ -24,7 +24,7 @@ function [TCHA]=cal_avestdbin(INPUT,burnin)
 % load('./Result/Test_06/CHA_test.mat'); % test
 NIT=size(INPUT,2);
 Mpbin=[-1E-7:1E-10:1E-7];
-Mcbin=[-1:0.001:1];
+Mcbin=[-1:0.005:1];
 SMPINT=50; % sampling interval
 BURNIN=floor(burnin*NIT/100)+1;
 for ii=BURNIN:NIT
@@ -91,8 +91,8 @@ STDFLT=diag(COVFLT);
 CORPOL=COVPOL./(sqrt(STDPOL)*sqrt(STDPOL'));
 CORFLT=COVFLT./(sqrt(STDFLT)*sqrt(STDFLT'));
 % Output
-TCHA.Mpbin=[Mpbin(1),Mpbin(2)-Mpbin(1),Mpbin(end)];
-TCHA.Mcbin=[Mcbin(1),Mcbin(2)-Mcbin(1),Mcbin(end)];
+TCHA.Mpbin=Mpbin;
+TCHA.Mcbin=Mcbin;
 TCHA.AVEPOL=AVEPOL;
 TCHA.AVEFLT=AVEFLT;
 TCHA.STDPOL=STDPOL;
