@@ -471,11 +471,12 @@ function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
 %
-if PRM.GPU==99
-  precision='double';
-else
-  precision='single';
-end
+% if PRM.GPU==99
+%   precision='double';
+% else
+%   precision='single';
+% end
+precision='double';
 RWD=PRM.RWD;
 Mc.INT=1e-2;
 Mp.INT=1e-10;
@@ -502,6 +503,10 @@ end
 %
 RES.OLD=inf(1,1,precision);
 PRI.OLD=inf(1,1,precision);
+McScale=0.05;
+MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
+LO_Mc=-1;
+UP_Mc=1;
 % GPU Initialize 
 if PRM.GPU~=99
   g=gpuDevice(PRM.GPU);
@@ -511,9 +516,9 @@ if PRM.GPU~=99
   res_m=g_men-r_men;
   fprintf('USE GPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d res_Memory(GB)=%6.3f\n',...
            PRM.CHA,PRM.ITR,Mc.N,Mp.N,res_m./(1024.*1024.*1024));      
-  CHA.Mc=gpuArray(CHA.Mc);
-  CHA.Mp=gpuArray(CHA.Mp);
-  CHA.La=gpuArray(CHA.La);
+%   CHA.Mc=gpuArray(CHA.Mc);
+%   CHA.Mp=gpuArray(CHA.Mp);
+%   CHA.La=gpuArray(CHA.La);
   Mc.STD=gpuArray(Mc.STD);
   Mp.STD=gpuArray(Mp.STD);
   La.STD=gpuArray(La.STD);
@@ -525,6 +530,16 @@ if PRM.GPU~=99
   G.TB=gpuArray(G.TB);
   G.C=gpuArray(G.C);
   G.P=gpuArray(G.P);
+  McScale=gpuArray(McScale);
+  MpScale=gpuArray(MpScale);
+  LO_Mc=gpuArray(LO_Mc);
+  UP_Mc=gpuArray(UP_Mc);
+  RWD=gpuArray(RWD);
+  G.B1=gpuArray(G.B1);
+  G.B2=gpuArray(G.B2);
+  G.TtB=gpuArray(G.TtB);
+  D.TRA=gpuArray(D.TRA);
+  D.OBSID=gpuArray(D.OBSID);
 else
   fprintf('USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
             PRM.CHA,PRM.ITR,Mc.N,Mp.N);
@@ -533,23 +548,19 @@ end
 RT=0;
 COUNT=0;
 %
-LO_Mc=-1;
-UP_Mc=1;
-McScale=0.05;
-MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
 while not(COUNT==3)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
-    logU=log(rand(PRM.CHA,1,'single','gpuArray'));
-    rMc = rand(Mc.N,PRM.CHA,'single','gpuArray');
-    rMp = rand(Mp.N,PRM.CHA,'single','gpuArray')-0.5;
-    rLa = rand(La.N,PRM.CHA,'single','gpuArray')-0.5;
+    logU=log(rand(PRM.CHA,1,precision,'gpuArray'));
+    rMc = rand(Mc.N,PRM.CHA,precision,'gpuArray')-0.5;
+    rMp = rand(Mp.N,PRM.CHA,precision,'gpuArray')-0.5;
+    rLa = rand(La.N,PRM.CHA,precision,'gpuArray')-0.5;
   else
-    logU=log(rand(PRM.CHA,1,'double'));
-    rMc =rand(Mc.N,PRM.CHA,'double')-0.5;
-    rMp =rand(Mp.N,PRM.CHA,'double')-0.5;
-    rLa =rand(La.N,PRM.CHA,'double')-0.5;
+    logU=log(rand(PRM.CHA,1,precision));
+    rMc =rand(Mc.N,PRM.CHA,precision)-0.5;
+    rMp =rand(Mp.N,PRM.CHA,precision)-0.5;
+    rLa =rand(La.N,PRM.CHA,precision)-0.5;
   end
   for iT=1:PRM.CHA
 % SAMPLE SECTION
@@ -601,9 +612,15 @@ while not(COUNT==3)
     end
 % KEEP SECTION
     if iT >= PRM.CHA-PRM.KEP
-      CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
-      CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
-      CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
+      if PRM.GPU~=99
+        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=gather(Mc.SMP);
+        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=gather(Mp.SMP);
+        CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=gather(La.SMP);
+      else
+        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
+        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
+        CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
+      end
       if ACC; NACC=NACC+1; end;
     end
   end
@@ -649,7 +666,7 @@ while not(COUNT==3)
     cCHA.Mp=gather(CHA.Mp);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    MAKE_FIG(cCHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC)
+    MAKE_FIG(cCHA,BLK,OBS,RT,gather(LO_Mc),gather(UP_Mc),VEC)
   else
     MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC)
   end
@@ -1301,8 +1318,8 @@ function Vneu=pole2velo(Pxyz,Oxyz)
 % pole2velo Convert velocity from Euler pole. Vectorized.
 [Nobs,~]=size(Oxyz);
 [Npol,~]=size(Pxyz);
-Vxyz=zeros(Npol,3,'single'); 
-Vneu=zeros(2.*Nobs,Npol,'single');
+Vxyz=zeros(Npol,3,'double'); 
+Vneu=zeros(2.*Nobs,Npol,'double');
 %
 for N=1:Nobs
   Vxyz(:,1) = -Oxyz(N,2).*Pxyz(:,3) + Pxyz(:,2).*Oxyz(N,3);
