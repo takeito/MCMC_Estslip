@@ -17,6 +17,8 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 SHOW_BLOCK_BOUND(BLK)
 % READ FIX EULER POLES
 [POL,PRM]=READ_EULER_POLES(BLK,PRM);
+% READ RIGID BLOCK BOUNDARY
+[BLK,PRM]=READ_RIGID_BOUND(BLK,PRM);
 % CALC. GREEN FUNCTION
 [TRI,OBS]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
@@ -235,6 +237,9 @@ PRM.DIRBlock_Interface=fullfile(PRM.HOME_D,DIRBlock_Interface);
 FilePole=fscanf(Fid,'%s \n',[1,1]);
 PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
 [~]=fgetl(Fid);
+FileRigb=fscanf(Fid,'%s \n',[1,1]);
+PRM.FileRigb=fullfile(PRM.HOME_D,FileRigb);
+[~]=fgetl(Fid);
 %
 PRM.GPU=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
@@ -258,6 +263,8 @@ fprintf('HOME_D             : %s \n',PRM.HOME_D)
 fprintf('FileOBS            : %s \n',PRM.FileOBS) 
 fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
 fprintf('DIRBlock_Interface : %s \n',PRM.DIRBlock_Interface) 
+fprintf('File fixed epole   : %s \n',PRM.FilePole) 
+fprintf('File Rigid boundary: %s \n',PRM.FileRigb) 
 fprintf('GPUdev (CPU:99)    : %i \n',PRM.GPU) 
 fprintf('ITR(Max_Nitr)      : %i \n',PRM.ITR) 
 fprintf('CHA(Chain)         : %i \n',PRM.CHA) 
@@ -440,14 +447,33 @@ for BL=1:BLK(1).NBlock
   MC=1;
   MT=1;
   MR=1;
+  rigblkID=BLK(1).RGPAIR(:,1)==BL;
+  FLAG1=sum(rigblkID);
   for NB1=1:BLK(1).NBlock
     for NB2=NB1+1:BLK(1).NBlock
       NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
       if NF~=0
-        if NB2==BL && NB1<NB2
-          D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+        if FLAG1==0
+          if NB2==BL && NB1<NB2
+            D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+          else
+            D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+          end
         else
-          D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+          FLAG2=0;
+          RGPAIRtmp=BLK(1).RGPAIR(rigblkID,:);
+          for RB=1:size(RGPAIRtmp,1)
+            RGPAIRID=ismember([NB1 NB2],RGPAIRtmp(RB,2:3));
+            ISPAIR=sum(RGPAIRID);
+            if ISPAIR==2;FLAG2=1;break;end
+          end
+          if FLAG2==1
+            D(1).TRA(MC:MC+3*NF-1,BL)=0;
+          elseif NB2==BL && NB1<NB2
+            D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+          else
+            D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+          end
         end
         MC=MC+3*NF;
         MT=MT+2*NF;
@@ -548,7 +574,7 @@ end
 RT=0;
 COUNT=0;
 %
-while not(COUNT==3)
+while not(COUNT==20)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
@@ -966,6 +992,13 @@ POL.FIXw=reshape(FIXw',3*BLK(1).NBlock,1);
 % 
 PRM.APRIORIPOLE=TMP';
 % 
+end
+%% READ RIGID BLOCK BOUNDARY PAIR
+function [BLK,PRM]=READ_RIGID_BOUND(BLK,PRM)
+if exist(PRM.FileRigb,'file')~=2; return; end
+FID=fopen(PRM.FileRigb,'r');
+TMP=fscanf(FID,'%d %d %d\n',[3 Inf]);
+BLK(1).RGPAIR=TMP';
 end
 %% MAKE GREEN FUNCTION
 function [TRI,OBS]=GREEN_TRI(BLK,OBS)
