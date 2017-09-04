@@ -333,12 +333,12 @@ for NB1=1:BLK(1).NBlock
       G(1).B(MT+NF:MT+2*NF-1,3*NB1  )=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
                                       -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
 
-      G(1).B(MT   :MT+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-2);
-      G(1).B(MT   :MT+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-1);
-      G(1).B(MT   :MT+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1  );
-      G(1).B(MT+NF:MT+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
-      G(1).B(MT+NF:MT+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
-      G(1).B(MT+NF:MT+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1  );
+%       G(1).B(MT   :MT+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-2);
+%       G(1).B(MT   :MT+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-1);
+%       G(1).B(MT   :MT+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1  );
+%       G(1).B(MT+NF:MT+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
+%       G(1).B(MT+NF:MT+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
+%       G(1).B(MT+NF:MT+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1  );
       
       G(1).B(MT   :MT+  NF-1,3*NB2-2)=-G(1).B(MT   :MT+  NF-1,3*NB1-2);
       G(1).B(MT   :MT+  NF-1,3*NB2-1)=-G(1).B(MT   :MT+  NF-1,3*NB1-1);
@@ -365,12 +365,12 @@ for NB1=1:BLK(1).NBlock
       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-      G(1).B1(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-2);
-      G(1).B1(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-1);
-      G(1).B1(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1  );
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
+%       G(1).B1(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-2);
+%       G(1).B1(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-1);
+%       G(1).B1(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1  );
+%       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
+%       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
+%       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
 %       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
 %       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
 %       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
@@ -397,12 +397,12 @@ for NB1=1:BLK(1).NBlock
       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
-      G(1).B2(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-2);
-      G(1).B2(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-1);
-      G(1).B2(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1  );
+%       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
+%       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
+%       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
+%       G(1).B2(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-2);
+%       G(1).B2(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-1);
+%       G(1).B2(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1  );
 %       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
 %       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
 %       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
@@ -1035,13 +1035,10 @@ for NB1=1:BLK(1).NBlock
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
       end
-      [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
+%       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
       TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
       OBS(1).Gw=(1./min(TRI(1).OBSDIS,[],2))./max(1./min(TRI(1).OBSDIS,[],2));
-%       TRI(1).NORMXYZ=[TRI(1).NORMXYZ; TRI(1).BOUND(NB1,NB2).NORMXYZ];
-%       TRI(1).PLANED=[TRI(1).PLANED; TRI(1).BOUND(NB1,NB2).PLANED];
-%       TRI(1).AXYZ=[TRI(1).AXYZ; TRI(1).BOUND(NB1,NB2).OXYZ];
     end
   end
 end
