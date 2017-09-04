@@ -575,16 +575,15 @@ while not(COUNT==3)
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(D.MID);
-% Calc Dip coefficient.
+% Calc Correction factor of subducting rate for DIP direction.
+% VE^2+VN^2 = Vst^2+(CF*Vdp)^2 <=> (G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2 = (G.TtB*Mp.SMP).^2+(CF*G.TB*Mp.SMP).^2
     CF=sqrt(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2));
-%     CF=sqrt((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2)./sqrt((G.TB*Mp.SMP).^2+(G.TtB*Mp.SMP).^2);
     CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
     CAL.ela=G.C*(repmat((G.TB*Mp.SMP),1,BLK(1).NBlock).*D.TRA.*repmat(Mc.SMPMAT,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
     CAL.ELA=sum(CAL.ela.*D.OBSID,2);
     CAL.SMP=CAL.RIG+CAL.ELA;
-%     CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT.*CF)+G.P*Mp.SMP;   
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
