@@ -50,17 +50,17 @@ for ii=BURNIN:NIT
   for jj=1:NPOL
     infid=cha.MpCOMPRESS.NPOL(jj).Mpscale==Inf;
     if ~infid
-      smppol(jj,:)=(single(cha.MpCOMPRESS.SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
+      smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
     else
-      smppol(jj,:)=single(ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX);
+      smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX;
     end
   end
   for kk=1:NFLT
     infid=cha.McCOMPRESS.NFLT(kk).Mcscale==Inf;
     if ~infid
-      smpflt(kk,:)=(single(cha.McCOMPRESS.SMPMc(kk,:))+128)./(2.55.*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
+      smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+128)./(2.55.*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
     else
-      smpflt(kk,:)=single(ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX);
+      smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX;
     end
   end
   if ii>=BURNIN
@@ -89,18 +89,18 @@ CORFLT=COVFLT./(sqrt(STDFLT)*sqrt(STDFLT'));
 % Output
 TCHA.Mpbin=Mpbin;
 TCHA.Mcbin=Mcbin;
-TCHA.AVEPOL=AVEPOL;
-TCHA.AVEFLT=AVEFLT;
-TCHA.STDPOL=STDPOL;
-TCHA.STDFLT=STDFLT;
-TCHA.COVPOL=COVPOL;
-TCHA.COVFLT=COVFLT;
-TCHA.CORPOL=CORPOL;
-TCHA.CORFLT=CORFLT;
-TCHA.HISTPOL=MpHIST;
-TCHA.HISTFLT=McHIST;
-TCHA.NDATPOL=NDATAPOL;
-TCHA.NDATFLT=NDATAFLT;
-TCHA.SMPPOL=SMPPOL;
-TCHA.SMPFLT=SMPFLT;
+TCHA.AVEPOL=single(AVEPOL);
+TCHA.AVEFLT=single(AVEFLT);
+TCHA.STDPOL=single(STDPOL);
+TCHA.STDFLT=single(STDFLT);
+TCHA.COVPOL=single(COVPOL);
+TCHA.COVFLT=single(COVFLT);
+TCHA.CORPOL=single(CORPOL);
+TCHA.CORFLT=single(CORFLT);
+TCHA.HISTPOL=single(MpHIST);
+TCHA.HISTFLT=single(McHIST);
+TCHA.NDATPOL=single(NDATAPOL);
+TCHA.NDATFLT=single(NDATAFLT);
+TCHA.SMPPOL=single(SMPPOL);
+TCHA.SMPFLT=single(SMPFLT);
 end
