@@ -14,7 +14,7 @@ for ii=1:Nit
   INPUT(ii).fname=fullfile(file(ii).folder,file(ii).name);
 end
 end
-%%
+%% Save routine.
 function WRITE_TCHA(TCHA,DIR)
 outfile=[DIR,'/TCHA.mat'];
 save(outfile,'TCHA','-v7.3');
@@ -24,10 +24,10 @@ function [TCHA]=cal_avestdbin(INPUT,burnin)
 % load('./Result/Test_06/CHA_test.mat'); % test
 NIT=size(INPUT,2);
 Mpbin=[-1E-7:1E-10:1E-7];
-Mcbin=[-1:0.005:1];
+Mcbin=[-1:0.01:1];
 SMPINT=50; % sampling interval
 BURNIN=floor(burnin*NIT/100)+1;
-for ii=BURNIN:NIT
+for ii=1:NIT
   load(INPUT(ii).fname);
   if ii==1
     NCH=size(cha.MpCOMPRESS.SMPMp,2);
@@ -47,31 +47,48 @@ for ii=BURNIN:NIT
     SMPPOL=[];
     SMPFLT=[];
   end
-  for jj=1:NPOL
-    infid=cha.MpCOMPRESS.NPOL(jj).Mpscale==Inf;
-    if ~infid
-      smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
-    else
-      smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX;
+  if ii>BURNIN
+    for jj=1:NPOL
+      infid=cha.MpCOMPRESS.NPOL(jj).Mpscale==Inf;
+      if ~infid
+        smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
+      else
+        smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX;
+      end
+      MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol(jj,:),Mpbin);
+      NDATAPOL(jj)=NDATAPOL(jj)+NCH;
     end
-  end
-  for kk=1:NFLT
-    infid=cha.McCOMPRESS.NFLT(kk).Mcscale==Inf;
-    if ~infid
-      smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+128)./(2.55.*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
-    else
-      smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX;
+    for kk=1:NFLT
+      infid=cha.McCOMPRESS.NFLT(kk).Mcscale==Inf;
+      if ~infid
+        smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+128)./(2.55.*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
+      else
+        smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX;
+      end
+      McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt(kk,:),Mcbin);
+      NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     end
-  end
-  if ii>=BURNIN
-    MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol(jj,:),Mpbin);
-    McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt(kk,:),Mcbin);
-    NDATAPOL(jj)=NDATAPOL(jj)+NCH;
-    NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     SUMPOL=SUMPOL+NCH.*cha.MpCOMPRESS.MEANMp;
     SUMFLT=SUMFLT+NCH.*cha.McCOMPRESS.MEANMc;
     SUMPOLPAIR=SUMPOLPAIR+(NCH-1).*cha.MpCOMPRESS.COVMp+NCH.*cha.MpCOMPRESS.MEANMp*cha.MpCOMPRESS.MEANMp';
-    SUMFLTPAIR=SUMFLTPAIR+(NCH-1).*cha.McCOMPRESS.COVMc+NCH.*cha.McCOMPRESS.MEANMc*cha.McCOMPRESS.MEANMc';
+    SUMFLTPAIR=SUMFLTPAIR+(NCH-1).*cha.McCOMPRESS.COVMc+NCH.*cha.McCOMPRESS.MEANMc*cha.McCOMPRESS.MEANMc';    
+  else
+    for jj=1:NPOL
+      infid=cha.MpCOMPRESS.NPOL(jj).Mpscale==Inf;
+      if ~infid
+        smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
+      else
+        smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX;
+      end
+    end
+    for kk=1:NFLT
+      infid=cha.McCOMPRESS.NFLT(kk).Mcscale==Inf;
+      if ~infid
+        smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+128)./(2.55.*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
+      else
+        smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX;
+      end
+    end
   end
   SMPPOL=[SMPPOL smppol(:,SMPID)];
   SMPFLT=[SMPFLT smpflt(:,SMPID)];
@@ -87,6 +104,8 @@ STDFLT=diag(COVFLT);
 CORPOL=COVPOL./(sqrt(STDPOL)*sqrt(STDPOL'));
 CORFLT=COVFLT./(sqrt(STDFLT)*sqrt(STDFLT'));
 % Output
+TCHA.Burnin=burnin;
+TCHA.Smpint=SMPINT;
 TCHA.Mpbin=Mpbin;
 TCHA.Mcbin=Mcbin;
 TCHA.AVEPOL=single(AVEPOL);
