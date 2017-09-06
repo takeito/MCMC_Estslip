@@ -27,8 +27,10 @@ Mpbin=[-1E-7:1E-10:1E-7];
 Mcbin=[-1:0.01:1];
 SMPINT=50; % sampling interval
 BURNIN=floor(burnin*NIT/100)+1;
+ACCTOTAL=0;
 for ii=1:NIT
   load(INPUT(ii).fname);
+  ACCFLAG=isfield(cha,'AJR');
   if ii==1
     NCH=size(cha.MpCOMPRESS.SMPMp,2);
     NPOL=length(cha.MpCOMPRESS.NPOL);
@@ -90,6 +92,9 @@ for ii=1:NIT
       end
     end
   end
+  if ACCFLAG
+    ACCTOTAL=ACCTOTAL+cha.AJR;
+  end
   SMPPOL=[SMPPOL smppol(:,SMPID)];
   SMPFLT=[SMPFLT smpflt(:,SMPID)];
   clear cha
@@ -104,6 +109,9 @@ STDFLT=diag(COVFLT);
 CORPOL=COVPOL./(sqrt(STDPOL)*sqrt(STDPOL'));
 CORFLT=COVFLT./(sqrt(STDFLT)*sqrt(STDFLT'));
 % Output
+if ACCFLAG
+  TCHA.ACCTOTAL=ACCTOTAL;
+end
 TCHA.Burnin=burnin;
 TCHA.Smpint=SMPINT;
 TCHA.Mpbin=Mpbin;
