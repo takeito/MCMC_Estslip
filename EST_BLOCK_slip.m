@@ -48,9 +48,9 @@ for DN=1:Inf
 end
 % 
 fprintf('Write OUTPUT FILE: %s \n',OUTPUT.DIR)
-dlmwrite(fullfile(ADIR,'Mp.txt'),CHA.Mp);
-dlmwrite(fullfile(ADIR,'Mc.txt'),CHA.Mc);
-dlmwrite(fullfile(ADIR,'La.txt'),CHA.La);
+dlmwrite(fullfile(ADIR,'Mp.txt'),single(CHA.Mp));
+dlmwrite(fullfile(ADIR,'Mc.txt'),single(CHA.Mc));
+dlmwrite(fullfile(ADIR,'La.txt'),single(CHA.La));
 %
 save(fullfile(ADIR,'CHA.mat'),'CHA','-v7.3')
 save(fullfile(ADIR,'BLK.mat'),'BLK','-v7.3')
@@ -594,7 +594,10 @@ while not(COUNT==20)
 %     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
 %     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
     McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMc(:,iT);
-    Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
+    McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
+    McTMP(McREJID)=Mc.OLD(McREJID);
+    Mc.SMP=McTMP;
+%     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
 %     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
@@ -668,10 +671,10 @@ while not(COUNT==20)
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
   if CHA.AJR > 0.24
-    RWD=RWD*1.05;
+%     RWD=RWD*1.05;
     COUNT=0;
   elseif CHA.AJR < 0.22
-    RWD=RWD*0.9;
+%     RWD=RWD*0.9;
     COUNT=0;
   else
     COUNT=COUNT+1;
