@@ -686,9 +686,11 @@ while not(COUNT==20)
   Mpmean=mean(CHA.Mp,2);
   Mcmean=mean(CHA.Mc,2);
   Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
+  CF=sqrt(((G.B1*Mpmean).^2+(G.B2*Mpmean).^2-(G.TtB*Mpmean).^2)./((G.TB*Mpmean).^2));
+  CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
   VEC.RIG=G.P*Mpmean;
   VEC.ela=G.C*(repmat((G.TB*Mpmean),1,BLK(1).NBlock).*D.TRA.*repmat(Mcmeanrep,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
-  VEC.ELA=sum(CAL.ela.*D.OBSID,2);
+  VEC.ELA=sum(VEC.ela.*D.OBSID,2);
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
   if PRM.GPU~=99
