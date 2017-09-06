@@ -606,8 +606,15 @@ while not(COUNT==20)
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(D.MID);
+% Calc GPU memory free capacity
+    Byte1=whos('G');
+    Byte2=whos('Mp');
+    b=waitGPU(Byte1.bytes+Byte2.bytes);
 % Calc Correction factor of subducting rate for DIP direction.
 % VE^2+VN^2 = Vst^2+(CF*Vdp)^2 <=> (G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2 = (G.TtB*Mp.SMP).^2+(CF*G.TB*Mp.SMP).^2
+    if sum(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2)<0)~=0
+        keyboard
+    end
     CF=sqrt(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2));
     CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
@@ -615,6 +622,9 @@ while not(COUNT==20)
     CAL.ela=G.C*(repmat((G.TB*Mp.SMP),1,BLK(1).NBlock).*D.TRA.*repmat(Mc.SMPMAT,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
     CAL.ELA=sum(CAL.ela.*D.OBSID,2);
     CAL.SMP=CAL.RIG+CAL.ELA;
+    if PRM.GPU=~99
+      clear('CAL.RIG','CAL.ela','CAL,ELA','CF');
+    end
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
@@ -1754,5 +1764,35 @@ TPHI1 = tan(RPH1);
 CPHI1 = cos(RPH1);
 LAT   = PH1-(C2.*X).^2.*V2.*TPHI1./(2.*D);
 LON   = ALON0+C2.*X./CPHI1-(C2.*X).^3.*(1.0+2.*TPHI1.^2)./(6.*D.^2.*CPHI1);
+end
+%====================================================
+function free=waitGPU(varargin)
+a=true;
+d=gpuDevice;
+if isempty(varargin)
+    limit=30;
+else
+    limit=varargin{1};
+end
+% tic
+while a
+    if limit<=100
+        free=d.FreeMemory/d.TotalMemory*100;
+        if free>limit
+            break
+        end
+        pause(0.5);
+    elseif limit>100
+        free=d.FreeMemory;
+        if free>limit
+            break
+        end
+        pause(0.5)
+    end
+end
+% waittime=toc;
+% if waittime>0.5
+%     disp(['waiting time' num2str(waittime)])
+% end
 end
 %====================================================
