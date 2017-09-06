@@ -514,7 +514,7 @@ Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
 Mc.OLD=   -0.5+rand(Mc.N,1,precision);
-Mp.OLD= double(BLK(1).POLE);
+Mp.OLD= zeros(size(BLK(1).POLE));
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
 CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
@@ -529,7 +529,7 @@ end
 %
 RES.OLD=inf(1,1,precision);
 PRI.OLD=inf(1,1,precision);
-McScale=0.27;
+McScale=0.13;
 MpScale=(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
@@ -607,9 +607,11 @@ while not(COUNT==20)
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(D.MID);
 % Calc GPU memory free capacity
-    Byte1=whos('G');
-    Byte2=whos('Mp');
-    b=waitGPU(Byte1.bytes+Byte2.bytes);
+    if PRM.GPU~=99
+      Byte1=whos('G');
+      Byte2=whos('Mp');
+      b=waitGPU(Byte1.bytes+Byte2.bytes);
+    end
 % Calc Correction factor of subducting rate for DIP direction.
 % VE^2+VN^2 = Vst^2+(CF*Vdp)^2 <=> (G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2 = (G.TtB*Mp.SMP).^2+(CF*G.TB*Mp.SMP).^2
     CFsq=((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2);
@@ -624,8 +626,8 @@ while not(COUNT==20)
     CAL.ela=G.C*(repmat((G.TB*Mp.SMP),1,BLK(1).NBlock).*D.TRA.*repmat(Mc.SMPMAT,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
     CAL.ELA=sum(CAL.ela.*D.OBSID,2);
     CAL.SMP=CAL.RIG+CAL.ELA;
-    if PRM.GPU=~99
-      clear('CAL.RIG','CAL.ela','CAL,ELA','CF');
+    if PRM.GPU~=99
+      clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
     end
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
