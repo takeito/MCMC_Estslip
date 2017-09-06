@@ -612,10 +612,12 @@ while not(COUNT==20)
     b=waitGPU(Byte1.bytes+Byte2.bytes);
 % Calc Correction factor of subducting rate for DIP direction.
 % VE^2+VN^2 = Vst^2+(CF*Vdp)^2 <=> (G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2 = (G.TtB*Mp.SMP).^2+(CF*G.TB*Mp.SMP).^2
-    if sum(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2)<0)~=0
-        keyboard
-    end
-    CF=sqrt(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2));
+    CFsq=((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2);
+    CFsq(CFsq<0)=0;
+%     if sum(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2)<0)~=0
+%         keyboard
+%     end
+    CF=sqrt(CFsq);
     CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
@@ -696,7 +698,9 @@ while not(COUNT==20)
   Mpmean=mean(CHA.Mp,2);
   Mcmean=mean(CHA.Mc,2);
   Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
-  CF=sqrt(((G.B1*Mpmean).^2+(G.B2*Mpmean).^2-(G.TtB*Mpmean).^2)./((G.TB*Mpmean).^2));
+  CFsq=((G.B1*Mpmean).^2+(G.B2*Mpmean).^2-(G.TtB*Mpmean).^2)./((G.TB*Mpmean).^2);
+  CFsq(CFsq<0)=0;
+  CF=sqrt(CFsq);
   CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
   VEC.RIG=G.P*Mpmean;
   VEC.ela=G.C*(repmat((G.TB*Mpmean),1,BLK(1).NBlock).*D.TRA.*repmat(Mcmeanrep,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
