@@ -529,8 +529,10 @@ end
 %
 RES.OLD=inf(1,1,precision);
 PRI.OLD=inf(1,1,precision);
-McScale=0.05;
-MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
+McScale=0.27;
+MpScale=(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
+% McScale=0.05;
+% MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
 LO_Mc=-1;
 UP_Mc=1;
 % GPU Initialize 
@@ -715,6 +717,8 @@ function COMPRESS_DATA(CHA,PRM,ITR)
 % 
 % load('./Result_red/Test_07/CHA.mat'); % test
 % 
+CHA.Mc=single(CHA.Mc);
+CHA.Mp=single(CHA.Mp);
 % if PRM.GPU==99&&gpuDeviceCount==0
 if PRM.GPU==99
   MEANMc=mean(CHA.Mc,2);
