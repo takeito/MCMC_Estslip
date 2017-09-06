@@ -666,7 +666,7 @@ while not(COUNT==20)
       if ACC; NACC=NACC+1; end;
     end
   end
-  COMPRESS_DATA(CHA,PRM,RT);
+  COMPRESS_DATA(CHA,PRM,RT,NACC);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -729,7 +729,7 @@ fprintf('RMS=: %8.3f\n',CHA.Res)
 fprintf('=== FINISHED MH_MCMC ===\n')
 end
 %% Compress CHA sampling
-function COMPRESS_DATA(CHA,PRM,ITR)
+function COMPRESS_DATA(CHA,PRM,ITR,NACC)
 % 
 % load('./Result_red/Test_07/CHA.mat'); % test
 % 
@@ -788,6 +788,7 @@ cha.MpCOMPRESS.COVMp=COVMp;
 cha.MpCOMPRESS.MEANMp=MEANMp;
 cha.MpCOMPRESS.SMPMp=int8(MpBASE);
 % 
+cha.AJR=NACC./PRM.CHA;
 save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
 % 
 end
