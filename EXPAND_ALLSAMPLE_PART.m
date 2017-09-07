@@ -23,7 +23,7 @@ end
 function [TCHA]=cal_avestdbin(INPUT,burnin)
 % load('./Result/Test_06/CHA_test.mat'); % test
 NIT=size(INPUT,2);
-Mpbin=[-1E-7:1E-10:1E-7];
+Mpbin=[-1E-7:1E-9:1E-7];
 Mcbin=[-1:0.01:1];
 SMPINT=50; % sampling interval
 BURNIN=floor(burnin*NIT/100)+1;
@@ -46,6 +46,8 @@ for ii=1:NIT
     SMPID=[1:SMPINT:NCH];
     smppol=zeros(NPOL,NCH);
     smpflt=zeros(NFLT,NCH);
+    MEDPOL=zeros(NPOL,1);
+    MEDFLT=zeros(NFLT,1);
     SMPPOL=[];
     SMPFLT=[];
   end
@@ -102,6 +104,14 @@ for ii=1:NIT
 end
 AVEPOL=SUMPOL./NDATAPOL;
 AVEFLT=SUMFLT./NDATAFLT;
+[~,MEDPOLID]=max(MpHIST,[],2);
+[~,MEDFLTID]=max(McHIST,[],2);
+for NP=1:NPOL
+  MEDPOL(NP)=0.5*(Mpbin(MEDPOLID(NP))+Mpbin(MEDPOLID(NP)+1));
+end
+for NF=1:NFLT
+  MEDFLT(NF)=0.5*(Mcbin(MEDFLTID(NF))+Mcbin(MEDFLTID(NF)+1));
+end
 COVPOL=SUMPOLPAIR./NDATAPOL-(SUMPOL./NDATAPOL)*(SUMPOL./NDATAPOL)';
 COVFLT=SUMFLTPAIR./NDATAFLT-(SUMFLT./NDATAFLT)*(SUMFLT./NDATAFLT)';
 STDPOL=diag(COVPOL);
@@ -118,6 +128,8 @@ TCHA.Mpbin=Mpbin;
 TCHA.Mcbin=Mcbin;
 TCHA.AVEPOL=single(AVEPOL);
 TCHA.AVEFLT=single(AVEFLT);
+TCHA.MEDPOL=single(MEDPOL);
+TCHA.MEDFLT=single(MEDFLT);
 TCHA.STDPOL=single(STDPOL);
 TCHA.STDFLT=single(STDFLT);
 TCHA.COVPOL=single(COVPOL);
