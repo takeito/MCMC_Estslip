@@ -514,7 +514,7 @@ Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
 Mc.OLD=   -0.5+rand(Mc.N,1,precision);
-Mp.OLD= zeros(size(BLK(1).POLE));
+Mp.OLD= double(BLK(1).POLE);
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
 CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
@@ -687,10 +687,10 @@ while not(COUNT==20)
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
 %
   if CHA.AJR > 0.24
-%     RWD=RWD*1.05;
+    RWD=RWD*1.1;
     COUNT=0;
   elseif CHA.AJR < 0.22
-%     RWD=RWD*0.9;
+    RWD=RWD*0.9;
     COUNT=0;
   else
     COUNT=COUNT+1;
