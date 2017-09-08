@@ -581,14 +581,14 @@ while not(COUNT==20)
   NACC=0;tic
   if PRM.GPU~=99
     logU=log(rand(PRM.CHA,1,precision,'gpuArray'));
-    rMc = randn(Mc.N,PRM.CHA,precision,'gpuArray');
-    rMp = randn(Mp.N,PRM.CHA,precision,'gpuArray');
-    rLa = randn(La.N,PRM.CHA,precision,'gpuArray');
+    rMc = rand(Mc.N,PRM.CHA,precision,'gpuArray')-0.5;
+    rMp = rand(Mp.N,PRM.CHA,precision,'gpuArray')-0.5;
+    rLa = rand(La.N,PRM.CHA,precision,'gpuArray')-0.5;
   else
     logU=log(rand(PRM.CHA,1,precision));
-    rMc =randn(Mc.N,PRM.CHA,precision);
-    rMp =randn(Mp.N,PRM.CHA,precision);
-    rLa =randn(La.N,PRM.CHA,precision);
+    rMc =rand(Mc.N,PRM.CHA,precision)-0.5;
+    rMp =rand(Mp.N,PRM.CHA,precision)-0.5;
+    rLa =rand(La.N,PRM.CHA,precision)-0.5;
   end
   for iT=1:PRM.CHA
 % SAMPLE SECTION
