@@ -655,15 +655,15 @@ while not(COUNT==20)
       PRI.OLD = PRI.SMP;
     end
 % KEEP SECTION
-    if iT >= PRM.CHA-PRM.KEP
+    if iT > PRM.CHA-PRM.KEP
       if PRM.GPU~=99
-        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=gather(Mc.SMP);
-        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=gather(Mp.SMP);
-        CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=gather(La.SMP);
+        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=gather(Mc.SMP);
+        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=gather(Mp.SMP);
+        CHA.La(:,iT-(PRM.CHA-PRM.KEP))=gather(La.SMP);
       else
-        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP)+1)=Mc.SMP;
-        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP)+1)=Mp.SMP;
-        CHA.La(:,iT-(PRM.CHA-PRM.KEP)+1)=La.SMP;
+        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=Mc.SMP;
+        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=Mp.SMP;
+        CHA.La(:,iT-(PRM.CHA-PRM.KEP))=La.SMP;
       end
       if ACC; NACC=NACC+1; end;
     end
