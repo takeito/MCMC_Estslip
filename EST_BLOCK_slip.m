@@ -513,7 +513,7 @@ La.N=1;
 Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
-Mc.OLD=   -0.5+rand(Mc.N,1,precision);
+Mc.OLD=   0.5.*rand(Mc.N,1,precision);
 Mp.OLD= double(BLK(1).POLE);
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
@@ -529,11 +529,12 @@ end
 %
 RES.OLD=inf(1,1,precision);
 PRI.OLD=inf(1,1,precision);
-McScale=0.13;
-MpScale=(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
+RWDSCALE=1000*RWD/(PRM.CHA);
+McScale=RWDSCALE*0.13;
+MpScale=RWDSCALE*(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
-LO_Mc=-1;
+LO_Mc=0;
 UP_Mc=1;
 % GPU Initialize 
 if PRM.GPU~=99
@@ -576,7 +577,7 @@ end
 RT=0;
 COUNT=0;
 %
-while not(COUNT==20)
+while not(COUNT==40)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
