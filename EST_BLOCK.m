@@ -3,18 +3,21 @@ function EST_BLOCK(DIRBlock)
 % Code by T.ITO 2016/03/02
 
 warning('off','all')
-INPUT_SET='./PARAMETER/parameter.txt';
+INPUT.Parfile='./PARAMETER/parameter.txt';
 % READ PARAMETER FOR MCMC Inversion 
-[PRM]=READ_PARAMETERS(INPUT_SET);
-% FileOBS='./GNSS_ITRF2008_Colombia_matlab.txt';
-% DIRBlock='./BLOCK/';
+[PRM]=READ_PARAMETERS(INPUT);
 % READ OBSERVATION FILE
 OBS=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY 
-PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
+if nargin~=0
+  PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
+  PRM.FilePole=fullfile(PRM.HOME_D,DIRBlock,'euler_poles_fix.pol');
+end
 [BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
+% READ FIX EULER POLES
+[POL,PRM]=READ_EULER_POLES(BLK,PRM);
 % CALC. ABIC AND BLOCK MOTION
-[BLK,OBS]=CALC_AIC(BLK,OBS);
+[BLK,OBS]=CALC_AIC(BLK,OBS,POL);
 %% TODO: Combine some blocks based on AIC(or cAIC).
 % BLK=COMBINE_BOUND(BLK,NB1,NB2)
 % BLOCK MOTION BETWEEN TWO BLOCKS
@@ -83,7 +86,7 @@ for N=1:BLK(1).NBlock
 end
 end
 %% CALCLATION AIC AND BLOCK MOTION
-function [BLK,OBS]=CALC_AIC(BLK,OBS)
+function [BLK,OBS]=CALC_AIC(BLK,OBS,POL)
 TSig=0; NumB=0;
 for N=1:BLK(1).NBlock
   Sig=0;EVne=[];POLE=[0; 0; 0];
@@ -92,9 +95,15 @@ for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     Sig=0;
     EVne=[0 0];
-    if OBS(N).NBLK>=1
+    if ismember(N,POL.BLID) && POL.FLAG(POL.BLID==N)==true
+      pol.wx=POL.wx(POL.BLID==N);
+      pol.wy=POL.wy(POL.BLID==N);
+      pol.wz=POL.wz(POL.BLID==N);
+      [POLE,EVne,Sig]=est_pole_fix(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww,pol);
+      TSig=TSig+Sig.*2.*OBS(N).NBLK;
+    elseif OBS(N).NBLK>=1
       NumB=NumB+1;
-      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww);
+      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,1./(OBS(N).Vww.^2));
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     end
   end
@@ -117,16 +126,37 @@ fprintf('Sigma^2= %8.3f AIC= %7.3f cAIC= %7.3f K= %2d NB= %2d\n',TSig./(OBS(1).N
 %
 end
 %% READ PARAMETER FILE 
-function [PRM]=READ_PARAMETERS(INPUT_SET)
+function [PRM]=READ_PARAMETERS(INPUT)
 %
-Fid=fopen(INPUT_SET,'r');
+Fid=fopen(INPUT.Parfile,'r');
 PRM.HOME_D=pwd;
 FileOBS=fscanf(Fid,'%s \n',[1,1]);
 PRM.FileOBS=fullfile(PRM.HOME_D,FileOBS);
 [~]=fgetl(Fid);
 DIRBlock=fscanf(Fid,'%s \n',[1,1]);
 PRM.DIRBlock=fullfile(PRM.HOME_D,DIRBlock);
+[~]=fgetl(Fid);
+DIRBlock_Interface=fscanf(Fid,'%s \n',[1,1]);
+PRM.DIRBlock_Interface=fullfile(PRM.HOME_D,DIRBlock_Interface);
+[~]=fgetl(Fid);
+FilePole=fscanf(Fid,'%s \n',[1,1]);
+PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
+[~]=fgetl(Fid);
+FileRigb=fscanf(Fid,'%s \n',[1,1]);
+PRM.FileRigb=fullfile(PRM.HOME_D,FileRigb);
+[~]=fgetl(Fid);
+%
+PRM.GPU=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.ITR=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.CHA=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.KEP=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.RWD=fscanf(Fid,'%f \n',[1,1]);
 fclose(Fid);
+
 %====================================================
 % fprintf('==================\nINPUT PARAMETERS\n==================\n') 
 % fprintf('HOME_D             : %s \n',PRM.HOME_D) 
@@ -134,6 +164,45 @@ fclose(Fid);
 % fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
 %====================================================
 % disp('PASS READ_PARAMETERS')
+end
+%% READ FIX EULER POLES
+function [POL,PRM]=READ_EULER_POLES(BLK,PRM)
+% Fix euler poles at the block which has no observation site.
+% BLID  : Block ID that includes fix POLE
+% OMEGA : unit is deg/Myr
+POL.ID=false;
+if exist(PRM.FilePole,'file')~=2; POL.FIXflag=0; return; end
+% 
+POL.FIXflag=1;
+FID=fopen(PRM.FilePole,'r');
+TMP=fscanf(FID,'%d %d %f %f %f\n',[5,Inf]);
+POL.ID=zeros(1,BLK(1).NBlock);
+FIXw=zeros(BLK(1).NBlock,3);
+POL.FLAG =TMP(1,:);
+POL.BLID =TMP(2,:);
+POL.LAT  =TMP(3,:);
+POL.LON  =TMP(4,:);
+POL.OMEGA=TMP(5,:);
+POL.FLAG =logical(POL.FLAG);   % use or not
+POL.BLID =POL.BLID(POL.FLAG) ;
+POL.LAT  =POL.LAT(POL.FLAG)  ;
+POL.LON  =POL.LON(POL.FLAG)  ;
+POL.OMEGA=POL.OMEGA(POL.FLAG);
+POL.LAT  =deg2rad(POL.LAT)        ;
+POL.LON  =deg2rad(POL.LON)        ;
+POL.OMEGA=deg2rad(POL.OMEGA.*1e-6);
+POL.wx=POL.OMEGA.*cos(POL.LAT).*cos(POL.LON);
+POL.wy=POL.OMEGA.*cos(POL.LAT).*sin(POL.LON);
+POL.wz=POL.OMEGA.*sin(POL.LAT)              ;
+POL.ID(POL.BLID)=true;
+FIXw(POL.BLID,1)=POL.wx;
+FIXw(POL.BLID,2)=POL.wy;
+FIXw(POL.BLID,3)=POL.wz;
+POL.ID=logical(reshape(repmat(POL.ID,3,1),3*BLK(1).NBlock,1));
+POL.FIXw=reshape(FIXw',3*BLK(1).NBlock,1);
+% 
+PRM.APRIORIPOLE=TMP';
+% 
 end
 %% READ BLOCK BOUNDARY DATA
 function [BLK,OBS]=READ_BLOCK_BOUND(DIR,OBS)
@@ -233,6 +302,26 @@ for N=1:Nobs
 end
 [PL,~,Sigma]=lscov(R,Vne,w);
 EVne=R*PL;
+end
+%% Estimate BLOCK Motion
+function [PL,EVne,Sigma]=est_pole_fix(Oxyz,Vne,w,pol)
+[Nobs,~]=size(Oxyz);
+R=zeros(Nobs.*2,3);
+%R(:,1) = -Oxyz(:,2).*pvec(3) + pvec(2).*Oxyz(:,3);
+%R(:,2) = -Oxyz(:,3).*pvec(1) + pvec(3).*Oxyz(:,1);
+%R(:,3) = -Oxyz(:,1).*pvec(2) + pvec(1).*Oxyz(:,2);
+for N=1:Nobs
+  R(2.*N-1,1)=-Oxyz(N,7).*Oxyz(N,3);
+  R(2.*N-1,2)=-Oxyz(N,5).*Oxyz(N,3);
+  R(2.*N-1,3)= Oxyz(N,5).*Oxyz(N,2)+Oxyz(N,7).*Oxyz(N,1);
+  R(2.*N,1)  = Oxyz(N,4).*Oxyz(N,5).*Oxyz(N,3)+Oxyz(N,6).*Oxyz(N,2);
+  R(2.*N,2)  =-Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,3)-Oxyz(N,6).*Oxyz(N,1);
+  R(2.*N,3)  = Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,2)-Oxyz(N,4).*Oxyz(N,5).*Oxyz(N,1);
+end
+PL=[pol.wx;pol.wy;pol.wz];
+% [PL,~,Sigma]=lscov(R,Vne,w);
+EVne=R*PL;
+Sigma=(1/(2*Nobs))*sum(((EVne-Vne)./w).^2);
 end
 %% PLATE MOTION DUE TO EULER POLE (XYZ)
 function Vneu=pole2velo(Pxyz,Oxyz)
