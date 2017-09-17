@@ -95,7 +95,7 @@ for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     Sig=0;
     EVne=[0 0];
-    if ismember(N,POL.BLID) && POL.FLAG(POL.BLID==N)==true
+    if POL.FIXflag~=0 && ismember(N,POL.BLID) && POL.FLAG(POL.BLID==N)==true
       pol.wx=POL.wx(POL.BLID==N);
       pol.wy=POL.wy(POL.BLID==N);
       pol.wz=POL.wz(POL.BLID==N);
