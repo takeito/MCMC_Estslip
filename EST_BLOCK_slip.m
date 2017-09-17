@@ -1240,7 +1240,7 @@ for N=1:BLK(1).NBlock
       pol.wx=POL.wx(POL.BLID==N);
       pol.wy=POL.wy(POL.BLID==N);
       pol.wz=POL.wz(POL.BLID==N);
-      [POLE,EVne,Sig]=est_pole_fix(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww,pol);
+      [POLE,EVne,Sig]=est_pole_fix(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Ver,pol);
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     elseif OBS(N).NBLK>=1
       NumB=NumB+1;
