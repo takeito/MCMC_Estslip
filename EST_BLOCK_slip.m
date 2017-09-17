@@ -279,12 +279,12 @@ function [D,G]=COMB_GREEN(BLK,OBS,TRI)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
 % pole unit is mm
 NOBS=length(OBS(1).EVEC);
-TMP.OBS(1:3:3*NOBS)=OBS.EVEC;
-TMP.OBS(2:3:3*NOBS)=OBS.NVEC;
-TMP.OBS(3:3:3*NOBS)=OBS.HVEC;
-TMP.ERR(1:3:3*NOBS)=OBS.EERR;
-TMP.ERR(2:3:3*NOBS)=OBS.NERR;
-TMP.ERR(3:3:3*NOBS)=OBS.HERR;
+TMP.OBS(1:3:3*NOBS)=OBS(1).EVEC;
+TMP.OBS(2:3:3*NOBS)=OBS(1).NVEC;
+TMP.OBS(3:3:3*NOBS)=OBS(1).HVEC;
+TMP.ERR(1:3:3*NOBS)=OBS(1).EERR./sqrt(OBS(1).WEIGHT);
+TMP.ERR(2:3:3*NOBS)=OBS(1).NERR./sqrt(OBS(1).WEIGHT);
+TMP.ERR(3:3:3*NOBS)=OBS(1).HERR;
 %
 D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
@@ -1247,7 +1247,7 @@ for N=1:BLK(1).NBlock
 %       OBS(N).GRweight=OBS(1).Gw(OBS(1).ABLK==N);
 %       OBS(N).GRweight=reshape(repmat(OBS(1).Gw(OBS(1).ABLK==N),1,2)',2*size(OBS(N).GRweight,1),1);
 %       [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).GRweight./(OBS(N).Vww.^2));
-      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,1./(OBS(N).Vww.^2));
+      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww);
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     end
   end
@@ -1317,9 +1317,11 @@ for N=1:BLK(1).NBlock
   OBS(N).EER=OBS(1).EERR(IND);
   OBS(N).NER=OBS(1).NERR(IND);
   OBS(N).HER=OBS(1).HERR(IND);
+  OBS(N).WGT=OBS(1).WEIGHT(IND);
   OBS(N).OXYZ=conv2ell(OBS(N).LAT,OBS(N).LON,OBS(N).HIG);
   OBS(N).Vne=reshape([OBS(1).EVEC(IND); OBS(1).NVEC(IND)],OBS(N).NBLK.*2,1);
-  OBS(N).Vww=reshape([OBS(1).EERR(IND); OBS(1).NERR(IND)],OBS(N).NBLK.*2,1);
+  OBS(N).Ver=reshape([OBS(1).EERR(IND); OBS(1).NERR(IND)],OBS(N).NBLK.*2,1);
+  OBS(N).Vww=reshape([OBS(1).WEIGHT(IND)./(OBS(1).EERR(IND).^2); OBS(1).WEIGHT(IND)./(OBS(1).NERR(IND).^2)],OBS(N).NBLK.*2,1);
 end
 end
 %% READ OBSERVATION DATA
@@ -1346,6 +1348,7 @@ while 1
   OBS(1).EERR(N) =str2double(cellstr(str(8))); %E-W
   OBS(1).NERR(N) =str2double(cellstr(str(9))); %N-S
   OBS(1).HERR(N) =str2double(cellstr(str(10))); %U-D
+  OBS(1).WEIGHT(N) =str2double(cellstr(str(11))); %Weight
   OBS(1).AXYZ(N,:)=conv2ell(OBS(1).ALAT(N),OBS(1).ALON(N),OBS(1).AHIG(N));
 end
 OBS(1).NOBS=N;

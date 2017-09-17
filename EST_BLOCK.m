@@ -99,11 +99,11 @@ for N=1:BLK(1).NBlock
       pol.wx=POL.wx(POL.BLID==N);
       pol.wy=POL.wy(POL.BLID==N);
       pol.wz=POL.wz(POL.BLID==N);
-      [POLE,EVne,Sig]=est_pole_fix(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww,pol);
+      [POLE,EVne,Sig]=est_pole_fix(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Ver,pol);
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     elseif OBS(N).NBLK>=1
       NumB=NumB+1;
-      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,1./(OBS(N).Vww.^2));
+      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww);
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     end
   end
@@ -253,9 +253,11 @@ for N=1:BLK(1).NBlock
   OBS(N).EER=OBS(1).EERR(IND);
   OBS(N).NER=OBS(1).NERR(IND);
   OBS(N).HER=OBS(1).HERR(IND);
+  OBS(N).WGT=OBS(1).WEIGHT(IND);
   OBS(N).OXYZ=conv2ell(OBS(N).LAT,OBS(N).LON);
   OBS(N).Vne=reshape([OBS(1).EVEC(IND); OBS(1).NVEC(IND)],OBS(N).NBLK.*2,1);
-  OBS(N).Vww=reshape([OBS(1).EERR(IND); OBS(1).NERR(IND)],OBS(N).NBLK.*2,1);
+  OBS(N).Ver=reshape([OBS(1).EERR(IND); OBS(1).NERR(IND)],OBS(N).NBLK.*2,1);
+  OBS(N).Vww=reshape([OBS(1).WEIGHT(IND)./(OBS(1).EERR(IND).^2); OBS(1).WEIGHT(IND)./(OBS(1).NERR(IND).^2)],OBS(N).NBLK.*2,1);
 end
 end
 %% READ OBSERVATION DATA
@@ -281,6 +283,7 @@ while 1
   OBS(1).EERR(N) =str2double(cellstr(str(8))); %E-W
   OBS(1).NERR(N) =str2double(cellstr(str(9))); %N-S
   OBS(1).HERR(N) =str2double(cellstr(str(10))); %U-D
+  OBS(1).WEIGHT(N) =str2double(cellstr(str(11))); %Weight
 end
 OBS(1).NOBS=N;
 OBS(1).ABLK=zeros(OBS(1).NOBS,1);
