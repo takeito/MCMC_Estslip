@@ -24,7 +24,7 @@ SHOW_BLOCK_BOUND(BLK)
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CALC. ABIC AND BLOCK MOTION
-[BLK,OBS]=CALC_AIC(BLK,OBS);
+[BLK,OBS]=CALC_AIC(BLK,OBS,POL);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 [BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 % MAKE FIGURES
@@ -1035,7 +1035,7 @@ ND=size(OBS(1).ALAT,2);
 %
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
-OBSMTR=[OBS(1).AXYZ(:,1:3) ones(OBS(1).NOBS,1)];
+% OBSMTR=[OBS(1).AXYZ(:,1:3) ones(OBS(1).NOBS,1)];
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 OBSz=1e-3.*OBS(1).AHIG;
 %
@@ -1062,9 +1062,9 @@ for NB1=1:BLK(1).NBlock
         for Nn=1:3
           TRIEDGE(Nn,:)=conv2ell(BLK(1).BOUND(NB1,NB2).blat(N,Nn),BLK(1).BOUND(NB1,NB2).blon(N,Nn),BLK(1).BOUND(NB1,NB2).bdep(N,Nn));
         end
-        TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:)=cross(TRIEDGE(1,1:3),TRIEDGE(2,1:3));
-        TRI(1).BOUND(NB1,NB2).PLANED(N,1)=-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)*TRIEDGE(1,1)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)*TRIEDGE(1,2)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)*TRIEDGE(1,3);
-        TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)=abs(OBSMTR*[TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:) TRI(1).BOUND(NB1,NB2).PLANED(N,1)]')./sqrt(TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)^2);
+%         TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:)=cross(TRIEDGE(1,1:3),TRIEDGE(2,1:3));
+%         TRI(1).BOUND(NB1,NB2).PLANED(N,1)=-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)*TRIEDGE(1,1)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)*TRIEDGE(1,2)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)*TRIEDGE(1,3);
+%         TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)=abs(OBSMTR*[TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:) TRI(1).BOUND(NB1,NB2).PLANED(N,1)]')./sqrt(TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)^2);
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
@@ -1096,8 +1096,8 @@ for NB1=1:BLK(1).NBlock
       end
 %       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
-      TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
-      OBS(1).Gw=(1./min(TRI(1).OBSDIS,[],2))./max(1./min(TRI(1).OBSDIS,[],2));
+%       TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
+%       OBS(1).Gw=min(TRI(1).OBSDIS,[],2)./max(min(TRI(1).OBSDIS,[],2));
     end
   end
 end
@@ -1226,7 +1226,7 @@ end
 drawnow
 end
 %% CALCLATION AIC AND BLOCK MOTION
-function [BLK,OBS]=CALC_AIC(BLK,OBS)
+function [BLK,OBS]=CALC_AIC(BLK,OBS,POL)
 TSig=0; NumB=0;
 BLK(1).POLE=[];
 for N=1:BLK(1).NBlock
@@ -1236,11 +1236,18 @@ for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     Sig=0;
     EVne=[0 0];
-    if OBS(N).NBLK>=1
+    if POL.FIXflag~=0 && ismember(N,POL.BLID) && POL.FLAG(POL.BLID==N)==true
+      pol.wx=POL.wx(POL.BLID==N);
+      pol.wy=POL.wy(POL.BLID==N);
+      pol.wz=POL.wz(POL.BLID==N);
+      [POLE,EVne,Sig]=est_pole_fix(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww,pol);
+      TSig=TSig+Sig.*2.*OBS(N).NBLK;
+    elseif OBS(N).NBLK>=1
       NumB=NumB+1;
-      OBS(N).GRweight=OBS(1).Gw(OBS(1).ABLK==N);
-      OBS(N).GRweight=reshape(repmat(OBS(1).Gw(OBS(1).ABLK==N),1,2)',2*size(OBS(N).GRweight,1),1);
-      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww.*OBS(N).GRweight);
+%       OBS(N).GRweight=OBS(1).Gw(OBS(1).ABLK==N);
+%       OBS(N).GRweight=reshape(repmat(OBS(1).Gw(OBS(1).ABLK==N),1,2)',2*size(OBS(N).GRweight,1),1);
+%       [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).GRweight./(OBS(N).Vww.^2));
+      [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,1./(OBS(N).Vww.^2));
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     end
   end
@@ -1366,8 +1373,28 @@ for N=1:Nobs
   R(2.*N,2)  =-Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,3)-Oxyz(N,6).*Oxyz(N,1);
   R(2.*N,3)  = Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,2)-Oxyz(N,4).*Oxyz(N,5).*Oxyz(N,1);
 end
-[PL,~,Sigma]=lscov(R,Vne,1./w);
+[PL,~,Sigma]=lscov(R,Vne,w);
 EVne=R*PL;
+end
+%% Calculate BLOCK Motion from FIXED Euler pole
+function [PL,EVne,Sigma]=est_pole_fix(Oxyz,Vne,w,pol)
+[Nobs,~]=size(Oxyz);
+R=zeros(Nobs.*2,3);
+%R(:,1) = -Oxyz(:,2).*pvec(3) + pvec(2).*Oxyz(:,3);
+%R(:,2) = -Oxyz(:,3).*pvec(1) + pvec(3).*Oxyz(:,1);
+%R(:,3) = -Oxyz(:,1).*pvec(2) + pvec(1).*Oxyz(:,2);
+for N=1:Nobs
+  R(2.*N-1,1)=-Oxyz(N,7).*Oxyz(N,3);
+  R(2.*N-1,2)=-Oxyz(N,5).*Oxyz(N,3);
+  R(2.*N-1,3)= Oxyz(N,5).*Oxyz(N,2)+Oxyz(N,7).*Oxyz(N,1);
+  R(2.*N,1)  = Oxyz(N,4).*Oxyz(N,5).*Oxyz(N,3)+Oxyz(N,6).*Oxyz(N,2);
+  R(2.*N,2)  =-Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,3)-Oxyz(N,6).*Oxyz(N,1);
+  R(2.*N,3)  = Oxyz(N,4).*Oxyz(N,7).*Oxyz(N,2)-Oxyz(N,4).*Oxyz(N,5).*Oxyz(N,1);
+end
+PL=[pol.wx;pol.wy;pol.wz];
+% [PL,~,Sigma]=lscov(R,Vne,w);
+EVne=R*PL;
+Sigma=(1/(2*Nobs))*sum(((EVne-Vne)./w).^2);
 end
 %% PLATE MOTION DUE TO EULER POLE (XYZ)
 function Vneu=pole2velo(Pxyz,Oxyz)
