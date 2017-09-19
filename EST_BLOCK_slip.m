@@ -513,7 +513,7 @@ La.N=1;
 Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
-Mc.OLD=   0.5.*rand(Mc.N,1,precision);
+Mc.OLD=   -0.5+rand(Mc.N,1,precision);
 Mp.OLD= double(BLK(1).POLE);
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
@@ -521,11 +521,9 @@ CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
 CHA.La= zeros(La.N,PRM.KEP,precision);
 % Set FIX POLES if POL.FIXflag=1
 % MpScale=Mp.INT.*ones(Mp.N,1,precision);
-if POL.FIXflag==1
-  Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
-  Mp.STD(POL.ID)=0;
-%   MpScale(POL.ID)=0;
-end
+Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
+Mp.STD(POL.ID)=0;
+% end
 %
 RES.OLD=inf(1,1,precision);
 PRI.OLD=inf(1,1,precision);
@@ -534,7 +532,7 @@ McScale=RWDSCALE*0.13;
 MpScale=RWDSCALE*(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
-LO_Mc=0;
+LO_Mc=-1;
 UP_Mc=1;
 % GPU Initialize 
 if PRM.GPU~=99
@@ -987,7 +985,10 @@ function [POL,PRM]=READ_EULER_POLES(BLK,PRM)
 % BLID  : Block ID that includes fix POLE
 % OMEGA : unit is deg/Myr
 POL.ID=false;
-if exist(PRM.FilePole,'file')~=2; POL.FIXflag=0; return; end
+POL.FLAG=0;
+POL.BLID=0;
+POL.FIXw=zeros(3*BLK(1).NBlock,1);
+if exist(PRM.FilePole,'file')~=2; return; end
 % 
 POL.FIXflag=1;
 FID=fopen(PRM.FilePole,'r');
@@ -1022,6 +1023,7 @@ PRM.APRIORIPOLE=TMP';
 end
 %% READ RIGID BLOCK BOUNDARY PAIR
 function [BLK,PRM]=READ_RIGID_BOUND(BLK,PRM)
+BLK(1).RGPAIR=zeros(3,1);
 if exist(PRM.FileRigb,'file')~=2; return; end
 FID=fopen(PRM.FileRigb,'r');
 TMP=fscanf(FID,'%d %d %d\n',[3 Inf]);
@@ -1236,7 +1238,7 @@ for N=1:BLK(1).NBlock
   if OBS(N).NBLK~=0
     Sig=0;
     EVne=[0 0];
-    if POL.FIXflag~=0 && ismember(N,POL.BLID) && POL.FLAG(POL.BLID==N)==true
+    if ismember(N,POL.BLID) && POL.FLAG(POL.BLID==N)==true
       pol.wx=POL.wx(POL.BLID==N);
       pol.wy=POL.wy(POL.BLID==N);
       pol.wz=POL.wz(POL.BLID==N);
