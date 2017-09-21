@@ -34,11 +34,11 @@ MAKE_FIGS(BLK,OBS);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 OUTPUT.DIR='./Result/';
-WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT,D,G)
+WRITE_CHA(CHA,BLK,TRI,PRM,OBS,OUTPUT,D,G)
 %
 end
 %% WIRTE OUTPUT FILE
-function WRITE_CHA(CHA,BLK,TRI,PRM,OUTPUT,D,G)
+function WRITE_CHA(CHA,BLK,TRI,PRM,OBS,OUTPUT,D,G)
 %
 for DN=1:Inf
   DDIR=['Test_',num2str(DN,'%02i')];
@@ -56,6 +56,7 @@ save(fullfile(ADIR,'CHA.mat'),'CHA','-v7.3')
 save(fullfile(ADIR,'BLK.mat'),'BLK','-v7.3')
 save(fullfile(ADIR,'TRI.mat'),'TRI','-v7.3')
 save(fullfile(ADIR,'PRM.mat'),'PRM','-v7.3')
+save(fullfile(ADIR,'OBS.mat'),'OBS','-v7.3')
 save(fullfile(ADIR,'GRN.mat'),'D','G','-v7.3')
 % 
 movefile('./Result/CHA_test*.mat',ADIR)
