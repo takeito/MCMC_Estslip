@@ -64,7 +64,6 @@ save(fullfile(ADIR,'OBS.mat'),'OBS','-v7.3')
 save(fullfile(ADIR,'GRN.mat'),'D','G','-v7.3')
 % 
 movefile('./Result/CHA_test*.mat',ADIR)
-mkdir
 savefig(140,fullfile(FIGDIR,'vec_rig_ela'))
 savefig(130,fullfile(FIGDIR,'vector'))
 savefig(120,fullfile(FIGDIR,'pole'))
