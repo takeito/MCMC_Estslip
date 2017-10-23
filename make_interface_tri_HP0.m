@@ -11,12 +11,12 @@ PRM.INIP_F='./initial_point.txt';
 % ------------------Parameter---------------------
 PRM.NMESH=pMESH;
 Reducerate=0.001;                                      % Reduce rate of triangles
-HP=0;                                                  % Hyper Parameter of Fobs(object function).
-pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;    % PH plate motion relative to AM plate(REVEL)
+HP=0;                                             % Hyper Parameter of Fobs(object function).
+pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative to AM plate(REVEL)
 % --------------------------------------------------
 
 for Dii=1:Inf
-  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HPnon_It',num2str(Dii,'%2i'),'/'];
+  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HP0_It',num2str(Dii,'%2i'),'/'];
   EXID=exist(sfolder);
   if EXID~=7; mkdir(sfolder); break; end;
 end
@@ -24,7 +24,7 @@ anim_savefile=[sfolder,'tri_anim.gif'];
 
 OBS=READ_OBS(PRM);
 ini_size=FIX_POINT(PRM.INIP_F);
-s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, PRM.INIP_F, PRM.NMESH.*20,ini_size);
+s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, OBS, sfolder, PRM.INIP_F, PRM.NMESH.*20,ini_size);
 save([sfolder,'plate_phs_initial'],'s')
 
 s=DOWN_TRI(s,OBS,PRM.NMESH,sfolder,anim_savefile,Reducerate,ini_size,pole,HP);
@@ -110,6 +110,9 @@ tg.dep=mean(S.dep(S.tri),2);
 [tgxyz]=enu2xyz(tg.lon,tg.lat,6371D0);
 [pxyz]=enu2xyz(POLE.lon,POLE.lat,deg2rad(POLE.omega));
 [PMEN]=platemotion(tgxyz.x,tgxyz.y,tgxyz.z,tg.lon,tg.lat,pxyz.x,pxyz.y,pxyz.z);
+PMEN.EW=PMEN.EW*1e6;
+PMEN.NS=PMEN.NS*1e6;
+PMEN.UD=PMEN.UD*1e6;
 [gx,gy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,alat0,alon0);
 [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
 gz=OBS(1).AHIG./1000;
@@ -118,26 +121,38 @@ Ua=zeros(length(S.tri(:,1)),1);
 minAng=zeros(length(S.tri),1);maxAng=zeros(length(S.tri),1);
 minLeng=zeros(length(S.tri),1);maxLeng=zeros(length(S.tri),1);
 tri_Ang=zeros(length(S.tri),3);
+stritmp=sort(S.tri,2);
+[~,stritmpsort]=sort(stritmp(:,1));
+S.tri=stritmp(stritmpsort,:);
 parfor n=1:length(S.tri)
 % for n=1:length(S.tri)        % <<--------- use in debug test
     [SDT]=SDTvec(sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)));
     PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
-    PMcom=PMcom./norm(PMcom);
+    if PMcom(2)~=0
+        PMcom(2)=sqrt((PMEN.EW(n)^2+PMEN.NS(n)^2-PMcom(1)^2)/(PMcom(2)^2))*PMcom(2);
+    end
+%     PMcom=PMcom./norm(PMcom);
     [Ang,Leng]=triangle_angles([sx(S.tri(n,:)) sy(S.tri(n,:)) sz(S.tri(n,:))],'d');
     tri_Ang(n,:)=Ang(:);
     minAng(n,1)=min(Ang); maxAng(n,1)=max(Ang);
     minLeng(n,1)=min(Leng); maxLeng(n,1)=max(Leng);
     [U]=CalcTriDisps(gx',gy',gz',sx(S.tri(n,:)),sy(S.tri(n,:)),sz(S.tri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+    uid=U.x>7 | U.y>7 | U.z>14;
+    U.x=U.x(uid);
+    U.y=U.y(uid);
+    U.z=U.z(uid);
     Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
 end
 clear n;
+u0id=sum(Ua==0);
 
 H=(minAng./maxAng).*(minLeng./maxLeng);
 Fobs=Ua+arpha.*H;             % Object function
 
 Ntri=length(S.tri);
-ffanim=0;
-while Ntri > n_mesh
+% ffanim=0;
+while u0id > 0
+% while Ntri > n_mesh
   Redu_tri=ceil(Ntri*Rr);
   r_index=ones(length(S.lat),1);
   min_tri=[];
@@ -167,7 +182,12 @@ while Ntri > n_mesh
   S.lat=S.lat(r_index);
   S.lon=S.lon(r_index);
   S.dep=S.dep(r_index);
+  [S,Ua,tri_Ang,minAng,maxAng,minLeng,maxLeng]=change_index(S,Ua,tri_Ang,r_index,minAng,maxAng,minLeng,maxLeng);
+  Stmp=S;
   S.tri=delaunay(S.lon,S.lat);
+  stritmp=sort(S.tri,2);
+  [~,stritmpsort]=sort(stritmp(:,1));
+  S.tri=stritmp(stritmpsort,:);
   [sx,sy]=PLTXY(S.lat,S.lon,alat0,alon0);
   sz=S.dep;
 %---------
@@ -183,6 +203,9 @@ while Ntri > n_mesh
   tg.lat=mean(S.lat(Stri),2);
   [tgxyz]=enu2xyz(tg.lon,tg.lat,6371D0);
   [PMEN]=platemotion(tgxyz.x,tgxyz.y,tgxyz.z,tg.lon,tg.lat,pxyz.x,pxyz.y,pxyz.z);
+  PMEN.EW=PMEN.EW*1e6;
+  PMEN.NS=PMEN.NS*1e6;
+  PMEN.UD=PMEN.UD*1e6;
   
 %---------
   Ua_tmp=Ua;
@@ -193,28 +216,43 @@ while Ntri > n_mesh
   minAng=zeros(length(Stri),1);maxAng=zeros(length(Stri),1);
   minLeng=zeros(length(Stri),1);maxLeng=zeros(length(Stri),1);
   tri_Ang=zeros(length(Stri),3);
-  
+  Lib=zeros(nn,1);
   parfor n=1:nn
-      %     for n=1:nn   %    <<----------------- use in debug test
-      if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
-          [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
-          PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
-          PMcom=PMcom./norm(PMcom);
-          [Ang,Leng]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
-          tri_Ang(n,:)=Ang(:);
-          minAng(n,1)=min(Ang); maxAng(n,1)=max(Ang);
-          minLeng(n,1)=min(Leng); maxLeng(n,1)=max(Leng);
-          %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
-          [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
-          Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
-      else
-          Ua(n)=Ua_tmp(n);
-          tri_Ang(n,:)=tri_Ang_tmp(n,:);
-          minAng(n,1)=minAng_tmp(n,1); maxAng(n,1)=maxAng_tmp(n,1);
-          minLeng(n,1)=minLeng_tmp(n,1); maxLeng(n,1)=maxLeng_tmp(n,1);
+%   for n=1:nn   %    <<----------------- use in debug test
+    Lia=find(ismember(Stmp.tri,Stri(n,:),'rows'));
+    if ~isempty(Lia);Lib(n)=Lia,end
+    if Lib(n)==0
+%     if Stri(n,1)~=S.tri(n,1) || Stri(n,2)~=S.tri(n,2) || Stri(n,3)~=S.tri(n,3)
+      [SDT]=SDTvec(sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)));
+      PMcom=[PMEN.EW(n) PMEN.NS(n) 0]*SDT;
+      if PMcom(2)~=0
+          PMcom(2)=sqrt((PMEN.EW(n)^2+PMEN.NS(n)^2-PMcom(1)^2)/(PMcom(2)^2))*PMcom(2);
       end
+%       PMcom=PMcom./norm(PMcom);
+      [Ang,Leng]=triangle_angles([sx(Stri(n,:)) sy(Stri(n,:)) sz(Stri(n,:))],'d');
+      tri_Ang(n,:)=Ang(:);
+      minAng(n,1)=min(Ang); maxAng(n,1)=max(Ang);
+      minLeng(n,1)=min(Leng); maxLeng(n,1)=max(Leng);
+      %      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,0,0,1);
+      [U]=CalcTriDisps(gx',gy',gz',sx(Stri(n,:)),sy(Stri(n,:)),sz(Stri(n,:)),0.25,PMcom(1),PMcom(3),PMcom(2));
+      uid=U.x>7 | U.y>7 | U.z>14;
+      U.x=U.x(uid);
+      U.y=U.y(uid);
+      U.z=U.z(uid);
+      Ua(n)=sum(sqrt(U.x.^2+U.y.^2+U.z.^2));
+    else
+      Ua(n)=Ua_tmp(Lib(n));
+      tri_Ang(n,:)=tri_Ang_tmp(Lib(n),:);
+      minAng(n,1)=minAng_tmp(Lib(n),1); maxAng(n,1)=maxAng_tmp(Lib(n),1);
+      minLeng(n,1)=minLeng_tmp(Lib(n),1); maxLeng(n,1)=maxLeng_tmp(Lib(n),1);
+%       Ua(n)=Ua_tmp(n);
+%       tri_Ang(n,:)=tri_Ang_tmp(n,:);
+%       minAng(n,1)=minAng_tmp(n,1); maxAng(n,1)=maxAng_tmp(n,1);
+%       minLeng(n,1)=minLeng_tmp(n,1); maxLeng(n,1)=maxLeng_tmp(n,1);
+    end
   end
-  clear n;
+  clear n Lia Lib
+  u0id=sum(Ua==0);
 
   H=(minAng./maxAng).*(minLeng./maxLeng);
   Fobs=Ua+arpha.*H;
@@ -222,7 +260,7 @@ while Ntri > n_mesh
   S.tri=Stri;
   Ntri=length([S.tri]);
   
-  ffanim=ffanim+1;
+%   ffanim=ffanim+1;
 % figure view and save each down_tri roop ------------
 %     Fid=figure('visible','off');
 %     plot(S.bound(:,1),S.bound(:,2),'r');
@@ -244,29 +282,29 @@ while Ntri > n_mesh
 %   pause(.1)
 
 % GIF animation test -----------
-  if ffanim==1
-      fig30=figure;
-  else
-      fig30=figure('visible','off');
-  end
-  plot(S.bound(:,1),S.bound(:,2),'r');
-  hold on;
-  plot(OBS(1).ALON,OBS(1).ALAT,'.g');
-  triplot(S.tri,S.lon,S.lat);
-  title(['Number of triangels= ',num2str(Ntri)]);
-  if ffanim == 1;
-      print('-depsc',[saveloc,'Mesh',num2str(Ntri)]);
-  end  
+%   if ffanim==1
+%       fig30=figure;
+%   else
+%       fig30=figure('visible','off');
+%   end
+%   plot(S.bound(:,1),S.bound(:,2),'r');
+%   hold on;
+%   plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+%   triplot(S.tri,S.lon,S.lat);
+%   title(['Number of triangels= ',num2str(Ntri)]);
+%   if ffanim == 1;
+%       print('-depsc',[saveloc,'Mesh',num2str(Ntri)]);
+%   end  
   fprintf('Number of triangels=%4.0f \n',Ntri)
-  frame=getframe(fig30);
-  im=frame2im(frame);
-  [A,map]=rgb2ind(im,256);
-  if ffanim == 1;
-      imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
-  else
-      imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
-  end
-  hold off;clf;
+%   frame=getframe(fig30);
+%   im=frame2im(frame);
+%   [A,map]=rgb2ind(im,256);
+%   if ffanim == 1;
+%       imwrite(A,map,animfile,'gif','LoopCount',Inf,'DelayTime',0.2);
+%   else
+%       imwrite(A,map,animfile,'gif','WriteMode','append','DelayTime',0.2);
+%   end
+%   hold off;clf;
 end
 
 % export when exit roop
@@ -278,22 +316,44 @@ S.F=Fobs;
 S.H=H;
 
 % save figure at the number of n-mesh
-close(fig30)
-clear ffanim;
+% close(fig30)
+% clear ffanim;
 
-Fid=figure('visible','off');
+% Fid=figure('visible','off');
+figure(30); clf
 plot(S.bound(:,1),S.bound(:,2),'r');
-hold on;
+hold on
 plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+hold on
 triplot(S.tri,S.lon,S.lat);
 title(['Number of triangels= ',num2str(Ntri)]);
+saveas(figure(30),[saveloc,'Mesh',num2str(Ntri),'.eps'],'epsc')
+pause(.1)
+close(figure(30))
 fprintf('Number of triangels=%4.0f \n ',Ntri)
-print(Fid,'-depsc ',[saveloc,'Mesh',num2str(Ntri)]);
-close(Fid)
+% print(Fid,'-depsc ',[saveloc,'Mesh',num2str(Ntri)]);
+% close(Fid)
 
 end
 %====================================================
-function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,inip_f,int_mesh,ini_size)
+function [S,Ua,tri_Ang,minA,maxA,minL,maxL]=change_index(S,Ua,tri_Ang,remID,minA,maxA,minL,maxL)
+
+ID=unique(sort(find(remID==0)));
+Nrem=length(ID);
+for ii=1:Nrem
+%   [idIDrow,idIDcol]=find(S.tri==ID(ii));
+  [idIDrow,~]=find(S.tri==ID(ii));
+  S.tri(idIDrow,:)=[];
+  minA(idIDrow)=[];maxA(idIDrow)=[];
+  minL(idIDrow)=[];maxL(idIDrow)=[];
+  Ua(idIDrow)=[];
+  tri_Ang(idIDrow,:)=[];
+  S.tri(S.tri>ID(ii))=S.tri(S.tri>ID(ii))-1;
+end
+
+end
+%====================================================
+function [s]=INIT_INTERFACE_TRI(sub_f,bound_f,OBS,saveloc,inip_f,int_mesh,ini_size)
 %====================================================
 Fid=fopen(sub_f);
 dep_sub=textscan(Fid,'%f%f%f');
@@ -313,9 +373,9 @@ ini_point=cell2mat(ini_point);
 F=scatteredInterpolant(dep_sub(:,1),dep_sub(:,2),dep_sub(:,3),'natural');
 min_lon=min(bound(:,1)); max_lon=max(bound(:,1));
 min_lat=min(bound(:,2)); max_lat=max(bound(:,2));
-figure(10); clf
-plot(bound(:,1),bound(:,2),'r')
-hold on
+% figure(10); clf
+% plot(bound(:,1),bound(:,2),'r')
+% hold on
 % initial straint point-------
 s.lon=ini_point(:,1);
 s.lat=ini_point(:,2);
@@ -323,7 +383,10 @@ s.dep=ini_point(:,3);
 %-----------------------------
 % n=0;
 n=ini_size;
-while n<int_mesh
+ntri=ini_size;
+adn=0;
+while ntri<int_mesh
+while n<int_mesh*(0.5+adn/10)
   slat=(max_lat-min_lat).*rand(1)+min_lat;
   slon=(max_lon-min_lon).*rand(1)+min_lon;
   ID=inpolygon(slon,slat,bound(:,1),bound(:,2));
@@ -332,13 +395,14 @@ while n<int_mesh
     s.lat(n)=slat;
     s.lon(n)=slon;
     s.dep(n)=F(slon,slat);
-    if rem(n,round(int_mesh/10))==1;
-      plot3(s.lon,s.lat,s.dep,'.')
-      pause(.1)
-    end
+%     if rem(n,round(int_mesh/10))==1;
+%       plot3(s.lon,s.lat,s.dep,'.')
+%       pause(.1)
+%     end
   end
 end
-plot3(s.lon,s.lat,s.dep,'.')
+adn=adn+1;
+% plot3(s.lon,s.lat,s.dep,'.')
 %====================================================
 tri = delaunay(s.lon,s.lat);
 %====================================================
@@ -347,12 +411,20 @@ glat=mean(s.lat(tri),2);
 ID=inpolygon(glon,glat,bound(:,1),bound(:,2));
 ID1ind=find(ID==1);
 s.tri=tri(ID1ind,:);
+ntri=size(s.tri,1);
+end
 
 figure(20); clf
+plot(OBS(1).ALON,OBS(1).ALAT,'.g');
+hold on
 plot(bound(:,1),bound(:,2),'r')
 hold on
 triplot(s.tri,s.lon,s.lat)
+title(['Number of triangels= ',num2str(int_mesh)]);
+saveas(figure(20),[saveloc,'Mesh',num2str(int_mesh),'.eps'],'epsc')
 pause(.1)
+close(figure(20))
+
 s.bound=bound;
 s.dep_sub=dep_sub;
 end
