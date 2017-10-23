@@ -33,7 +33,7 @@ MAKE_FIGS(BLK,OBS);
 [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
-OUTPUT.DIR='./Result/';
+% OUTPUT.DIR='./Result/';
 WRITE_CHA(CHA,BLK,TRI,PRM,OBS,OUTPUT,D,G)
 %
 end
@@ -42,12 +42,16 @@ function WRITE_CHA(CHA,BLK,TRI,PRM,OBS,OUTPUT,D,G)
 %
 for DN=1:Inf
   DDIR=['Test_',num2str(DN,'%02i')];
-  ADIR=fullfile(OUTPUT.DIR,DDIR);
+  ADIR=fullfile(RPM.DirResult,DDIR);
   EXID=exist(ADIR);
-  if EXID~=7; mkdir(ADIR); break; end
+  if EXID~=7
+    FIGDIR=fullfile(ADIR,'figure');
+    mkdir(ADIR);mkdir(FIGDIR);
+    break
+  end
 end
 % 
-fprintf('Write OUTPUT FILE: %s \n',OUTPUT.DIR)
+fprintf('Write OUTPUT FILE: %s \n',RPM.DirResult)
 dlmwrite(fullfile(ADIR,'Mp.txt'),single(CHA.Mp));
 dlmwrite(fullfile(ADIR,'Mc.txt'),single(CHA.Mc));
 dlmwrite(fullfile(ADIR,'La.txt'),single(CHA.La));
@@ -60,6 +64,12 @@ save(fullfile(ADIR,'OBS.mat'),'OBS','-v7.3')
 save(fullfile(ADIR,'GRN.mat'),'D','G','-v7.3')
 % 
 movefile('./Result/CHA_test*.mat',ADIR)
+mkdir
+savefig(140,fullfile(FIGDIR,'vec_rig_ela'))
+savefig(130,fullfile(FIGDIR,'vector'))
+savefig(120,fullfile(FIGDIR,'pole'))
+savefig(110,fullfile(FIGDIR,'std'))
+savefig(100,fullfile(FIGDIR,'coupling'))
 % 
 end
 %% UNIFORM MESH GENERATION
@@ -240,6 +250,9 @@ PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
 [~]=fgetl(Fid);
 FileRigb=fscanf(Fid,'%s \n',[1,1]);
 PRM.FileRigb=fullfile(PRM.HOME_D,FileRigb);
+[~]=fgetl(Fid);
+DirResult=fscanf(Fid,'%s \n',[1,1]);
+PRM.DirResult=fullfile(PRM.HOME_D,DirResult);
 [~]=fgetl(Fid);
 %
 PRM.GPU=fscanf(Fid,'%d \n',[1,1]);
