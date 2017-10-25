@@ -34,15 +34,15 @@ MAKE_FIGS(BLK,OBS);
 % MAKE FIGURES
 %MAKE_FIG(CHA,BLK,OBS,PRM);
 % OUTPUT.DIR='./Result/';
-WRITE_CHA(CHA,BLK,TRI,PRM,OBS,OUTPUT,D,G)
+WRITE_CHA(CHA,BLK,TRI,PRM,OBS,D,G)
 %
 end
 %% WIRTE OUTPUT FILE
-function WRITE_CHA(CHA,BLK,TRI,PRM,OBS,OUTPUT,D,G)
+function WRITE_CHA(CHA,BLK,TRI,PRM,OBS,D,G)
 %
 for DN=1:Inf
   DDIR=['Test_',num2str(DN,'%02i')];
-  ADIR=fullfile(RPM.DirResult,DDIR);
+  ADIR=fullfile(PRM.DirResult,DDIR);
   EXID=exist(ADIR);
   if EXID~=7
     FIGDIR=fullfile(ADIR,'figure');
@@ -51,7 +51,7 @@ for DN=1:Inf
   end
 end
 % 
-fprintf('Write OUTPUT FILE: %s \n',RPM.DirResult)
+fprintf('Write OUTPUT FILE: %s \n',PRM.DirResult)
 dlmwrite(fullfile(ADIR,'Mp.txt'),single(CHA.Mp));
 dlmwrite(fullfile(ADIR,'Mc.txt'),single(CHA.Mc));
 dlmwrite(fullfile(ADIR,'La.txt'),single(CHA.La));
