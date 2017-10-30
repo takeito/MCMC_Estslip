@@ -63,7 +63,8 @@ save(fullfile(ADIR,'PRM.mat'),'PRM','-v7.3')
 save(fullfile(ADIR,'OBS.mat'),'OBS','-v7.3')
 save(fullfile(ADIR,'GRN.mat'),'D','G','-v7.3')
 % 
-movefile('./Result/CHA_test*.mat',ADIR)
+movefile([PRM.DirResult,'/CHA_test*.mat'],ADIR)
+% movefile('./Result/CHA_test*.mat',ADIR)
 savefig(140,fullfile(FIGDIR,'vec_rig_ela'))
 savefig(130,fullfile(FIGDIR,'vector'))
 savefig(120,fullfile(FIGDIR,'pole'))
@@ -806,7 +807,8 @@ cha.MpCOMPRESS.MEANMp=MEANMp;
 cha.MpCOMPRESS.SMPMp=int8(MpBASE);
 % 
 cha.AJR=NACC./PRM.CHA;
-save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
+save(fullfile(PRM.DirResult,['CHA_test',num2str(ITR,'%03i')]),'cha','-v7.3');
+% save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
 % 
 end
 %% Show results for makeing FIGURES
