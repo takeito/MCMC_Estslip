@@ -24,7 +24,7 @@ SHOW_BLOCK_BOUND(BLK)
 % Combain to Green function
 [D,G]=COMB_GREEN(BLK,OBS,TRI);
 % CALC. ABIC AND BLOCK MOTION
-[BLK,OBS]=CALC_AIC(BLK,OBS,POL);
+[BLK,OBS]=CALC_AIC(BLK,OBS,POL,PRM);
 % BLOCK MOTION BETWEEN TWO BLOCKS
 [BLK,OBS]=Est_Motion_BLOCKS(BLK,OBS);
 % MAKE FIGURES
@@ -40,6 +40,8 @@ end
 %% WIRTE OUTPUT FILE
 function WRITE_CHA(CHA,BLK,TRI,PRM,OBS,D,G)
 %
+logfile=fullfile(PRM.DirResult,'log.txt');
+logFID=fopen(logfile,'a');
 for DN=1:Inf
   DDIR=['Test_',num2str(DN,'%02i')];
   ADIR=fullfile(PRM.DirResult,DDIR);
@@ -70,6 +72,11 @@ savefig(130,fullfile(FIGDIR,'vector'))
 savefig(120,fullfile(FIGDIR,'pole'))
 savefig(110,fullfile(FIGDIR,'std'))
 savefig(100,fullfile(FIGDIR,'coupling'))
+% 
+fprintf(logFID,'MODEL= %s\n',PRM.DIRBlock);
+fprintf(logFID,'OBSDATA= %s\n',PRM.FileOBS);
+fclose(logFID);
+movefile(logfile,ADIR);
 % 
 end
 %% UNIFORM MESH GENERATION
@@ -508,8 +515,11 @@ end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
 % Markov chain Monte Calro
+logfile=fullfile(PRM.DirResult,'log.txt');
+logFID=fopen(logfile,'a');
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
 fprintf('Residual=%9.3f \n',RR);
+fprintf(logFID,'Residual=%9.3f \n',RR);
 %
 % if PRM.GPU==99
 %   precision='double';
@@ -560,6 +570,8 @@ if PRM.GPU~=99
   res_m=g_men-r_men;
   fprintf('USE GPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d res_Memory(GB)=%6.3f\n',...
            PRM.CHA,PRM.ITR,Mc.N,Mp.N,res_m./(1024.*1024.*1024));      
+  fprintf(logFID,'USE GPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d res_Memory(GB)=%6.3f\n',...
+           PRM.CHA,PRM.ITR,Mc.N,Mp.N,res_m./(1024.*1024.*1024));      
 %   CHA.Mc=gpuArray(CHA.Mc);
 %   CHA.Mp=gpuArray(CHA.Mp);
 %   CHA.La=gpuArray(CHA.La);
@@ -586,6 +598,8 @@ if PRM.GPU~=99
   D.OBSID=gpuArray(D.OBSID);
 else
   fprintf('USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
+            PRM.CHA,PRM.ITR,Mc.N,Mp.N);
+  fprintf(logFID,'USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
             PRM.CHA,PRM.ITR,Mc.N,Mp.N);
 end
 %
@@ -694,13 +708,18 @@ while not(COUNT==40)
 %
   fprintf('T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
            RT,1-RES.OLD./RR,100*CHA.AJR,RWD,toc)
+  fprintf(logFID,'T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
+           RT,1-RES.OLD./RR,100*CHA.AJR,RWD,toc);
 %
   for BK=1:BLK(1).NBlock
     [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
     fprintf('POLE OF BLOCK %2i = lat:%7.2f deg. lon:%8.2f deg. ang:%9.2e deg./m.y. \n',...
       BK,mean(latp),mean(lonp),mean(ang));
+    fprintf(logFID,'POLE OF BLOCK %2i = lat:%7.2f deg. lon:%8.2f deg. ang:%9.2e deg./m.y. \n',...
+      BK,mean(latp),mean(lonp),mean(ang));
   end
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
+  fprintf(logFID,'Lamda = %7.2f \n',mean(CHA.La));
 %
   if CHA.AJR > 0.24
     RWD=RWD*1.1;
@@ -745,6 +764,9 @@ end
 CHA.Res=RES.SMP;
 fprintf('RMS=: %8.3f\n',CHA.Res)
 fprintf('=== FINISHED MH_MCMC ===\n')
+fprintf(logFID,'RMS=: %8.3f\n',CHA.Res);
+fprintf(logFID,'=== FINISHED MH_MCMC ===\n');
+fclose(logFID);
 end
 %% Compress CHA sampling
 function COMPRESS_DATA(CHA,PRM,ITR,NACC)
@@ -1246,9 +1268,11 @@ end
 drawnow
 end
 %% CALCLATION AIC AND BLOCK MOTION
-function [BLK,OBS]=CALC_AIC(BLK,OBS,POL)
+function [BLK,OBS]=CALC_AIC(BLK,OBS,POL,PRM)
 TSig=0; NumB=0;
 BLK(1).POLE=[];
+logfile=fullfile(PRM.DirResult,'log.txt');
+logFID=fopen(logfile,'a');
 for N=1:BLK(1).NBlock
   Sig=0;EVne=[];POLE=[0; 0; 0];
   OBS(N).EEV=zeros(OBS(N).NBLK,1);
@@ -1277,8 +1301,10 @@ for N=1:BLK(1).NBlock
   OBS(N).EEV=EVne(1:2:end);
   OBS(N).ENV=EVne(2:2:end);
   fprintf('BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f ',N,OBS(N).NBLK,Sig)
+  fprintf(logFID,'BLOCK=%2d NUM_OBS=%2d Sigma^2=%5.2f ',N,OBS(N).NBLK,Sig);
   [latp,lonp,ang]=xyzp2lla(POLE(1),POLE(2),POLE(3));
   fprintf('Lat:%7.2f deg. Lon:%8.2f deg. Ang:%9.2e deg./m.y. \n',latp,lonp,ang);    
+  fprintf(logFID,'Lat:%7.2f deg. Lon:%8.2f deg. Ang:%9.2e deg./m.y. \n',latp,lonp,ang);    
 %   if OBS(N).NBLK>=2 
 %     fprintf('OBS(E,N) ')
 %     fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
@@ -1290,6 +1316,8 @@ end
 AIC=(OBS(1).NOBS.*2).*log(TSig./(OBS(1).NOBS.*2))+2.*NumB.*3;
 cAIC=AIC+2.*NumB.*3.*(NumB.*3+1)./(OBS(1).NOBS.*2-NumB.*3-1);
 fprintf('Sigma^2=%8.3f AIC=%7.3f cAIC=%7.3f K=%2d\n',TSig./(OBS(1).NOBS.*2),AIC,cAIC,NumB.*3)
+fprintf(logFID,'Sigma^2=%8.3f AIC=%7.3f cAIC=%7.3f K=%2d\n',TSig./(OBS(1).NOBS.*2),AIC,cAIC,NumB.*3);
+fclose(logFID);
 %
 end
 %% READ BLOCK BOUNDARY DATA
