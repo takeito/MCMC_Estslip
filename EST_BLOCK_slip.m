@@ -553,7 +553,7 @@ Mp.STD(POL.ID)=0;
 % end
 %
 RES.OLD=inf(1,1,precision);
-PRI.OLD=inf(1,1,precision);
+% PRI.OLD=inf(1,1,precision);
 RWDSCALE=1000*RWD/(PRM.CHA);
 McScale=RWDSCALE*0.13;
 MpScale=RWDSCALE*(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
@@ -664,7 +664,7 @@ while not(COUNT==40)
 % CALC RESIDUAL SECTION
     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 % Mc is better Zero 
-    PRI.SMP=sum(abs(Mc.SMP),1);   
+%     PRI.SMP=sum(abs(Mc.SMP),1);   
 %% MAKE Probably Density Function
 % $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$%%
 %  log(x(x>0));
@@ -673,8 +673,8 @@ while not(COUNT==40)
 % this is a generic formula.
 %   rho = (q1+logpdf(y))-(q2+logpdf(x0));  
     Pdf = -0.5.*...
-         ((RES.SMP+La.SMP+exp(-La.SMP).*PRI.SMP)...
-         -(RES.OLD+La.OLD+exp(-La.OLD).*PRI.OLD));
+         ((RES.SMP+La.SMP+exp(-La.SMP))...
+         -(RES.OLD+La.OLD+exp(-La.OLD)));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
     if ACC
@@ -682,7 +682,7 @@ while not(COUNT==40)
       Mp.OLD  = Mp.SMP;
       La.OLD  = La.SMP;
       RES.OLD = RES.SMP;
-      PRI.OLD = PRI.SMP;
+%       PRI.OLD = PRI.SMP;
     end
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
