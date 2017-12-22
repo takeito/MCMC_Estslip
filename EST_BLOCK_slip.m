@@ -605,6 +605,7 @@ end
 %
 RT=0;
 COUNT=0;
+Burn=1;
 %
 while not(COUNT==40)
   RT  =RT+1;
@@ -721,15 +722,32 @@ while not(COUNT==40)
   fprintf('Lamda = %7.2f \n',mean(CHA.La));
   fprintf(logFID,'Lamda = %7.2f \n',mean(CHA.La));
 %
-  if CHA.AJR > 0.24
-    RWD=RWD*1.1;
-    COUNT=0;
-  elseif CHA.AJR < 0.22
-    RWD=RWD*0.9;
-    COUNT=0;
-  else
+  if Burn==0
+    if CHA.AJR > 0.24
+      RWD=RWD*1.1;
+    elseif CHA.AJR < 0.22
+      RWD=RWD*0.9;
+    end
     COUNT=COUNT+1;
+  else
+    if CHA.AJR > 0.24
+      RWD=RWD*1.1;
+    elseif CHA.AJR < 0.22
+      RWD=RWD*0.9;
+    else
+      COUNT=COUNT+1;
+      Burn=0;
+    end
   end
+%   if CHA.AJR > 0.24
+%     RWD=RWD*1.1;
+%     COUNT=0;
+%   elseif CHA.AJR < 0.22
+%     RWD=RWD*0.9;
+%     COUNT=0;
+%   else
+%     COUNT=COUNT+1;
+%   end
   CHA.SMP=CAL.SMP;
   % debug-----------
   Mpmean=mean(CHA.Mp,2);
