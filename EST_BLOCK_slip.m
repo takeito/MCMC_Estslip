@@ -607,7 +607,7 @@ RT=0;
 COUNT=0;
 Burn=1;
 %
-while not(COUNT==40)
+while not(COUNT==400)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
