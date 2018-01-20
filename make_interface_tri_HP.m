@@ -2,7 +2,7 @@ function make_interface_tri_HP(pMESH,hp)
 % 
 warning('off')
 % PRM.OBS_F='./data_set.txt';
-PRM.OBS_F='./GEONET_seafloorGPSA_mesh.txt';
+PRM.OBS_F='./OBSDATA/GEONET_seafloorGPSA_mesh.txt';
 PRM.SUB_F='./plate_phs.txt';
 % PRM.BOU_F='./bound.txt';
 PRM.BOU_F='./phcont.txt';
@@ -16,7 +16,7 @@ pole.lon=161.65; pole.lat=54.74; pole.omega=-1.168;   % PH plate motion relative
 % --------------------------------------------------
 
 for Dii=1:Inf
-  sfolder=['./Result/Mesh',num2str(PRM.NMESH,'%5i'),'_HP',num2str(hp,'%3.1f'),'_It',num2str(Dii,'%2i'),'/'];
+  sfolder=['./Result_blue/Mesh',num2str(PRM.NMESH,'%5i'),'_HP10e',num2str(hp,'%3.1f'),'_It',num2str(Dii,'%2i'),'/'];
   EXID=exist(sfolder);
   if EXID~=7; mkdir(sfolder); break; end;
 end
@@ -24,7 +24,7 @@ anim_savefile=[sfolder,'tri_anim.gif'];
 
 OBS=READ_OBS(PRM);
 ini_size=FIX_POINT(PRM.INIP_F);
-s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, OBS, sfolder, PRM.INIP_F, PRM.NMESH.*20,ini_size);
+s=INIT_INTERFACE_TRI(PRM.SUB_F, PRM.BOU_F, OBS, sfolder, PRM.INIP_F, PRM.NMESH.*10,ini_size);
 save([sfolder,'plate_phs_initial'],'s')
 
 s=DOWN_TRI(s,OBS,PRM.NMESH,sfolder,anim_savefile,Reducerate,ini_size,pole,HP);
