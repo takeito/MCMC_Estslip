@@ -266,6 +266,8 @@ PRM.GPU=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
 PRM.ITR=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
+PRM.THR=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
 PRM.CHA=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
 PRM.KEP=fscanf(Fid,'%d \n',[1,1]);
@@ -288,6 +290,7 @@ fprintf('File fixed epole   : %s \n',PRM.FilePole)
 fprintf('File Rigid boundary: %s \n',PRM.FileRigb) 
 fprintf('GPUdev (CPU:99)    : %i \n',PRM.GPU) 
 fprintf('ITR(Max_Nitr)      : %i \n',PRM.ITR) 
+fprintf('ITR(Threshold_Nitr): %i \n',PRM.THR) 
 fprintf('CHA(Chain)         : %i \n',PRM.CHA) 
 fprintf('KEP(KEEP)          : %i \n',PRM.KEP) 
 fprintf('RWD(Walk_dis)      : %4.2f \n',PRM.RWD) 
@@ -611,7 +614,7 @@ RT=0;
 COUNT=0;
 Burn=1;
 %
-while not(COUNT==400)
+while not(COUNT==PRM.THR)
   RT  =RT+1;
   NACC=0;tic
   if PRM.GPU~=99
