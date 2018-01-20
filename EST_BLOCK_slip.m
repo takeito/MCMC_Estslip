@@ -476,9 +476,11 @@ for BL=1:BLK(1).NBlock
       if NF~=0
         if FLAG1==0
           if NB2==BL && NB1<NB2
-            D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+%             D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+            D(1).TRA(MC:MC+3*NF-1,BL)=-1/2;  % 1/2 : because back slip of 'relative' motion
           else
-            D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+%             D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+            D(1).TRA(MC:MC+3*NF-1,BL)= 1/2;
           end
         else
           FLAG2=0;
@@ -491,9 +493,11 @@ for BL=1:BLK(1).NBlock
           if FLAG2==1
             D(1).TRA(MC:MC+3*NF-1,BL)=0;
           elseif NB2==BL && NB1<NB2
-            D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+%             D(1).TRA(MC:MC+3*NF-1,BL)=-1;
+            D(1).TRA(MC:MC+3*NF-1,BL)=-1/2;
           else
-            D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+%             D(1).TRA(MC:MC+3*NF-1,BL)= 1;
+            D(1).TRA(MC:MC+3*NF-1,BL)= 1/2;
           end
         end
         MC=MC+3*NF;
