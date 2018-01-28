@@ -1161,7 +1161,7 @@ for NB1=1:BLK(1).NBlock
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
-        [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
+        [BLK,TRI,D]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF);
       end
 %       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
@@ -1175,9 +1175,17 @@ disp('PASS GREEN_TRI')
 disp('==================')
 end
 %% TODO: DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
-function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2)
+function [BLK,TRI,D]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 % BLK(1).BOUND(NB1,NB2).type=5; %flag
+for ii=1:size(BLK(1).RGPAIR,1)
+  RGPAIRID=ismember([3 11],BLK(1).RGPAIR(ii,2:3));
+  ISPAIR=sum(RGPAIRID);
+  if ISPAIR==2
+    D(1).INV1(3*TRI(1).TNF+N)=1;break
+  end
+end
+
 switch BLK(1).BOUND(NB1,NB2).type
   case 1
     SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
