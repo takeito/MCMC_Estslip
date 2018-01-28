@@ -1112,6 +1112,7 @@ TRI(1).OBSDIS=[];
 % TRI(1).PLANED=[];
 TRI(1).TNF=0;
 for NB1=1:BLK(1).NBlock
+  [BLK(NB1).LOCALX,BLK(NB1).LOCALY]=PLTXY(BLK(NB1).LAT,BLK(NB1).LON,ALAT,ALON);
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
     TRI(1).BOUND(NB1,NB2).clat=[];
@@ -1160,6 +1161,7 @@ for NB1=1:BLK(1).NBlock
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
+        [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       end
 %       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
       TRI(1).TNF=TRI(1).TNF+NF;
