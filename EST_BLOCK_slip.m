@@ -1104,7 +1104,7 @@ ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
 % OBSMTR=[OBS(1).AXYZ(:,1:3) ones(OBS(1).NOBS,1)];
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
-OBSz=1e-3.*OBS(1).AHIG;
+OBSz=-1e-3.*OBS(1).AHIG;
 %
 TRI(1).OBSDIS=[];
 % TRI(1).AXYZ=[];
@@ -1126,12 +1126,16 @@ for NB1=1:BLK(1).NBlock
 %
       fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
-    BLK(1).BOUND(NB1,NB2).FLAG1=0;
-    for ii=1:size(BLK(1).RGPAIR,1)
-      RGPAIRID=ismember([NB1 NB2],BLK(1).RGPAIR(ii,2:3));
-      ISPAIR=sum(RGPAIRID);
-      if ISPAIR==2; BLK(1).BOUND(NB1,NB2).FLAG1=1; break; end
-    end
+%       [BLK(1).BOUND(NB1,NB2).CX,BLK(1).BOUND(NB1,NB2).CY]=...
+%           PLTXY(mean(BLK(1).BOUND(NB1,NB2).blat,2),mean(BLK(1).BOUND(NB1,NB2).blon,2),ALAT,ALON);
+%       [BLK(1).BOUND(NB1,NB2).IN,BLK(1).BOUND(NB1,NB2).ON]=...
+%           inpolygon(BLK(1).BOUND(NB1,NB2).CX,BLK(1).BOUND(NB1,NB2).CY,BLK(NB1).LOCALX,BLK(NB1).LOCALY);
+      BLK(1).BOUND(NB1,NB2).FLAG1=0;
+      for ii=1:size(BLK(1).RGPAIR,1)
+        RGPAIRID=ismember([NB1 NB2],BLK(1).RGPAIR(ii,2:3));
+        ISPAIR=sum(RGPAIRID);
+        if ISPAIR==2; BLK(1).BOUND(NB1,NB2).FLAG1=1; break; end
+      end
 
       for N=1:NF
         TRIEDGE=zeros(3,7);
@@ -1169,7 +1173,7 @@ for NB1=1:BLK(1).NBlock
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
-        [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF);
+        [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF);
       end
       TRI(1).NB=TRI(1).NB+NF;
 %       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
@@ -1183,14 +1187,32 @@ disp('PASS GREEN_TRI')
 disp('==================')
 end
 %% TODO: DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
-function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF)
+function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 % BLK(1).BOUND(NB1,NB2).type=5; %flag
 switch BLK(1).BOUND(NB1,NB2).FLAG1
   case 1
-    TRI(1).INV1(3*TRI(1).NB+N)=1;return
+    TRI(1).INV1(3*TRI(1).NB+N)=1;
   case 0
-    TRI(1).INV1(3*TRI(1).NB+N)=-1;return
+    TRIXC=mean(TRIx);
+    TRIYC=mean(TRIy);
+    [IN,ON]=inpolygon(TRIXC,TRIYC,BLK(NB1).LOCALX,BLK(NB1).LOCALY);
+    if IN==1 && ON~=1
+      TRI(1).INV1(3*TRI(1).NB+N)=1;
+    elseif IN==1 && ON==1
+      TRIC=[TRIXC TRIYC 0];
+      UV=[0 0 1];
+      NV=cross(UV,TRI(1).BOUND(NB1,NB2).ST(N,:));
+      CNV=TRIC+NV;
+      if inpolygon(CNV(1),CNV(2),BLK(NB1).LOCALX,BLK(NB1).LOCALY)==1
+        TRI(1).INV1(3*TRI(1).NB+N)=1;
+      else
+        TRI(1).INV1(3*TRI(1).NB+N)=-1;
+      end
+    else
+      TRI(1).INV1(3*TRI(1).NB+N)=-1;
+    end
+%     TRI(1).INV1(3*TRI(1).NB+N)=-1;
 end
 
 % switch BLK(1).BOUND(NB1,NB2).type
