@@ -1125,6 +1125,13 @@ for NB1=1:BLK(1).NBlock
 %
       fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
+    FLAG1=0;
+    for ii=1:size(BLK(1).RGPAIR,1)
+      RGPAIRID=ismember([NB1 NB2],BLK(1).RGPAIR(ii,2:3));
+      ISPAIR=sum(RGPAIRID);
+      if ISPAIR==2; FLAG1=1; break; end
+    end
+
       for N=1:NF
         TRIEDGE=zeros(3,7);
         for Nn=1:3
