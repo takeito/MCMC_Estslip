@@ -315,7 +315,7 @@ D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
 D(1).OBSID=zeros(3*NOBS,BLK(1).NBlock);
-D(1).TRA=zeros(TRI.TNF,BLK(1).NBlock);
+D(1).TRA=zeros(BLK(1).NB,BLK(1).NBlock);
 D(1).CFID=false(3*BLK(1).NB,1);
 D(1).CFDIPID=true(3*BLK(1).NB,1);
 D(1).CNT=0;
@@ -363,14 +363,6 @@ for NB1=1:BLK(1).NBlock
                                       -TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
       G(1).B(MT+NF:MT+2*NF-1,3*NB1  )=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
                                       -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
-
-%       G(1).B(MT   :MT+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-2);
-%       G(1).B(MT   :MT+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1-1);
-%       G(1).B(MT   :MT+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT   :MT+  NF-1,3*NB1  );
-%       G(1).B(MT+NF:MT+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
-%       G(1).B(MT+NF:MT+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
-%       G(1).B(MT+NF:MT+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B(MT+NF:MT+2*NF-1,3*NB1  );
-      
       G(1).B(MT   :MT+  NF-1,3*NB2-2)=-G(1).B(MT   :MT+  NF-1,3*NB1-2);
       G(1).B(MT   :MT+  NF-1,3*NB2-1)=-G(1).B(MT   :MT+  NF-1,3*NB1-1);
       G(1).B(MT   :MT+  NF-1,3*NB2  )=-G(1).B(MT   :MT+  NF-1,3*NB1  );
@@ -396,15 +388,6 @@ for NB1=1:BLK(1).NBlock
       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-%       G(1).B1(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-2);
-%       G(1).B1(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1-1);
-%       G(1).B1(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC     :MC+  NF-1,3*NB1  );
-%       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
-%       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
-%       G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
-%       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-%       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-%       G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
       G(1).B1(MC     :MC+  NF-1,3*NB2-2)=-G(1).B1(MC     :MC+  NF-1,3*NB1-2);
       G(1).B1(MC     :MC+  NF-1,3*NB2-1)=-G(1).B1(MC     :MC+  NF-1,3*NB1-1);
       G(1).B1(MC     :MC+  NF-1,3*NB2  )=-G(1).B1(MC     :MC+  NF-1,3*NB1  );
@@ -428,15 +411,6 @@ for NB1=1:BLK(1).NBlock
       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-%       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
-%       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
-%       G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
-%       G(1).B2(MC     :MC+  NF-1,3*NB1-2)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-2);
-%       G(1).B2(MC     :MC+  NF-1,3*NB1-1)=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1-1);
-%       G(1).B2(MC     :MC+  NF-1,3*NB1  )=TRI(1).BOUND(NB1,NB2).SDTINV.*G(1).B2(MC     :MC+  NF-1,3*NB1  );
-%       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-%       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-%       G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
       G(1).B2(MC+  NF:MC+2*NF-1,3*NB2-2)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
       G(1).B2(MC+  NF:MC+2*NF-1,3*NB2-1)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
       G(1).B2(MC+  NF:MC+2*NF-1,3*NB2  )=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
@@ -464,53 +438,6 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
 end
 % 
-for BL=1:BLK(1).NBlock
-  D(1).obsid=zeros(1,NOBS);
-  D(1).obsid(1,OBS(1).ABLK==BL)=true;
-  D(1).OBSID(:,BL)=reshape(repmat(D(1).obsid,3,1),3*NOBS,1);
-  MC=1;
-  MT=1;
-  MR=1;
-  rigblkID=BLK(1).RGPAIR(:,1)==BL;
-  FLAG1=sum(rigblkID);
-  for NB1=1:BLK(1).NBlock
-    for NB2=NB1+1:BLK(1).NBlock
-      NF=size(TRI(1).BOUND(NB1,NB2).clon,2);
-      if NF~=0
-        if FLAG1==0
-          if NB2==BL && NB1<NB2
-%             D(1).TRA(MC:MC+3*NF-1,BL)=-1;
-            D(1).TRA(MC:MC+3*NF-1,BL)=-1/2;  % 1/2 : because back slip of 'relative' motion
-          else
-%             D(1).TRA(MC:MC+3*NF-1,BL)= 1;
-            D(1).TRA(MC:MC+3*NF-1,BL)= 1/2;
-          end
-        else
-          FLAG2=0;
-          RGPAIRtmp=BLK(1).RGPAIR(rigblkID,:);
-          for RB=1:size(RGPAIRtmp,1)
-            RGPAIRID=ismember([NB1 NB2],RGPAIRtmp(RB,2:3));
-            ISPAIR=sum(RGPAIRID);
-            if ISPAIR==2;FLAG2=1;break;end
-          end
-          if FLAG2==1
-            D(1).TRA(MC:MC+3*NF-1,BL)=0;
-          elseif NB2==BL && NB1<NB2
-%             D(1).TRA(MC:MC+3*NF-1,BL)=-1;
-            D(1).TRA(MC:MC+3*NF-1,BL)=-1/2;
-          else
-%             D(1).TRA(MC:MC+3*NF-1,BL)= 1;
-            D(1).TRA(MC:MC+3*NF-1,BL)= 1/2;
-          end
-        end
-        MC=MC+3*NF;
-        MT=MT+2*NF;
-        MR=MR+  NF;
-      end
-    end
-  end
-end
-% 
 G(1).C  =TMP.C(D(1).IND,:);
 G(1).P  =TMP.P(D(1).IND,:);
 G(1).T  =   sparse(G(1).T);
@@ -518,6 +445,8 @@ G(1).TB =    G(1).T*G(1).B;
 G(1).Tt =  sparse(G(1).Tt);
 G(1).TtB=   G(1).Tt*G(1).B;
 D(1).MID=logical(repmat(D(1).MID,3,1));
+D(1).INVSTR =TRI(1).INVSTR;
+D(1).INVDIP=TRI(1).INVDIP;
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
@@ -659,10 +588,11 @@ while not(COUNT==PRM.THR)
 %     end
     CF=sqrt(CFsq);
     CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
+% Make inverse factor of strike direction Green function
+    STRINV=sign(G.TB*Mp.SMP).*D(1).INVSTR.*D(1).INVDIP+~D(1).INVDIP;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
-    CAL.ela=G.C*(repmat((G.TB*Mp.SMP),1,BLK(1).NBlock).*D.TRA.*repmat(Mc.SMPMAT,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
-    CAL.ELA=sum(CAL.ela.*D.OBSID,2);
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*STRINV.*Mc.SMPMAT);
     CAL.SMP=CAL.RIG+CAL.ELA;
     if PRM.GPU~=99
       clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
@@ -764,9 +694,10 @@ while not(COUNT==PRM.THR)
   CFsq(CFsq<0)=0;
   CF=sqrt(CFsq);
   CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
+  STRINV=sign(G.TB*Mpmean).*D(1).INVSTR.*D(1).INVDIP+~D(1).INVDIP;
   VEC.RIG=G.P*Mpmean;
-  VEC.ela=G.C*(repmat((G.TB*Mpmean),1,BLK(1).NBlock).*D.TRA.*repmat(Mcmeanrep,1,BLK(1).NBlock).*repmat(CF,1,BLK(1).NBlock));
-  VEC.ELA=sum(VEC.ela.*D.OBSID,2);
+  VEC.ELA=G.C*((G.TB*Mpmean).*STRINV.*Mcmeanrep);
+  VEC.SUM=VEC.RIG+VEC.ELA;
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
   if PRM.GPU~=99
@@ -927,7 +858,7 @@ hold on
 figure(130);clf(130)
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 hold on
-quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
+quiver(OBS(1).ALON,OBS(1).ALAT,VEC.SUM(1:3:end)',VEC.SUM(2:3:end)','blue')
 hold on
 axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
 title(['Iteration Number: ',num2str(RT)]);
@@ -1111,7 +1042,8 @@ TRI(1).OBSDIS=[];
 % TRI(1).NORMXYZ=[];
 % TRI(1).PLANED=[];
 TRI(1).NB=0;
-TRI(1).INV1=ones(3*BLK(1).NB,1);
+TRI(1).INVSTR =zeros(3*BLK(1).NB,1);
+TRI(1).INVDIP=zeros(3*BLK(1).NB,1);
 for NB1=1:BLK(1).NBlock
   [BLK(NB1).LOCALX,BLK(NB1).LOCALY]=PLTXY(BLK(NB1).LAT,BLK(NB1).LON,ALAT,ALON);
   for NB2=NB1+1:BLK(1).NBlock
@@ -1126,10 +1058,6 @@ for NB1=1:BLK(1).NBlock
 %
       fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
-%       [BLK(1).BOUND(NB1,NB2).CX,BLK(1).BOUND(NB1,NB2).CY]=...
-%           PLTXY(mean(BLK(1).BOUND(NB1,NB2).blat,2),mean(BLK(1).BOUND(NB1,NB2).blon,2),ALAT,ALON);
-%       [BLK(1).BOUND(NB1,NB2).IN,BLK(1).BOUND(NB1,NB2).ON]=...
-%           inpolygon(BLK(1).BOUND(NB1,NB2).CX,BLK(1).BOUND(NB1,NB2).CY,BLK(NB1).LOCALX,BLK(NB1).LOCALY);
       BLK(1).BOUND(NB1,NB2).FLAG1=0;
       for ii=1:size(BLK(1).RGPAIR,1)
         RGPAIRID=ismember([NB1 NB2],BLK(1).RGPAIR(ii,2:3));
@@ -1176,7 +1104,6 @@ for NB1=1:BLK(1).NBlock
         [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF);
       end
       TRI(1).NB=TRI(1).NB+NF;
-%       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
 %       TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
 %       OBS(1).Gw=min(TRI(1).OBSDIS,[],2)./max(min(TRI(1).OBSDIS,[],2));
     end
@@ -1189,53 +1116,35 @@ end
 %% TODO: DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
 function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
-% BLK(1).BOUND(NB1,NB2).type=5; %flag
 switch BLK(1).BOUND(NB1,NB2).FLAG1
   case 1
-    TRI(1).INV1(3*TRI(1).NB+N)=1;
+    TRI(1).INVSTR(3*TRI(1).NB+N) =1;
+    TRI(1).INVDIP(3*TRI(1).NB+N)=1;
   case 0
     TRIXC=mean(TRIx);
     TRIYC=mean(TRIy);
     [IN,ON]=inpolygon(TRIXC,TRIYC,BLK(NB1).LOCALX,BLK(NB1).LOCALY);
     if IN==1 && ON~=1
-      TRI(1).INV1(3*TRI(1).NB+N)=1;
+      TRI(1).INVSTR(3*TRI(1).NB+N) =1;
+      TRI(1).INVDIP(3*TRI(1).NB+N)=1;
     elseif IN==1 && ON==1
       TRIC=[TRIXC TRIYC 0];
       UV=[0 0 1];
       NV=cross(UV,TRI(1).BOUND(NB1,NB2).ST(N,:));
       CNV=TRIC+NV;
       if inpolygon(CNV(1),CNV(2),BLK(NB1).LOCALX,BLK(NB1).LOCALY)==1
-        TRI(1).INV1(3*TRI(1).NB+N)=1;
+        TRI(1).INVSTR(3*TRI(1).NB+N) =1;
+        TRI(1).INVDIP(3*TRI(1).NB+N)=1;
       else
-        TRI(1).INV1(3*TRI(1).NB+N)=-1;
+        TRI(1).INVSTR(3*TRI(1).NB+N) =-1;
+        TRI(1).INVDIP(3*TRI(1).NB+N)= 1;
       end
     else
-      TRI(1).INV1(3*TRI(1).NB+N)=-1;
+      TRI(1).INVSTR(3*TRI(1).NB+N) =-1;
+      TRI(1).INVDIP(3*TRI(1).NB+N)= 1;
     end
-%     TRI(1).INV1(3*TRI(1).NB+N)=-1;
+%     TRI(1).INVSTR(3*TRI(1).NB+N)=-1;
 end
-
-% switch BLK(1).BOUND(NB1,NB2).type
-%   case 1
-%     SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
-%     SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
-%     if sum(SFID1)>sum(SFID2)
-%       TRI(1).BOUND(NB1,NB2).SDTINV=    ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
-%     elseif sum(SFID1)<sum(SFID2)
-%       TRI(1).BOUND(NB1,NB2).SDTINV=-1.*ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
-%     end
-%   case 5
-% %     ORTHO=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
-% %     CTRI =[TRI(1).BOUND(NB1,NB2).clon' TRI(1).BOUND(NB1,NB2).clat' zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
-% %     COUT =inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB2).LON,BLK(NB2).LAT)&~inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB1).LON,BLK(NB1).LAT);
-% %     DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP;
-% %     IDOUT=inpolygon(DPEND(:,1),DPEND(:,2),BLK(NB2).LON,BLK(NB2).LAT);
-% %     TMPID=or(COUT,and(ORTHO,IDOUT));
-% %     TRI(1).BOUND(NB1,NB2).SDTINV=-1.*TMPID+~TMPID;
-%     TRI(1).BOUND(NB1,NB2).SDTINV=ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
-%   otherwise
-%     fprintf('%s\n','No fault.')
-% end
 % 
 end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
