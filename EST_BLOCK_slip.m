@@ -445,8 +445,12 @@ G(1).TB =    G(1).T*G(1).B;
 G(1).Tt =  sparse(G(1).Tt);
 G(1).TtB=   G(1).Tt*G(1).B;
 D(1).MID=logical(repmat(D(1).MID,3,1));
-D(1).INVSTR =TRI(1).INVSTR;
-D(1).INVDIP=TRI(1).INVDIP;
+D(1).INVSTR=TRI(1).INVSTR.*TRI(1).INVSTID;
+D(1).INVDIP=TRI(1).INVDIP.*TRI(1).INVSTID;
+D(1).INVTNS=TRI(1).INVTNS.*TRI(1).INVTSID;
+% D(1).INVSTID=TRI(1).INVSTID;
+% D(1).INVDPID=TRI(1).INVDPID;
+% D(1).INVTSID=TRI(1).INVTSID;
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
@@ -589,10 +593,13 @@ while not(COUNT==PRM.THR)
     CF=sqrt(CFsq);
     CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
 % Make inverse factor of strike direction Green function
-    STRINV=sign(G.TB*Mp.SMP).*D(1).INVSTR.*D(1).INVDIP+~D(1).INVDIP;
+    SGN=sign(G.TB*Mp.SMP);
+    STRINV=SGN.*D(1).INVSTR...
+          +     D(1).INVDIP...
+          +SGN.*D(1).INVTNS;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*STRINV.*Mc.SMPMAT);
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*STRINV.*CF.*Mc.SMPMAT);
     CAL.SMP=CAL.RIG+CAL.ELA;
     if PRM.GPU~=99
       clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
@@ -694,9 +701,12 @@ while not(COUNT==PRM.THR)
   CFsq(CFsq<0)=0;
   CF=sqrt(CFsq);
   CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
-  STRINV=sign(G.TB*Mpmean).*D(1).INVSTR.*D(1).INVDIP+~D(1).INVDIP;
+  SGN=sign(G.TB*Mp.SMP);
+  STRINV=SGN.*D(1).INVSTR...
+        +     D(1).INVDIP...
+        +SGN.*D(1).INVTNS;
   VEC.RIG=G.P*Mpmean;
-  VEC.ELA=G.C*((G.TB*Mpmean).*STRINV.*Mcmeanrep);
+  VEC.ELA=G.C*((G.TB*Mpmean).*STRINV.*CF.*Mcmeanrep);
   VEC.SUM=VEC.RIG+VEC.ELA;
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
@@ -1042,8 +1052,12 @@ TRI(1).OBSDIS=[];
 % TRI(1).NORMXYZ=[];
 % TRI(1).PLANED=[];
 TRI(1).NB=0;
-TRI(1).INVSTR =zeros(3*BLK(1).NB,1);
+TRI(1).INVSTR=zeros(3*BLK(1).NB,1);
 TRI(1).INVDIP=zeros(3*BLK(1).NB,1);
+TRI(1).INVTNS=zeros(3*BLK(1).NB,1);
+TRI(1).INVSTID=zeros(3*BLK(1).NB,1);
+TRI(1).INVDPID=zeros(3*BLK(1).NB,1);
+TRI(1).INVTSID=zeros(3*BLK(1).NB,1);
 for NB1=1:BLK(1).NBlock
   [BLK(NB1).LOCALX,BLK(NB1).LOCALY]=PLTXY(BLK(NB1).LAT,BLK(NB1).LON,ALAT,ALON);
   for NB2=NB1+1:BLK(1).NBlock
@@ -1062,7 +1076,14 @@ for NB1=1:BLK(1).NBlock
       for ii=1:size(BLK(1).RGPAIR,1)
         RGPAIRID=ismember([NB1 NB2],BLK(1).RGPAIR(ii,2:3));
         ISPAIR=sum(RGPAIRID);
-        if ISPAIR==2; BLK(1).BOUND(NB1,NB2).FLAG1=1; break; end
+        if ISPAIR==2
+          if max(BLK(1).RGPAIR(ii,2:3))==BLK(1).RGPAIR(ii,1)
+            BLK(1).BOUND(NB1,NB2).FLAG1=1;
+          else
+            BLK(1).BOUND(NB1,NB2).FLAG1=2;
+          end
+          break
+        end
       end
 
       for N=1:NF
@@ -1118,30 +1139,57 @@ function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 switch BLK(1).BOUND(NB1,NB2).FLAG1
   case 1
-    TRI(1).INVSTR(3*TRI(1).NB+N) =1;
-    TRI(1).INVDIP(3*TRI(1).NB+N)=1;
+    TRI(1).INVSTR(3*TRI(1).NB+N)= 1;
+    TRI(1).INVDIP(3*TRI(1).NB+N)= 1;
+    TRI(1).INVTNS(3*TRI(1).NB+N)= 1;
+    TRI(1).INVSTID(3*TRI(1).NB+N)=0;
+    TRI(1).INVDPID(3*TRI(1).NB+N)=1;
+    TRI(1).INVTSID(3*TRI(1).NB+N)=0;
+  case 2
+    TRI(1).INVSTR(3*TRI(1).NB+N)= 1;
+    TRI(1).INVDIP(3*TRI(1).NB+N)=-1;
+    TRI(1).INVTNS(3*TRI(1).NB+N)= 1;
+    TRI(1).INVSTID(3*TRI(1).NB+N)=0;
+    TRI(1).INVDPID(3*TRI(1).NB+N)=1;
+    TRI(1).INVTSID(3*TRI(1).NB+N)=0;
   case 0
     TRIXC=mean(TRIx);
     TRIYC=mean(TRIy);
     [IN,ON]=inpolygon(TRIXC,TRIYC,BLK(NB1).LOCALX,BLK(NB1).LOCALY);
     if IN==1 && ON~=1
-      TRI(1).INVSTR(3*TRI(1).NB+N) =1;
-      TRI(1).INVDIP(3*TRI(1).NB+N)=1;
+      TRI(1).INVSTR(3*TRI(1).NB+N)= 1;
+      TRI(1).INVDIP(3*TRI(1).NB+N)= 1;
+      TRI(1).INVTNS(3*TRI(1).NB+N)= 1;
+      TRI(1).INVSTID(3*TRI(1).NB+N)=0;
+      TRI(1).INVDPID(3*TRI(1).NB+N)=1;
+      TRI(1).INVTSID(3*TRI(1).NB+N)=0;
     elseif IN==1 && ON==1
       TRIC=[TRIXC TRIYC 0];
       UV=[0 0 1];
       NV=cross(UV,TRI(1).BOUND(NB1,NB2).ST(N,:));
       CNV=TRIC+NV;
       if inpolygon(CNV(1),CNV(2),BLK(NB1).LOCALX,BLK(NB1).LOCALY)==1
-        TRI(1).INVSTR(3*TRI(1).NB+N) =1;
-        TRI(1).INVDIP(3*TRI(1).NB+N)=1;
-      else
-        TRI(1).INVSTR(3*TRI(1).NB+N) =-1;
+        TRI(1).INVSTR(3*TRI(1).NB+N)= 1;
         TRI(1).INVDIP(3*TRI(1).NB+N)= 1;
+        TRI(1).INVTNS(3*TRI(1).NB+N)= 1;
+        TRI(1).INVSTID(3*TRI(1).NB+N)=1;
+        TRI(1).INVDPID(3*TRI(1).NB+N)=0;
+        TRI(1).INVTSID(3*TRI(1).NB+N)=0;
+      else
+        TRI(1).INVSTR(3*TRI(1).NB+N)=-1;
+        TRI(1).INVDIP(3*TRI(1).NB+N)= 1;
+        TRI(1).INVTNS(3*TRI(1).NB+N)= 1;
+        TRI(1).INVSTID(3*TRI(1).NB+N)=1;
+        TRI(1).INVDPID(3*TRI(1).NB+N)=0;
+        TRI(1).INVTSID(3*TRI(1).NB+N)=0;
       end
     else
-      TRI(1).INVSTR(3*TRI(1).NB+N) =-1;
+      TRI(1).INVSTR(3*TRI(1).NB+N)=-1;
       TRI(1).INVDIP(3*TRI(1).NB+N)= 1;
+      TRI(1).INVTNS(3*TRI(1).NB+N)= 1;
+      TRI(1).INVSTID(3*TRI(1).NB+N)=1;
+      TRI(1).INVDPID(3*TRI(1).NB+N)=0;
+      TRI(1).INVTSID(3*TRI(1).NB+N)=0;
     end
 %     TRI(1).INVSTR(3*TRI(1).NB+N)=-1;
 end
