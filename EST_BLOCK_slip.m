@@ -299,7 +299,7 @@ fprintf('==================\n')
 disp('PASS READ_PARAMETERS')
 end
 %% MAKE MATRIX
-function [D,G]=COMB_GREEN(BLK,OBS,TRI)
+function [D,G]=COMB_GREEN(BLK,OBS,TRI,D)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
 % pole unit is mm
 NOBS=length(OBS(1).EVEC);
@@ -316,17 +316,17 @@ D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
 D(1).OBSID=zeros(3*NOBS,BLK(1).NBlock);
 D(1).TRA=zeros(TRI.TNF,BLK(1).NBlock);
-D(1).CFID=false(3*TRI(1).TNF,1);
-D(1).CFDIPID=true(3*TRI(1).TNF,1);
+D(1).CFID=false(3*BLK(1).NB,1);
+D(1).CFDIPID=true(3*BLK(1).NB,1);
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
 %
-G(1).T =zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
-G(1).Tt=zeros(3*TRI(1).TNF,2.*TRI(1).TNF);
-G(1).B =zeros(2*TRI(1).TNF,3.*BLK(1).NBlock);
-G(1).B1=zeros(3*TRI(1).TNF,3.*BLK(1).NBlock);
-G(1).B2=zeros(3*TRI(1).TNF,3.*BLK(1).NBlock);
+G(1).T =zeros(3*BLK(1).NB,2.*BLK(1).NB);
+G(1).Tt=zeros(3*BLK(1).NB,2.*BLK(1).NB);
+G(1).B =zeros(2*BLK(1).NB,3.*BLK(1).NBlock);
+G(1).B1=zeros(3*BLK(1).NB,3.*BLK(1).NBlock);
+G(1).B2=zeros(3*BLK(1).NB,3.*BLK(1).NBlock);
 TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
 %
 MC=1;
@@ -1110,7 +1110,8 @@ TRI(1).OBSDIS=[];
 % TRI(1).AXYZ=[];
 % TRI(1).NORMXYZ=[];
 % TRI(1).PLANED=[];
-TRI(1).TNF=0;
+TRI(1).NB=0;
+TRI(1).INV1=ones(3*BLK(1).NB,1);
 for NB1=1:BLK(1).NBlock
   [BLK(NB1).LOCALX,BLK(NB1).LOCALY]=PLTXY(BLK(NB1).LAT,BLK(NB1).LON,ALAT,ALON);
   for NB2=NB1+1:BLK(1).NBlock
@@ -1125,11 +1126,11 @@ for NB1=1:BLK(1).NBlock
 %
       fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
-    FLAG1=0;
+    BLK(1).BOUND(NB1,NB2).FLAG1=0;
     for ii=1:size(BLK(1).RGPAIR,1)
       RGPAIRID=ismember([NB1 NB2],BLK(1).RGPAIR(ii,2:3));
       ISPAIR=sum(RGPAIRID);
-      if ISPAIR==2; FLAG1=1; break; end
+      if ISPAIR==2; BLK(1).BOUND(NB1,NB2).FLAG1=1; break; end
     end
 
       for N=1:NF
@@ -1168,10 +1169,10 @@ for NB1=1:BLK(1).NBlock
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
-        [BLK,TRI,D]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF);
+        [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF);
       end
+      TRI(1).NB=TRI(1).NB+NF;
 %       [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2);
-      TRI(1).TNF=TRI(1).TNF+NF;
 %       TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
 %       OBS(1).Gw=min(TRI(1).OBSDIS,[],2)./max(min(TRI(1).OBSDIS,[],2));
     end
@@ -1182,38 +1183,37 @@ disp('PASS GREEN_TRI')
 disp('==================')
 end
 %% TODO: DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
-function [BLK,TRI,D]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF)
+function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 % BLK(1).BOUND(NB1,NB2).type=5; %flag
-for ii=1:size(BLK(1).RGPAIR,1)
-  RGPAIRID=ismember([3 11],BLK(1).RGPAIR(ii,2:3));
-  ISPAIR=sum(RGPAIRID);
-  if ISPAIR==2
-    D(1).INV1(3*TRI(1).TNF+N)=1;break
-  end
+switch BLK(1).BOUND(NB1,NB2).FLAG1
+  case 1
+    TRI(1).INV1(3*TRI(1).NB+N)=1;return
+  case 0
+    TRI(1).INV1(3*TRI(1).NB+N)=-1;return
 end
 
-switch BLK(1).BOUND(NB1,NB2).type
-  case 1
-    SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
-    SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
-    if sum(SFID1)>sum(SFID2)
-      TRI(1).BOUND(NB1,NB2).SDTINV=    ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
-    elseif sum(SFID1)<sum(SFID2)
-      TRI(1).BOUND(NB1,NB2).SDTINV=-1.*ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
-    end
-  case 5
-%     ORTHO=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
-%     CTRI =[TRI(1).BOUND(NB1,NB2).clon' TRI(1).BOUND(NB1,NB2).clat' zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
-%     COUT =inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB2).LON,BLK(NB2).LAT)&~inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB1).LON,BLK(NB1).LAT);
-%     DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP;
-%     IDOUT=inpolygon(DPEND(:,1),DPEND(:,2),BLK(NB2).LON,BLK(NB2).LAT);
-%     TMPID=or(COUT,and(ORTHO,IDOUT));
-%     TRI(1).BOUND(NB1,NB2).SDTINV=-1.*TMPID+~TMPID;
-    TRI(1).BOUND(NB1,NB2).SDTINV=ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
-  otherwise
-    fprintf('%s\n','No fault.')
-end
+% switch BLK(1).BOUND(NB1,NB2).type
+%   case 1
+%     SFID1=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB1).LON,BLK(NB1).LAT);
+%     SFID2=inpolygon(TRI(1).BOUND(NB1,NB2).clon,TRI(1).BOUND(NB1,NB2).clat,BLK(NB2).LON,BLK(NB2).LAT);
+%     if sum(SFID1)>sum(SFID2)
+%       TRI(1).BOUND(NB1,NB2).SDTINV=    ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
+%     elseif sum(SFID1)<sum(SFID2)
+%       TRI(1).BOUND(NB1,NB2).SDTINV=-1.*ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
+%     end
+%   case 5
+% %     ORTHO=TRI(1).BOUND(NB1,NB2).NV(:,3)==0;
+% %     CTRI =[TRI(1).BOUND(NB1,NB2).clon' TRI(1).BOUND(NB1,NB2).clat' zeros(size(TRI(1).BOUND(NB1,NB2).clat,2),1)];
+% %     COUT =inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB2).LON,BLK(NB2).LAT)&~inpolygon(CTRI(:,1),CTRI(:,2),BLK(NB1).LON,BLK(NB1).LAT);
+% %     DPEND=CTRI+1e-3.*TRI(1).BOUND(NB1,NB2).DP;
+% %     IDOUT=inpolygon(DPEND(:,1),DPEND(:,2),BLK(NB2).LON,BLK(NB2).LAT);
+% %     TMPID=or(COUT,and(ORTHO,IDOUT));
+% %     TRI(1).BOUND(NB1,NB2).SDTINV=-1.*TMPID+~TMPID;
+%     TRI(1).BOUND(NB1,NB2).SDTINV=ones(size(TRI(1).BOUND(NB1,NB2).clat,2),1);
+%   otherwise
+%     fprintf('%s\n','No fault.')
+% end
 % 
 end
 %% ESTIMATE FAULT PARAMETERS FOR TRI
