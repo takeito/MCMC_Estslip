@@ -446,7 +446,7 @@ G(1).Tt =  sparse(G(1).Tt);
 G(1).TtB=   G(1).Tt*G(1).B;
 D(1).MID=logical(repmat(D(1).MID,3,1));
 D(1).INVSTR=TRI(1).INVSTR.*TRI(1).INVSTID;
-D(1).INVDIP=TRI(1).INVDIP.*TRI(1).INVSTID;
+D(1).INVDIP=TRI(1).INVDIP.*TRI(1).INVDPID;
 D(1).INVTNS=TRI(1).INVTNS.*TRI(1).INVTSID;
 % D(1).INVSTID=TRI(1).INVSTID;
 % D(1).INVDPID=TRI(1).INVDPID;
@@ -1160,9 +1160,9 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
       TRI(1).INVSTR(3*TRI(1).NB     +N)= 1;
       TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
       TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
-      TRI(1).INVSTID(3*TRI(1).NB     +N)=0;
-      TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=1;
-      TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
+      TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
+      TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
+      TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
     elseif IN==1 && ON==1
       TRIC=[TRIXC TRIYC 0];
       UV=[0 0 1];
@@ -1174,14 +1174,14 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
         TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
         TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
         TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
-        TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
+        TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
       else
         TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
         TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
         TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
         TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
         TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
-        TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
+        TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
       end
     else
       TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
@@ -1189,7 +1189,7 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
       TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
       TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
       TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
-      TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
+      TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
     end
 %     TRI(1).INVSTR(3*TRI(1).NB+N)=-1;
 end
