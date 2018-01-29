@@ -42,16 +42,33 @@ function WRITE_CHA(CHA,BLK,TRI,PRM,OBS,D,G)
 %
 logfile=fullfile(PRM.DirResult,'log.txt');
 logFID=fopen(logfile,'a');
-for DN=1:Inf
-  DDIR=['Test_',num2str(DN,'%02i')];
-  ADIR=fullfile(PRM.DirResult,DDIR);
-  EXID=exist(ADIR);
-  if EXID~=7
-    FIGDIR=fullfile(ADIR,'figure');
-    mkdir(ADIR);mkdir(FIGDIR);
-    break
+EXT=fullfile(PRM.DirResult,'Test_*');
+file=dir(EXT);
+if size(file,1)~=0
+  DNO=zeros(size(file));
+  for ii=1:size(file,1)
+    namsplit=strsplit(file(ii).name,'_');
+    DNO(ii)=str2num(char(namsplit(2)));
   end
+  B=sort(DNO);
+  NextNO=B(end)+1;
+  ADIR=fullfile(PRM.DirResult,['Test_',num2str(NextNO,'%02i')]);
+else
+  ADIR=fullfile(PRM.DirResult,'Test_01');
 end
+FDIR=fullfile(ADIR,'figure');
+mkdir(ADIR);mkdir(FDIR);
+
+% for DN=1:Inf
+%   DDIR=['Test_',num2str(DN,'%02i')];
+%   ADIR=fullfile(PRM.DirResult,DDIR);
+%   EXID=exist(ADIR);
+%   if EXID~=7
+%     FDIR=fullfile(ADIR,'figure');
+%     mkdir(ADIR);mkdir(FDIR);
+%     break
+%   end
+% end
 % 
 fprintf('Write OUTPUT FILE: %s \n',PRM.DirResult)
 dlmwrite(fullfile(ADIR,'Mp.txt'),single(CHA.Mp));
@@ -67,11 +84,11 @@ save(fullfile(ADIR,'GRN.mat'),'D','G','-v7.3')
 % 
 movefile([PRM.DirResult,'/CHA_test*.mat'],ADIR)
 % movefile('./Result/CHA_test*.mat',ADIR)
-savefig(140,fullfile(FIGDIR,'vec_rig_ela'))
-savefig(130,fullfile(FIGDIR,'vector'))
-savefig(120,fullfile(FIGDIR,'pole'))
-savefig(110,fullfile(FIGDIR,'std'))
-savefig(100,fullfile(FIGDIR,'coupling'))
+savefig(140,fullfile(FDIR,'vec_rig_ela'))
+savefig(130,fullfile(FDIR,'vector'))
+savefig(120,fullfile(FDIR,'pole'))
+savefig(110,fullfile(FDIR,'std'))
+savefig(100,fullfile(FDIR,'coupling'))
 % 
 fprintf(logFID,'MODEL= %s\n',PRM.DIRBlock);
 fprintf(logFID,'OBSDATA= %s\n',PRM.FileOBS);
