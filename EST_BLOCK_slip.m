@@ -465,9 +465,9 @@ D(1).MID=logical(repmat(D(1).MID,3,1));
 D(1).INVSTR=TRI(1).INVSTR.*TRI(1).INVSTID;
 D(1).INVDIP=TRI(1).INVDIP.*TRI(1).INVDPID;
 D(1).INVTNS=TRI(1).INVTNS.*TRI(1).INVTSID;
-% D(1).INVSTID=TRI(1).INVSTID;
-% D(1).INVDPID=TRI(1).INVDPID;
-% D(1).INVTSID=TRI(1).INVTSID;
+D(1).INV   =D(1).INVSTR...
+           +D(1).INVDIP...
+           +D(1).INVTNS;
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
@@ -610,13 +610,13 @@ while not(COUNT==PRM.THR)
     CF=sqrt(CFsq);
     CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
 % Make inverse factor of strike direction Green function
-    SGN=sign(G.TB*Mp.SMP);
-    STRINV=SGN.*D(1).INVSTR...
-          +     D(1).INVDIP...
-          +SGN.*D(1).INVTNS;
+%     SGN=sign(G.TB*Mp.SMP);
+%     STRINV=SGN.*D(1).INVSTR...
+%           +     D(1).INVDIP...
+%           +SGN.*D(1).INVTNS;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*STRINV.*CF.*Mc.SMPMAT);
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).INV.*CF.*Mc.SMPMAT);
     CAL.SMP=CAL.RIG+CAL.ELA;
     if PRM.GPU~=99
       clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
@@ -718,12 +718,12 @@ while not(COUNT==PRM.THR)
   CFsq(CFsq<0)=0;
   CF=sqrt(CFsq);
   CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
-  SGN=sign(G.TB*Mpmean);
-  STRINV=SGN.*D(1).INVSTR...
-        +     D(1).INVDIP...
-        +SGN.*D(1).INVTNS;
+%   SGN=sign(G.TB*Mpmean);
+%   STRINV=SGN.*D(1).INVSTR...
+%         +     D(1).INVDIP...
+%         +SGN.*D(1).INVTNS;
   VEC.RIG=G.P*Mpmean;
-  VEC.ELA=G.C*((G.TB*Mpmean).*STRINV.*CF.*Mcmeanrep);
+  VEC.ELA=G.C*((G.TB*Mpmean).*D(1).INV.*CF.*Mcmeanrep);
   VEC.SUM=VEC.RIG+VEC.ELA;
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
@@ -1163,9 +1163,9 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
     TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=1;
     TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
   case 2
-    TRI(1).INVSTR(3*TRI(1).NB     +N)= 1;
+    TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
     TRI(1).INVDIP(3*TRI(1).NB+  NF+N)=-1;
-    TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
+    TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)=-1;
     TRI(1).INVSTID(3*TRI(1).NB     +N)=0;
     TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=1;
     TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
@@ -1195,7 +1195,7 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
       else
         TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
         TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
-        TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
+        TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)=-1;
         TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
         TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
         TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
@@ -1203,7 +1203,7 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
     else
       TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
       TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
-      TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
+      TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)=-1;
       TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
       TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
       TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
