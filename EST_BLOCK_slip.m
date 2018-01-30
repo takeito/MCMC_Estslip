@@ -1894,25 +1894,21 @@ function free=waitGPU(varargin)
 a=true;
 d=gpuDevice;
 if isempty(varargin)
-    limit=30;
+  limit=30;
 else
-    limit=varargin{1};
+  limit=varargin{1};
 end
 % tic
 while a
-    if limit<=100
-        free=d.FreeMemory/d.TotalMemory*100;
-        if free>limit
-            break
-        end
-        pause(0.5);
-    elseif limit>100
-        free=d.FreeMemory;
-        if free>limit
-            break
-        end
-        pause(0.5)
-    end
+  if limit<=100
+    free=d.FreeMemory/d.TotalMemory*100;
+    if free>limit; break; end
+    pause(0.5);
+  elseif limit>100
+    free=d.FreeMemory;
+    if free>limit; break; end
+    pause(0.5)
+  end
 end
 % waittime=toc;
 % if waittime>0.5
