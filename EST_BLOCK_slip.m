@@ -333,8 +333,6 @@ D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
 D(1).OBSID=zeros(3*NOBS,BLK(1).NBlock);
 D(1).TRA=zeros(BLK(1).NB,BLK(1).NBlock);
-D(1).CFID=false(3*BLK(1).NB,1);
-D(1).CFDIPID=true(3*BLK(1).NB,1);
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
@@ -357,9 +355,6 @@ for NB1=1:BLK(1).NBlock
       D(1).mID=zeros(BLK(1).NB,1);
       D(1).mID(MR:MR+NF-1)=1;
       D(1).MID=[D(1).MID D(1).mID];
-      if BLK(1).BOUND(NB1,NB2).type==5;D(1).CFID(MC:MC+3*NF-1)=true;end
-      D(1).CFDIPID(MC+NF:MC+2*NF-1,1)=false;
-      D(1).CFDIPID(MC+NF:MC+2*NF-1,1)=false;
 % Need Project to direction of relative plate motion estimated from Pole
 %       TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
 %       TMP.LD(TMP.LD==0)=1;
@@ -462,6 +457,7 @@ G(1).TB =    G(1).T*G(1).B;
 G(1).Tt =  sparse(G(1).Tt);
 G(1).TtB=   G(1).Tt*G(1).B;
 D(1).MID=logical(repmat(D(1).MID,3,1));
+D(1).CF =TRI(1).CF;
 D(1).INVSTR=TRI(1).INVSTR.*TRI(1).INVSTID;
 D(1).INVDIP=TRI(1).INVDIP.*TRI(1).INVDPID;
 D(1).INVTNS=TRI(1).INVTNS.*TRI(1).INVTSID;
@@ -600,23 +596,9 @@ while not(COUNT==PRM.THR)
       Byte2=whos('Mp');
       b=waitGPU(Byte1.bytes+Byte2.bytes);
     end
-% Calc Correction factor of subducting rate for DIP direction.
-% VE^2+VN^2 = Vst^2+(CF*Vdp)^2 <=> (G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2 = (G.TtB*Mp.SMP).^2+(CF*G.TB*Mp.SMP).^2
-    CFsq=((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2);
-    CFsq(CFsq<0)=0;
-%     if sum(((G.B1*Mp.SMP).^2+(G.B2*Mp.SMP).^2-(G.TtB*Mp.SMP).^2)./((G.TB*Mp.SMP).^2)<0)~=0
-%         keyboard
-%     end
-    CF=sqrt(CFsq);
-    CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
-% Make inverse factor of strike direction Green function
-%     SGN=sign(G.TB*Mp.SMP);
-%     STRINV=SGN.*D(1).INVSTR...
-%           +     D(1).INVDIP...
-%           +SGN.*D(1).INVTNS;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).INV.*CF.*Mc.SMPMAT);
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).INV.*D(1).CF.*Mc.SMPMAT);
     CAL.SMP=CAL.RIG+CAL.ELA;
     if PRM.GPU~=99
       clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
@@ -714,16 +696,8 @@ while not(COUNT==PRM.THR)
   Mpmean=mean(CHA.Mp,2);
   Mcmean=mean(CHA.Mc,2);
   Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
-  CFsq=((G.B1*Mpmean).^2+(G.B2*Mpmean).^2-(G.TtB*Mpmean).^2)./((G.TB*Mpmean).^2);
-  CFsq(CFsq<0)=0;
-  CF=sqrt(CFsq);
-  CF(or(D.CFDIPID,or(isnan(CF),D.CFID)))=1;
-%   SGN=sign(G.TB*Mpmean);
-%   STRINV=SGN.*D(1).INVSTR...
-%         +     D(1).INVDIP...
-%         +SGN.*D(1).INVTNS;
   VEC.RIG=G.P*Mpmean;
-  VEC.ELA=G.C*((G.TB*Mpmean).*D(1).INV.*CF.*Mcmeanrep);
+  VEC.ELA=G.C*((G.TB*Mpmean).*D(1).INV.*D(1).CF.*Mcmeanrep);
   VEC.SUM=VEC.RIG+VEC.ELA;
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
@@ -1069,6 +1043,7 @@ TRI(1).OBSDIS=[];
 % TRI(1).NORMXYZ=[];
 % TRI(1).PLANED=[];
 TRI(1).NB=0;
+TRI(1).CF=ones(3*BLK(1).NB,1);
 TRI(1).INVSTR=zeros(3*BLK(1).NB,1);
 TRI(1).INVDIP=zeros(3*BLK(1).NB,1);
 TRI(1).INVTNS=zeros(3*BLK(1).NB,1);
@@ -1139,6 +1114,7 @@ for NB1=1:BLK(1).NBlock
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
+        [TRI]=CorrectFactor(BLK,TRI,NB1,NB2,DP,N,NF);
         [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF);
       end
       TRI(1).NB=TRI(1).NB+NF;
@@ -1151,7 +1127,17 @@ disp('==================')
 disp('PASS GREEN_TRI')
 disp('==================')
 end
-%% TODO: DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
+%% Calculate correction factor of (STR, DIP, TNS) unit vectors
+function [TRI]=CorrectFactor(BLK,TRI,NB1,NB2,DP,N,NF)
+% Coded by H.Kimura 2018/1/31 (test ver.)
+switch BLK(1).BOUND(NB1,NB2).FLAG1
+  case {1,2}
+    TRI(1).CF(3*TRI(1).NB+NF+N)=1/sqrt(DP(1)^2+DP(2)^2);  % 1=sqrt(DP(1)^2+DP(2)^2+DP(3)^2): norm of DP
+  case 0
+    return
+end
+end
+%% DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
 function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 switch BLK(1).BOUND(NB1,NB2).FLAG1
