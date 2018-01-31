@@ -478,6 +478,7 @@ if PRM.GPU~=99
   G.TB=gpuArray(G.TB);
   G.C=gpuArray(G.C);
   G.P=gpuArray(G.P);
+  D(1).CFINV=gpuArray(D(1).CFINV);
   McScale=gpuArray(McScale);
   MpScale=gpuArray(MpScale);
   LO_Mc=gpuArray(LO_Mc);
