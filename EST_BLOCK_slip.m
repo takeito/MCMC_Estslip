@@ -338,10 +338,7 @@ D(1).CNT=0;
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
 %
 G(1).T =zeros(3*BLK(1).NB,2.*BLK(1).NB);
-G(1).Tt=zeros(3*BLK(1).NB,2.*BLK(1).NB);
 G(1).B =zeros(2*BLK(1).NB,3.*BLK(1).NBlock);
-G(1).B1=zeros(3*BLK(1).NB,3.*BLK(1).NBlock);
-G(1).B2=zeros(3*BLK(1).NB,3.*BLK(1).NBlock);
 TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
 %
 MC=1;
@@ -381,57 +378,6 @@ for NB1=1:BLK(1).NBlock
       G(1).B(MT+NF:MT+2*NF-1,3*NB2-2)=-G(1).B(MT+NF:MT+2*NF-1,3*NB1-2);
       G(1).B(MT+NF:MT+2*NF-1,3*NB2-1)=-G(1).B(MT+NF:MT+2*NF-1,3*NB1-1);
       G(1).B(MT+NF:MT+2*NF-1,3*NB2  )=-G(1).B(MT+NF:MT+2*NF-1,3*NB1  );           
-% Transrate Matrix for dE and dN
-      G(1).Tt(MC+NF:MC+2*NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,1));
-      G(1).Tt(MC   :MC+  NF-1,MT   :MT+  NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,1));
-      G(1).Tt(MC+NF:MC+2*NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).ST(:,2));
-      G(1).Tt(MC   :MC+  NF-1,MT+NF:MT+2*NF-1)=diag(TRI(1).BOUND(NB1,NB2).DP(:,2));
-%       
-      G(1).B1(MC     :MC+  NF-1,3*NB1-2)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3));
-      G(1).B1(MC     :MC+  NF-1,3*NB1-1)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3));
-      G(1).B1(MC     :MC+  NF-1,3*NB1  )=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
-                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2)=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
-                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2));
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
-                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  )=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
-                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-      G(1).B1(MC     :MC+  NF-1,3*NB2-2)=-G(1).B1(MC     :MC+  NF-1,3*NB1-2);
-      G(1).B1(MC     :MC+  NF-1,3*NB2-1)=-G(1).B1(MC     :MC+  NF-1,3*NB1-1);
-      G(1).B1(MC     :MC+  NF-1,3*NB2  )=-G(1).B1(MC     :MC+  NF-1,3*NB1  );
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB2-2)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-2);
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB2-1)=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1-1);
-      G(1).B1(MC+  NF:MC+2*NF-1,3*NB2  )=-G(1).B1(MC+  NF:MC+2*NF-1,3*NB1  );
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB2-2)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB2-1)=0;
-      G(1).B1(MC+2*NF:MC+3*NF-1,3*NB2  )=0;
-% 
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3));
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3));
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  )=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
-                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
-      G(1).B2(MC     :MC+  NF-1,3*NB1-2)=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
-                                      +TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2));
-      G(1).B2(MC     :MC+  NF-1,3*NB1-1)=-1.*(-TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,3)...
-                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,6).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
-      G(1).B2(MC     :MC+  NF-1,3*NB1  )=-1.*( TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,7).*TRI(1).BOUND(NB1,NB2).OXYZ(:,2)...
-                                      -TRI(1).BOUND(NB1,NB2).OXYZ(:,4).*TRI(1).BOUND(NB1,NB2).OXYZ(:,5).*TRI(1).BOUND(NB1,NB2).OXYZ(:,1));
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-2)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1-1)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB1  )=0;
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB2-2)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-2);
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB2-1)=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1-1);
-      G(1).B2(MC+  NF:MC+2*NF-1,3*NB2  )=-G(1).B2(MC+  NF:MC+2*NF-1,3*NB1  );
-      G(1).B2(MC     :MC+  NF-1,3*NB2-2)=-G(1).B2(MC     :MC+  NF-1,3*NB1-2);
-      G(1).B2(MC     :MC+  NF-1,3*NB2-1)=-G(1).B2(MC     :MC+  NF-1,3*NB1-1);
-      G(1).B2(MC     :MC+  NF-1,3*NB2  )=-G(1).B2(MC     :MC+  NF-1,3*NB1  );
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB2-2)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB2-1)=0;
-      G(1).B2(MC+2*NF:MC+3*NF-1,3*NB2  )=0;
 %       
       MC=MC+3*NF;
       MT=MT+2*NF;
@@ -452,18 +398,11 @@ end
 % 
 G(1).C  =TMP.C(D(1).IND,:);
 G(1).P  =TMP.P(D(1).IND,:);
-G(1).T  =   sparse(G(1).T);
-G(1).TB =    G(1).T*G(1).B;
-G(1).Tt =  sparse(G(1).Tt);
-G(1).TtB=   G(1).Tt*G(1).B;
+G(1).TB =sparse(G(1).T*G(1).B);
 D(1).MID=logical(repmat(D(1).MID,3,1));
-D(1).CF =TRI(1).CF;
-D(1).INVSTR=TRI(1).INVSTR.*TRI(1).INVSTID;
-D(1).INVDIP=TRI(1).INVDIP.*TRI(1).INVDPID;
-D(1).INVTNS=TRI(1).INVTNS.*TRI(1).INVTSID;
-D(1).INV   =D(1).INVSTR...
-           +D(1).INVDIP...
-           +D(1).INVTNS;
+D(1).CFINV =TRI(1).CF.*(TRI(1).INVSTR.*TRI(1).INVSTID...
+                      + TRI(1).INVDIP.*TRI(1).INVDPID...
+                      + TRI(1).INVTNS.*TRI(1).INVTSID);
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
@@ -544,10 +483,6 @@ if PRM.GPU~=99
   LO_Mc=gpuArray(LO_Mc);
   UP_Mc=gpuArray(UP_Mc);
   RWD=gpuArray(RWD);
-  G.B1=gpuArray(G.B1);
-  G.B2=gpuArray(G.B2);
-  G.TtB=gpuArray(G.TtB);
-  D.TRA=gpuArray(D.TRA);
   D.OBSID=gpuArray(D.OBSID);
 else
   fprintf('USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
@@ -598,7 +533,7 @@ while not(COUNT==PRM.THR)
     end
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).INV.*D(1).CF.*Mc.SMPMAT);
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
     CAL.SMP=CAL.RIG+CAL.ELA;
     if PRM.GPU~=99
       clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
@@ -697,7 +632,7 @@ while not(COUNT==PRM.THR)
   Mcmean=mean(CHA.Mc,2);
   Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
   VEC.RIG=G.P*Mpmean;
-  VEC.ELA=G.C*((G.TB*Mpmean).*D(1).INV.*D(1).CF.*Mcmeanrep);
+  VEC.ELA=G.C*((G.TB*Mpmean).*D(1).CFINV.*Mcmeanrep);
   VEC.SUM=VEC.RIG+VEC.ELA;
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
