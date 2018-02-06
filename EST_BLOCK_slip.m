@@ -1076,19 +1076,20 @@ end
 %% DISCRIMINATE BOUNDARY TYPE AND SUBFAULT SURFACE DIRECTION
 function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
+% Modified by H.Kimura 2018/2/6
 switch BLK(1).BOUND(NB1,NB2).FLAG1
   case 1
     TRI(1).INVSTR(3*TRI(1).NB     +N)= 1;
     TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
     TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
-    TRI(1).INVSTID(3*TRI(1).NB     +N)=0;
+    TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
     TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=1;
     TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
   case 2
     TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
     TRI(1).INVDIP(3*TRI(1).NB+  NF+N)=-1;
     TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)=-1;
-    TRI(1).INVSTID(3*TRI(1).NB     +N)=0;
+    TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
     TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=1;
     TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
   case 0
