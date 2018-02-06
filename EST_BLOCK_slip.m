@@ -352,9 +352,6 @@ for NB1=1:BLK(1).NBlock
       D(1).mID=zeros(BLK(1).NB,1);
       D(1).mID(MR:MR+NF-1)=1;
       D(1).MID=[D(1).MID D(1).mID];
-% Need Project to direction of relative plate motion estimated from Pole
-%       TMP.LD=sqrt(TRI(1).BOUND(NB1,NB2).DP(:,1).^2+TRI(1).BOUND(NB1,NB2).DP(:,2).^2);
-%       TMP.LD(TMP.LD==0)=1;
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
@@ -401,9 +398,6 @@ G(1).P  =TMP.P(D(1).IND,:);
 G(1).TB =sparse(G(1).T*G(1).B);
 D(1).MID=logical(repmat(D(1).MID,3,1));
 D(1).CFINV =TRI(1).CF.*(TRI(1).INV);
-% D(1).CFINV =TRI(1).CF.*(TRI(1).INVSTR.*TRI(1).INVSTID...
-%                       + TRI(1).INVDIP.*TRI(1).INVDPID...
-%                       + TRI(1).INVTNS.*TRI(1).INVTSID);
 end
 %% Markov chain Monte Calro
 function [CHA]=MH_MCMC(D,G,BLK,PRM,OBS,POL)
@@ -1084,22 +1078,10 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
     TRI(1).INV(3*TRI(1).NB     +N)= 1;
     TRI(1).INV(3*TRI(1).NB+  NF+N)= 1;
     TRI(1).INV(3*TRI(1).NB+2*NF+N)= 0;
-%     TRI(1).INVSTR(3*TRI(1).NB     +N)= 1;
-%     TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
-%     TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
-%     TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
-%     TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=1;
-%     TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
   case 2
     TRI(1).INV(3*TRI(1).NB     +N)=-1;
     TRI(1).INV(3*TRI(1).NB+  NF+N)=-1;
     TRI(1).INV(3*TRI(1).NB+2*NF+N)= 0;
-%     TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
-%     TRI(1).INVDIP(3*TRI(1).NB+  NF+N)=-1;
-%     TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)=-1;
-%     TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
-%     TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=1;
-%     TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=0;
   case 0
     TRIXC=mean(TRIx);
     TRIYC=mean(TRIy);
@@ -1108,12 +1090,6 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
       TRI(1).INV(3*TRI(1).NB     +N)= 1;
       TRI(1).INV(3*TRI(1).NB+  NF+N)= 0;
       TRI(1).INV(3*TRI(1).NB+2*NF+N)= 1;
-%       TRI(1).INVSTR(3*TRI(1).NB     +N)= 1;
-%       TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
-%       TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
-%       TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
-%       TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
-%       TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
     elseif IN==1 && ON==1
       TRIC=[TRIXC TRIYC 0];
       UV=[0 0 1];
@@ -1123,35 +1099,16 @@ switch BLK(1).BOUND(NB1,NB2).FLAG1
         TRI(1).INV(3*TRI(1).NB     +N)= 1;
         TRI(1).INV(3*TRI(1).NB+  NF+N)= 0;
         TRI(1).INV(3*TRI(1).NB+2*NF+N)= 1;
-%         TRI(1).INVSTR(3*TRI(1).NB     +N)= 1;
-%         TRI(1).INVDIP(3*TRI(1).NB+  NF+N)= 1;
-%         TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)= 1;
-%         TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
-%         TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
-%         TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
       else
         TRI(1).INV(3*TRI(1).NB     +N)=-1;
         TRI(1).INV(3*TRI(1).NB+  NF+N)= 0;
         TRI(1).INV(3*TRI(1).NB+2*NF+N)=-1;
-%         TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
-%         TRI(1).INVDIP(3*TRI(1).NB+  NF+N)=-1;
-%         TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)=-1;
-%         TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
-%         TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
-%         TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
       end
     else
       TRI(1).INV(3*TRI(1).NB     +N)=-1;
       TRI(1).INV(3*TRI(1).NB+  NF+N)= 0;
       TRI(1).INV(3*TRI(1).NB+2*NF+N)=-1;
-%       TRI(1).INVSTR(3*TRI(1).NB     +N)=-1;
-%       TRI(1).INVDIP(3*TRI(1).NB+  NF+N)=-1;
-%       TRI(1).INVTNS(3*TRI(1).NB+2*NF+N)=-1;
-%       TRI(1).INVSTID(3*TRI(1).NB     +N)=1;
-%       TRI(1).INVDPID(3*TRI(1).NB+  NF+N)=0;
-%       TRI(1).INVTSID(3*TRI(1).NB+2*NF+N)=1;
     end
-%     TRI(1).INVSTR(3*TRI(1).NB+N)=-1;
 end
 % 
 end
