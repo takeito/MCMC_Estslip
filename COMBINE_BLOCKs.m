@@ -36,11 +36,11 @@ if size(file,1)~=0
     namsplit=strsplit(file(ii).name,'_');
     DNO(ii)=str2num(char(namsplit(2)));
   end
-  B=sort(DNO);
-  NextNO=B(end)+1;
-  FDIR=fullfile(PRM.DirResult,['Test_',num2str(NextNO,'%02i')]);
+  b=sort(DNO);
+  NextNO=b(end)+1;
+  FDIR=fullfile(DIR1,['MODEL_',num2str(NextNO,'%02i')]);
 else
-  FDIR=fullfile(PRM.DirResult,'Test_01');
+  FDIR=fullfile(DIR1,'MODEL_01');
 end
 mkdir(FDIR);
 NB=1;
