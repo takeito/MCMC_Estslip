@@ -38,10 +38,11 @@ if size(file,1)~=0
   end
   b=sort(DNO);
   NextNO=b(end)+1;
-  FDIR=fullfile(DIR1,['MODEL_',num2str(NextNO,'%02i')]);
+  DIR=['MODEL_',num2str(NextNO,'%02i')];
 else
-  FDIR=fullfile(DIR1,'MODEL_01');
+  DIR='MODEL_01';
 end
+FDIR=fullfile(DIR1,DIR);
 mkdir(FDIR);
 NB=1;
 for FN=1:BLK(1).NBlock
