@@ -305,6 +305,7 @@ fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
 fprintf('DIRBlock_Interface : %s \n',PRM.DIRBlock_Interface) 
 fprintf('File fixed epole   : %s \n',PRM.FilePole) 
 fprintf('File Rigid boundary: %s \n',PRM.FileRigb) 
+fprintf('DIRResult          : %s \n',PRM.DirResult) 
 fprintf('GPUdev (CPU:99)    : %i \n',PRM.GPU) 
 fprintf('ITR(Max_Nitr)      : %i \n',PRM.ITR) 
 fprintf('ITR(Threshold_Nitr): %i \n',PRM.THR) 
@@ -829,7 +830,7 @@ for NB1=1:BLK(1).NBlock
       while 1
         NF=NF+1;
         loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
-        [~] = fgetl(Fid);
+        tline = fgetl(Fid); if ~ischar(tline); break; end
         blon(NF,:)=loc_f(1,:);%Lon
         blat(NF,:)=loc_f(2,:);%Lat
         bdep(NF,:)=loc_f(3,:);%Hight
@@ -901,6 +902,16 @@ for NB1=1:BLK(1).NBlock
         BLK(1).BOUND(NB1,NB2).blon=[Bslon(Bstri(:,1)),Bslon(Bstri(:,2)),Bslon(Bstri(:,3))];
         BLK(1).BOUND(NB1,NB2).blat=[Bslat(Bstri(:,1)),Bslat(Bstri(:,2)),Bslat(Bstri(:,3))];
         BLK(1).BOUND(NB1,NB2).bdep=[Bsdep(Bstri(:,1)),Bsdep(Bstri(:,2)),Bsdep(Bstri(:,3))];
+%
+        out_tri_f=fullfile(PRM.DIRBlock,['triB_',num2str(NB1),'_',num2str(NB2),'.out']);
+        nlen=length(BLK(1).BOUND(NB1,NB2).blat(:,1));
+        Fid_out=fopen(out_tri_f,'w+');
+        fprintf(Fid_out,'%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n> \n',...
+        reshape([BLK(1).BOUND(NB1,NB2).blon(:,1),BLK(1).BOUND(NB1,NB2).blat(:,1),BLK(1).BOUND(NB1,NB2).bdep(:,1),...
+                 BLK(1).BOUND(NB1,NB2).blon(:,2),BLK(1).BOUND(NB1,NB2).blat(:,2),BLK(1).BOUND(NB1,NB2).bdep(:,2),...
+                 BLK(1).BOUND(NB1,NB2).blon(:,3),BLK(1).BOUND(NB1,NB2).blat(:,3),BLK(1).BOUND(NB1,NB2).bdep(:,3),...
+                 BLK(1).BOUND(NB1,NB2).blon(:,1),BLK(1).BOUND(NB1,NB2).blat(:,1),BLK(1).BOUND(NB1,NB2).bdep(:,1)]',4*nlen,3));
+        fclose(Fid_out);
       end
     end
     BLK(1).NB=BLK(1).NB+size(BLK(1).BOUND(NB1,NB2).blon,1);
