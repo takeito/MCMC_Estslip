@@ -689,10 +689,10 @@ MpMAX=max(CHA.Mp,[],2);
 MpMIN=min(CHA.Mp,[],2);
 % 
 Mcscale=100./(McMAX-McMIN);
-McBASE=(CHA.Mc-McMIN).*Mcscale*2.55-128;
+McBASE=bsxfun(@times,bsxfun(@minus,CHA.Mc,McMIN),Mcscale.*2.55-128);
 Mcint8=int8(McBASE);
 Mpscale=100./(MpMAX-MpMIN);
-MpBASE=(CHA.Mp-MpMIN).*Mpscale*2.55-128;
+MpBASE=bsxfun(@times,bsxfun(@minus,CHA.Mp,MpMIN),Mpscale.*2.55-128);
 Mpint8=int8(MpBASE);
 % 
 binedge=int8(-128:127);
