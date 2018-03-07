@@ -48,7 +48,7 @@ if size(file,1)~=0
   DNO=zeros(size(file));
   for ii=1:size(file,1)
     namsplit=strsplit(file(ii).name,'_');
-    DNO(ii)=str2num(char(namsplit(2)));
+    DNO(ii)=str2double(char(namsplit(2)));
   end
   B=sort(DNO);
   NextNO=B(end)+1;
@@ -151,7 +151,7 @@ while 1
     pold=inf;  np=size(p,1);
     continue;
   end
-  if count > 100*np | (abs(mean(L)-int_bo)/int_bo < 0.05 & max_change < dptol)
+  if count > 100*np || (abs(mean(L)-int_bo)/int_bo < 0.05 && max_change < dptol)
     fprintf('Count %4i Maxchange %4.1f Out side %3i Ave L %5.1f\n',count,100*max_change,sum(d>0),mean(L))
     break;
   end
@@ -731,7 +731,7 @@ blue=[ones(1,32) 1:-1/32:0]';
 rwb=[red green blue];
 rw =rwb(33:end,:);
 if LO_Mc==-1; cmap=rwb;
-else; cmap=rw; end
+else cmap=rw; end
 % 
 figure(100);clf(100)
 % BUG to wait zero
@@ -776,8 +776,8 @@ for NB=1:BLK(1).NBlock
   [latp,lonp,~]=xyzp2lla(CHA.Mp(3.*NB-2,:),CHA.Mp(3.*NB-1,:),CHA.Mp(3.*NB,:));
   minlon=min(lonp); maxlon=max(lonp); 
   minlat=min(latp); maxlat=max(latp); 
-  if maxlon-minlon < 0.5; binlon=[minlon maxlon]; else; binlon=minlon:0.5:maxlon; end  
-  if maxlat-minlat < 0.5; binlat=[minlat maxlat]; else; binlat=minlat:0.5:maxlat; end  
+  if maxlon-minlon < 0.5; binlon=[minlon maxlon]; else binlon=minlon:0.5:maxlon; end  
+  if maxlat-minlat < 0.5; binlat=[minlat maxlat]; else binlat=minlat:0.5:maxlat; end  
   histogram2(lonp,latp,binlon,binlat,'Normalization','probability','FaceColor','flat')
   hold on
   text(double(mean(lonp)),double(mean(latp)),int2str(NB))
