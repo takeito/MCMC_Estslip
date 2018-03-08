@@ -532,6 +532,7 @@ while not(COUNT==PRM.THR)
     CAL.RIG=G.P*Mp.SMP;
     CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
     CAL.SMP=CAL.RIG+CAL.ELA;
+    
     if PRM.GPU~=99
       clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
     end
@@ -1054,6 +1055,7 @@ for NB1=1:BLK(1).NBlock
         TRI(1).BOUND(NB1,NB2).GDIP(1:3:3*ND,N)=U.x; %E
         TRI(1).BOUND(NB1,NB2).GDIP(2:3:3*ND,N)=U.y; %N
         TRI(1).BOUND(NB1,NB2).GDIP(3:3:3*ND,N)=-U.z; %D
+        sum(sum(isnan(TRI(1).BOUND(NB1,NB2).GDIP)))
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
