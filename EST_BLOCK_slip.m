@@ -1055,7 +1055,6 @@ for NB1=1:BLK(1).NBlock
         TRI(1).BOUND(NB1,NB2).GDIP(1:3:3*ND,N)=U.x; %E
         TRI(1).BOUND(NB1,NB2).GDIP(2:3:3*ND,N)=U.y; %N
         TRI(1).BOUND(NB1,NB2).GDIP(3:3:3*ND,N)=-U.z; %D
-        sum(sum(isnan(TRI(1).BOUND(NB1,NB2).GDIP)))
         if mod(N,ceil(NF/3)) == 1
           fprintf('MAKE GREEN at TRI sub-faults : %4i / %4i \n',N,NF)
         end
