@@ -28,12 +28,22 @@ end
 %% Write blocks in txt format
 function [B,DIR]=WRITE_FILE(BLK,BNO1,BNO2)
 DIR1='BLOCK_MODEL';
-for DN=1:Inf
-  DIR=['MODEL_',num2str(DN,'%02i')];
-  FDIR=fullfile(DIR1,DIR);
-  EXID=exist(FDIR);
-  if EXID~=7; mkdir(FDIR); fprintf('%s\n',['Export folder: ',FDIR]); break; end
+EXT=fullfile(DIR1,'MODEL_*');
+file=dir(EXT);
+if size(file,1)~=0
+  DNO=zeros(size(file));
+  for ii=1:size(file,1)
+    namsplit=strsplit(file(ii).name,'_');
+    DNO(ii)=str2num(char(namsplit(2)));
+  end
+  b=sort(DNO);
+  NextNO=b(end)+1;
+  DIR=['MODEL_',num2str(NextNO,'%02i')];
+else
+  DIR='MODEL_01';
 end
+FDIR=fullfile(DIR1,DIR);
+mkdir(FDIR);
 NB=1;
 for FN=1:BLK(1).NBlock
   namesplit=strsplit(BLK(FN).name,{'_','.'});
