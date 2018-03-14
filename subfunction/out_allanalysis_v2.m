@@ -152,7 +152,7 @@ end
 %% Export coupling and SDR for each boundary
 function ExportCouplingPair(DIR,BLK,TCHA,sdr,Coupling_Pair)
 PAIR=Coupling_Pair.pair;
-name=Coupling_Pair.NAME;
+name=Coupling_Pair.NAME{1};
 NN=1;
 exid=exist([DIR,'/coupling']);
 if exid~=7; mkdir([DIR,'/coupling']); end
@@ -251,7 +251,7 @@ Est_Motion_BLOCKS(DIR,TCHA,BLK)
 end
 %% Export elastic vectors resulting from coupling at block boundaries
 function out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,Elastic_Pair)
-NAME=Elastic_Pair.NAME;
+NAME=Elastic_Pair.NAME{1};
 PAIR=Elastic_Pair.pair;
 % 
 % calvec=calc_sampling_vector(OBS,BLK,TCHA,D,G);
