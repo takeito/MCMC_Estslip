@@ -1,5 +1,7 @@
 function out_allanalysis_v2(DIR)
 % 
+Parfile='PARAMETER/parameter_export.txt';
+[Par]=ReadPara(Parfile);
 fprintf('Now loading %s ...',[DIR,'/PRM.mat'])
 load([DIR,'/PRM.mat']);fprintf('load\n')
 fprintf('Now loading %s ...',[DIR,'/OBS.mat'])
@@ -16,23 +18,141 @@ G(1).TB=full(G(1).TB);
 % 
 [SDR]=coupling2sdr(TCHA,D,G);
 ExportCoupling(DIR,TCHA,BLK,SDR);
-ExportCouplingPair(DIR,BLK,TCHA,SDR,[1 2;1 3;1 4;1 6;1 7;1 8;2 6;2 8;3 4;4 8;5 6;5 7;5 8;6 7;6 8;10 11],'Inland');
-BLKNAME={'AM','OK','YZ','ON','KI','CB','SU','FA','IMP','IOG','PHS','PAC'};
-out_epole_allchain(DIR,TCHA,BLK,BLKNAME);
-[TRIg,~,GRD]=MAKE_PART_GREEN(BLK,120,150,20,50,0.4);
+for CP=1:size(Par.Coupling_Pair,2)
+  ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
+end
+out_epole_allchain(DIR,TCHA,BLK,Par.BLKNAME);
+[TRIg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
 out_vector_allchain_v2(DIR,BLK,TCHA,G,D,GRD,TRIg,OBS);
 RelativeMotion_allchain(DIR,BLK,TCHA);
 % % 
-out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,'MTL',[7 8;5 8;6 8])  %OG(revised),OGnew
-out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,'IMP',[2 9;8 9])  %OG(revised),OGnew
-out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,'PS',[4 11;8 11])  %OG(revised),OGnew
-out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,'OG',[2 10])  %OG(revised),OGnew
-out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,'PAC',[2 12;10 12;11 12])  %OG(revised),OGnew
-out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,'Inland',[1 2;1 3;1 4;1 6;1 7;1 8;2 6;2 8;3 4;4 8;5 6;5 7;5 8;6 7;6 8;7 8;9 10;9 11])  %OG(revised),OGnew
-% 
+for EL=1:size(Par.Elastic_Pair,2)
+  out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
+end
+%
+end
+%% Read export parameter file
+function [PAR]=ReadPara(Parfile)
+% Note:
+% Prepare the export parameter file in the 'PARAMETER' folder as bellows,
+%--example from here--
+% # BLKNAME
+% AM,PAC,OK,PHS,IMP
+% # Coupling_Pair
+% Inland
+% 1 3
+% 2 3
+% 3 5
+% 4 6
+% # Elastic_Pair
+% MTL
+% 7 9
+% 9 10
+% PAC
+% 11 12
+% 10 11
+% 9 11
+% # GRID_SETTING
+% 120 150 
+% 20 50 
+% 0.4
+% --- END HERE ---
+%--end of example--
+PAR=[];
+PDIR=pwd;
+Parfile=fullfile(PDIR,Parfile);
+Fid=fopen(Parfile,'r');
+if Fid~=0
+  PAR.BLKNAME=[];
+  PAR.Coupling_Pair=[];
+  PAR.Elastic_Pair=[];
+  PAR.Grid_Setting=[];
+  tline=fgetl(Fid);
+  while 1
+    switch tline
+      case '# BLKNAME'
+        while 1
+          tline=fgetl(Fid);
+          Tline=strtrim(strsplit(tline));
+          if ~or(strcmpi(Tline(1),'---'),or(strcmpi(Tline(1),'#'),strcmpi(Tline(1),'')))
+            PAR.BLKNAME=[PAR.BLKNAME, Tline];
+          else
+            break
+          end
+        end
+      case '# Coupling_Pair'
+        NCo=0;
+        tline=fgetl(Fid);
+        while 1
+          Tline=strtrim(strsplit(tline));
+          if ~or(strcmpi(Tline(1),'---'),or(strcmpi(Tline(1),'#'),strcmpi(Tline(1),'')))
+            NCo=NCo+1;
+%             tline=fscanf(Fid,'%s \n',[1,1]);
+            PAR.Coupling_Pair(NCo).NAME=Tline;
+            PAR.Coupling_Pair(NCo).pair=[];
+            while 1
+              tline=fgetl(Fid);
+              Tline=strtrim(strsplit(tline));
+              Tline=str2num(char(Tline));
+              if ~isempty(Tline)
+                PAR.Coupling_Pair(NCo).pair=[PAR.Coupling_Pair(NCo).pair; Tline'];
+              else
+                break
+              end
+            end
+          else
+            break
+          end
+        end
+      case '# Elastic_Pair'
+      NEl=0;
+      tline=fgetl(Fid);
+      while 1
+        Tline=strtrim(strsplit(tline));
+        if ~or(strcmpi(Tline(1),'---'),or(strcmpi(Tline(1),'#'),strcmpi(Tline(1),'')))
+          NEl=NEl+1;
+%           Tline=fscanf(Fid,'%s \n',[1,1]);
+          PAR.Elastic_Pair(NEl).NAME=Tline;
+          PAR.Elastic_Pair(NEl).pair=[];
+          while 1
+            tline=fgetl(Fid);
+            Tline=strtrim(strsplit(tline));
+            Tline=str2num(char(Tline));
+            if ~isempty(Tline)
+              PAR.Elastic_Pair(NEl).pair=[PAR.Elastic_Pair(NEl).pair; Tline'];
+            else
+              break
+            end
+          end
+        else
+          break
+        end
+      end
+      case '# GRID_SETTING'
+        while 1
+          tline=fgetl(Fid);
+          Tline=strtrim(strsplit(tline));
+          if ~or(strcmpi(Tline(1),'---'),or(strcmpi(Tline(1),'#'),strcmpi(Tline(1),'')))
+            Tline=str2num(char(Tline));
+            if ~isempty(Tline)
+                PAR.Grid_Setting=[PAR.Grid_Setting, Tline'];
+            end
+          else
+            break
+          end
+        end
+        otherwise
+        tline=fgetl(Fid);
+    end
+    if strcmpi(tline,'--- END HERE ---'); break; end
+  end
+end
+
 end
 %% Export coupling and SDR for each boundary
-function ExportCouplingPair(DIR,BLK,TCHA,sdr,PAIR,name)
+function ExportCouplingPair(DIR,BLK,TCHA,sdr,Coupling_Pair)
+PAIR=Coupling_Pair.pair;
+name=Coupling_Pair.NAME;
 NN=1;
 exid=exist([DIR,'/coupling']);
 if exid~=7; mkdir([DIR,'/coupling']); end
@@ -97,6 +217,11 @@ function out_epole_allchain(DIR,TCHA,BLK,NAMEMAT)
 FID=fopen([DIR,'/est_euler_pole.txt'],'w');
 fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) a b c d e f(1e-8 (rad/Myr)^2) \n');
 fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) a b c d e f(1e-8 (rad/Myr)^2) \n');
+if isempty(NAMEMAT)
+  for kk=1:BLK(1).NBlock
+    NAMEMAT{ii}=num2str(kk,'%02i');
+  end
+end
 for BK=1:BLK(1).NBlock
 %   [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
   [latp,lonp,ang]=xyzp2lla(TCHA.AVEPOL(3.*BK-2,:),TCHA.AVEPOL(3.*BK-1,:),TCHA.AVEPOL(3.*BK,:));
@@ -125,7 +250,9 @@ Est_Motion_BLOCKS(DIR,TCHA,BLK)
 % 
 end
 %% Export elastic vectors resulting from coupling at block boundaries
-function out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,NAME,PAIR)
+function out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,Elastic_Pair)
+NAME=Elastic_Pair.NAME;
+PAIR=Elastic_Pair.pair;
 % 
 % calvec=calc_sampling_vector(OBS,BLK,TCHA,D,G);
 [grdvec,GRD]=calc_vector_atmesh_pair(BLK,TCHA,D,G,GRD,TRIg,PAIR);
