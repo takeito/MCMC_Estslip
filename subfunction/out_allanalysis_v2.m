@@ -500,8 +500,13 @@ CALvec.SUM=CALvec.RIG+CALvec.ELA;
 
 end
 %% MAKE PART GREEN FUNCTION v2
-function [TRIg,Dg,GRD]=MAKE_PART_GREEN(BLK,minlon,maxlon,minlat,maxlat,interval)
+function [TRIg,Dg,GRD]=MAKE_PART_GREEN(BLK,Grid_Setting)
 % 
+minlon=Grid_Setting(1);
+maxlon=Grid_Setting(2);
+minlat=Grid_Setting(3);
+maxlat=Grid_Setting(4);
+interval=Grid_Setting(5);
 [Xm,Ym]=meshgrid(minlon:interval:maxlon,minlat:interval:maxlat);
 XM=Xm(:);
 YM=Ym(:);
