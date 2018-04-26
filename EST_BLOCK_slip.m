@@ -963,7 +963,7 @@ PRM.APRIORIPOLE=TMP';
 end
 %% READ RIGID BLOCK BOUNDARY PAIR
 function [BLK,PRM]=READ_RIGID_BOUND(BLK,PRM)
-BLK(1).RGPAIR=zeros(3,1);
+BLK(1).RGPAIR=zeros(1,3);
 if exist(PRM.FileRigb,'file')~=2; return; end
 FID=fopen(PRM.FileRigb,'r');
 TMP=fscanf(FID,'%d %d %d\n',[3 Inf]);
