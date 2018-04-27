@@ -19,6 +19,8 @@ SHOW_BLOCK_BOUND(BLK)
 [POL,PRM]=READ_EULER_POLES(BLK,PRM);
 % READ RIGID BLOCK BOUNDARY
 [BLK,PRM]=READ_RIGID_BOUND(BLK,PRM);
+% READ INTERNAL DEFORMATION PARAMETER
+% [BLK,PRM]=READ_INTERNAL_DDFORMATION(BLK,PRM);
 % CALC. GREEN FUNCTION
 [TRI,OBS]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
@@ -965,6 +967,20 @@ if exist(PRM.FileRigb,'file')~=2; return; end
 FID=fopen(PRM.FileRigb,'r');
 TMP=fscanf(FID,'%d %d %d\n',[3 Inf]);
 BLK(1).RGPAIR=TMP';
+end
+%% READ RIGID BLOCK BOUNDARY PAIR
+function [BLK,PRM]=READ_INTERNAL_DDFORMATION(BLK,PRM)
+%%% Parameter file format %%%
+% Block_Num. Flag1 Flag2 Lat. Lon.
+% Flag1 : If uniform internal deformation is calculated, 1, else, 0
+% Flag2 : If calculation point is set by manual, 1, else, 0
+% Lat. : Latitude of calculation point. If Flag1 is set to 0, Lat. is 0
+% Lon. : Longitude of calculation point. If Flag1 is set to 0, Lon. is 0
+BLK(1).RGPAIR=zeros(1,5);
+if exist(PRM.FileInternal,'file')~=2; return; end
+FID=fopen(PRM.FileInternal,'r');
+TMP=fscanf(FID,'%d %d %d %d %d\n',[5 Inf]);
+BLK(1).INTERNAL=TMP';
 end
 %% MAKE GREEN FUNCTION
 function [TRI,OBS]=GREEN_TRI(BLK,OBS)
