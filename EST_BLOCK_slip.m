@@ -346,6 +346,11 @@ D(1).CNT=0;
 G(1).T =zeros(3*BLK(1).NB,2.*BLK(1).NB);
 G(1).B =zeros(2*BLK(1).NB,3.*BLK(1).NBlock);
 TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
+% TMP.I=zeros(3*NOBS,3.*BLK(1).NBlock);
+% 
+% ALAT=mean(OBS(1).ALAT(:));
+% ALON=mean(OBS(1).ALON(:));
+% [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 %
 MC=1;
 MT=1;
@@ -397,6 +402,12 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
+%   TMP.I(EIND,3*NB1-2)= OBSx(IND)-BLK(N).Xinter;
+%   TMP.I(EIND,3*NB1-1)= OBSy(IND)-BLK(N).Yinter;
+%   TMP.I(EIND,3*NB1  )= 0;
+%   TMP.I(NIND,3*NB1-2)= 0;
+%   TMP.I(NIND,3*NB1-1)= OBSx(IND)-BLK(N).Xinter;
+%   TMP.I(NIND,3*NB1  )= OBSy(IND)-BLK(N).Yinter;
 end
 % 
 G(1).C  =TMP.C(D(1).IND,:);
