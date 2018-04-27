@@ -332,8 +332,6 @@ D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
-D(1).OBSID=zeros(3*NOBS,BLK(1).NBlock);
-D(1).TRA=zeros(BLK(1).NB,BLK(1).NBlock);
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
@@ -480,7 +478,6 @@ if PRM.GPU~=99
   LO_Mc=gpuArray(LO_Mc);
   UP_Mc=gpuArray(UP_Mc);
   RWD=gpuArray(RWD);
-  D.OBSID=gpuArray(D.OBSID);
 else
   fprintf('USE CPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d \n',...
             PRM.CHA,PRM.ITR,Mc.N,Mp.N);
