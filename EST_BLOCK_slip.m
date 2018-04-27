@@ -20,7 +20,7 @@ SHOW_BLOCK_BOUND(BLK)
 % READ RIGID BLOCK BOUNDARY
 [BLK,PRM]=READ_RIGID_BOUND(BLK,PRM);
 % READ INTERNAL DEFORMATION PARAMETER
-% [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,PRM);
+% [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM);
 % CALC. GREEN FUNCTION
 [TRI,OBS]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
@@ -985,13 +985,15 @@ TMP=fscanf(FID,'%d %d %d\n',[3 Inf]);
 BLK(1).RGPAIR=TMP';
 end
 %% READ RIGID BLOCK BOUNDARY PAIR
-function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,PRM)
+function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM)
 %%% Parameter file format %%%
 % Block_Num. Flag1 Flag2 Lat. Lon.
 % Flag1 : If uniform internal deformation is calculated, 1, else, 0
 % Flag2 : If calculation point is set by manual, 1, else, 0
 % Lat. : Latitude of calculation point. If Flag1 is set to 0, Lat. is 0
 % Lon. : Longitude of calculation point. If Flag1 is set to 0, Lon. is 0
+ALAT=mean(OBS(1).ALAT(:));
+ALON=mean(OBS(1).ALON(:));
 BLK(1).INTERNAL=zeros(1,5);
 if exist(PRM.FileInternal,'file')~=2; return; end
 FID=fopen(PRM.FileInternal,'r');
@@ -1001,18 +1003,14 @@ for NB=1:BLK(1).NB
   [id,flag]=find(BLK(1).INTERNAL(:,1)==NB);
   if flag==1
     if BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)==1
-      BLK(NB).LATinter=BLK(1).INTERNAL(id,4);
-      BLK(NB).LONinter=BLK(1).INTERNAL(id,5);
+      [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(BLK(1).INTERNAL(id,4),BLK(1).INTERNAL(id,4),ALAT,ALON);
     elseif BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)~=1
-      BLK(NB).LATinter=mean(BLK(NB).LAT);
-      BLK(NB).LONinter=mean(BLK(NB).LON);
+      [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
     elseif BLK(1).INTERNAL(id,2)~=1
-      BLK(NB).LATinter=0;
-      BLK(NB).LONinter=0;
+      BLK(NB).Xinter=0; BLK(NB).Yinter=0;
     end
   else
-    BLK(NB).LATinter=0;
-    BLK(NB).LONinter=0;
+    BLK(NB).Xinter=0; BLK(NB).Yinter=0;
   end
 end
 end
