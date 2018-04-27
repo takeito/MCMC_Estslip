@@ -992,11 +992,29 @@ function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,PRM)
 % Flag2 : If calculation point is set by manual, 1, else, 0
 % Lat. : Latitude of calculation point. If Flag1 is set to 0, Lat. is 0
 % Lon. : Longitude of calculation point. If Flag1 is set to 0, Lon. is 0
-BLK(1).RGPAIR=zeros(1,5);
+BLK(1).INTERNAL=zeros(1,5);
 if exist(PRM.FileInternal,'file')~=2; return; end
 FID=fopen(PRM.FileInternal,'r');
-TMP=fscanf(FID,'%d %d %d %d %d\n',[5 Inf]);
+TMP=fscanf(FID,'%d %d %d %f %f\n',[5 Inf]);
 BLK(1).INTERNAL=TMP';
+for NB=1:BLK(1).NB
+  [id,flag]=find(BLK(1).INTERNAL(:,1)==NB);
+  if flag==1
+    if BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)==1
+      BLK(NB).LATinter=BLK(1).INTERNAL(id,4);
+      BLK(NB).LONinter=BLK(1).INTERNAL(id,5);
+    elseif BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)~=1
+      BLK(NB).LATinter=mean(BLK(NB).LAT);
+      BLK(NB).LONinter=mean(BLK(NB).LON);
+    elseif BLK(1).INTERNAL(id,2)~=1
+      BLK(NB).LATinter=0;
+      BLK(NB).LONinter=0;
+    end
+  else
+    BLK(NB).LATinter=0;
+    BLK(NB).LONinter=0;
+  end
+end
 end
 %% MAKE GREEN FUNCTION
 function [TRI,OBS]=GREEN_TRI(BLK,OBS)
