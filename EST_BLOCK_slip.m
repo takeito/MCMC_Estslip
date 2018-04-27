@@ -259,6 +259,7 @@ function [PRM]=READ_PARAMETERS(INPUT)
 % Modified by Takeo Ito 2012/10/26 (ver 1.1)
 % Modified by Takeo Ito 2015/11/11 (ver 1.2)
 % Modified by Takeo Ito 2016/07/06 (ver 1.3)
+% Modified by Hiroshi Kimura 2018/04/06 (ver 1.4)
 %
 Fid=fopen(INPUT.Parfile,'r');
 PRM.HOME_D=pwd;
@@ -277,6 +278,9 @@ PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
 FileRigb=fscanf(Fid,'%s \n',[1,1]);
 PRM.FileRigb=fullfile(PRM.HOME_D,FileRigb);
 [~]=fgetl(Fid);
+% FileInternal=fscanf(Fid,'%s \n',[1,1]);
+% PRM.FileInternal=fullfile(PRM.HOME_D,FileInternal);
+% [~]=fgetl(Fid);
 DirResult=fscanf(Fid,'%s \n',[1,1]);
 PRM.DirResult=fullfile(PRM.HOME_D,DirResult);
 [~]=fgetl(Fid);
@@ -301,19 +305,20 @@ PRM.OptB2=tmp(:,2);
 PRM.OptINT=tmp(:,3);
 %====================================================
 fprintf('==================\nINPUT PARAMETERS\n==================\n') 
-fprintf('HOME_D             : %s \n',PRM.HOME_D) 
-fprintf('FileOBS            : %s \n',PRM.FileOBS) 
-fprintf('DIRBlock           : %s \n',PRM.DIRBlock)
-fprintf('DIRBlock_Interface : %s \n',PRM.DIRBlock_Interface) 
-fprintf('File fixed epole   : %s \n',PRM.FilePole) 
-fprintf('File Rigid boundary: %s \n',PRM.FileRigb) 
-fprintf('DIRResult          : %s \n',PRM.DirResult) 
-fprintf('GPUdev (CPU:99)    : %i \n',PRM.GPU) 
-fprintf('ITR(Max_Nitr)      : %i \n',PRM.ITR) 
-fprintf('ITR(Threshold_Nitr): %i \n',PRM.THR) 
-fprintf('CHA(Chain)         : %i \n',PRM.CHA) 
-fprintf('KEP(KEEP)          : %i \n',PRM.KEP) 
-fprintf('RWD(Walk_dis)      : %4.2f \n',PRM.RWD) 
+fprintf('HOME_D                   : %s \n',PRM.HOME_D) 
+fprintf('FileOBS                  : %s \n',PRM.FileOBS) 
+fprintf('DIRBlock                 : %s \n',PRM.DIRBlock)
+fprintf('DIRBlock_Interface       : %s \n',PRM.DIRBlock_Interface) 
+fprintf('File fixed epole         : %s \n',PRM.FilePole) 
+fprintf('File Rigid boundary      : %s \n',PRM.FileRigb) 
+% fprintf('File Internal deformation: %s \n',PRM.FileInternal) 
+fprintf('DIRResult                : %s \n',PRM.DirResult) 
+fprintf('GPUdev (CPU:99)          : %i \n',PRM.GPU) 
+fprintf('ITR(Max_Nitr)            : %i \n',PRM.ITR) 
+fprintf('ITR(Threshold_Nitr)      : %i \n',PRM.THR) 
+fprintf('CHA(Chain)               : %i \n',PRM.CHA) 
+fprintf('KEP(KEEP)                : %i \n',PRM.KEP) 
+fprintf('RWD(Walk_dis)            : %4.2f \n',PRM.RWD) 
 fprintf('==================\n') 
 %====================================================
 disp('PASS READ_PARAMETERS')
