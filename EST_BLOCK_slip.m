@@ -402,12 +402,12 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
-%   TMP.I(EIND,3*NB1-2)= OBSx(IND)-BLK(N).Xinter;
-%   TMP.I(EIND,3*NB1-1)= OBSy(IND)-BLK(N).Yinter;
+%   TMP.I(EIND,3*NB1-2)= (OBSx(IND)-BLK(N).Xinter).*BLK(NB).FLAGinter;
+%   TMP.I(EIND,3*NB1-1)= (OBSy(IND)-BLK(N).Yinter).*BLK(NB).FLAGinter;
 %   TMP.I(EIND,3*NB1  )= 0;
 %   TMP.I(NIND,3*NB1-2)= 0;
-%   TMP.I(NIND,3*NB1-1)= OBSx(IND)-BLK(N).Xinter;
-%   TMP.I(NIND,3*NB1  )= OBSy(IND)-BLK(N).Yinter;
+%   TMP.I(NIND,3*NB1-1)= (OBSx(IND)-BLK(N).Xinter).*BLK(NB).FLAGinter;
+%   TMP.I(NIND,3*NB1  )= (OBSy(IND)-BLK(N).Yinter).*BLK(NB).FLAGinter;
 end
 % 
 G(1).C  =TMP.C(D(1).IND,:);
@@ -1012,6 +1012,7 @@ for NB=1:BLK(1).NB
   else
     BLK(NB).Xinter=0; BLK(NB).Yinter=0;
   end
+  BLK(NB).FLAGinter=flag;
 end
 end
 %% MAKE GREEN FUNCTION
