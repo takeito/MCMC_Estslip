@@ -986,12 +986,20 @@ BLK(1).RGPAIR=TMP';
 end
 %% READ RIGID BLOCK BOUNDARY PAIR
 function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM)
-%%% Parameter file format %%%
+% Coded by Hiroshi Kimura 2018/05/01 (ver 1.0)
+%------------------------- Parameter file format --------------------------
 % Block_Num. Flag1 Flag2 Lat. Lon.
 % Flag1 : If uniform internal deformation is calculated, 1, else, 0
 % Flag2 : If calculation point is set by manual, 1, else, 0
 % Lat. : Latitude of calculation point. If Flag1 is set to 0, Lat. is 0
 % Lon. : Longitude of calculation point. If Flag1 is set to 0, Lon. is 0
+% If there is no description about a certain block, internal deformation is
+% calculated for the block. In that case, the point where internal
+% deformation is calculated is set to the geometric center of the block. If
+% you 'do not' want to calculate internal deformation for a certain block,
+% you have to describe about the block and set FLAG1 to '0', whereas other 
+% columns shold be arbitrary value.
+% -------------------------------------------------------------------------
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
 BLK(1).INTERNAL=zeros(1,5);
@@ -1001,18 +1009,17 @@ TMP=fscanf(FID,'%d %d %d %f %f\n',[5 Inf]);
 BLK(1).INTERNAL=TMP';
 for NB=1:BLK(1).NB
   [id,flag]=find(BLK(1).INTERNAL(:,1)==NB);
+  BLK(NB).FLAGinter=flag;
   if flag==1
     if BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)==1
       [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(BLK(1).INTERNAL(id,4),BLK(1).INTERNAL(id,4),ALAT,ALON);
     elseif BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)~=1
       [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
-    elseif BLK(1).INTERNAL(id,2)~=1
-      BLK(NB).Xinter=0; BLK(NB).Yinter=0;
     end
   else
-    BLK(NB).Xinter=0; BLK(NB).Yinter=0;
+    [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
+    BLK(NB).FLAGinter=flag;
   end
-  BLK(NB).FLAGinter=flag;
 end
 end
 %% MAKE GREEN FUNCTION
