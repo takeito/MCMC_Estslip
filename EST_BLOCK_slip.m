@@ -20,7 +20,7 @@ SHOW_BLOCK_BOUND(BLK)
 % READ RIGID BLOCK BOUNDARY
 [BLK,PRM]=READ_RIGID_BOUND(BLK,PRM);
 % READ INTERNAL DEFORMATION PARAMETER
-% [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM);
+[BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM);
 % CALC. GREEN FUNCTION
 [TRI,OBS]=GREEN_TRI(BLK,OBS);
 % Combain to Green function
@@ -278,9 +278,9 @@ PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
 FileRigb=fscanf(Fid,'%s \n',[1,1]);
 PRM.FileRigb=fullfile(PRM.HOME_D,FileRigb);
 [~]=fgetl(Fid);
-% FileInternal=fscanf(Fid,'%s \n',[1,1]);
-% PRM.FileInternal=fullfile(PRM.HOME_D,FileInternal);
-% [~]=fgetl(Fid);
+FileInternal=fscanf(Fid,'%s \n',[1,1]);
+PRM.FileInternal=fullfile(PRM.HOME_D,FileInternal);
+[~]=fgetl(Fid);
 DirResult=fscanf(Fid,'%s \n',[1,1]);
 PRM.DirResult=fullfile(PRM.HOME_D,DirResult);
 [~]=fgetl(Fid);
@@ -311,7 +311,7 @@ fprintf('DIRBlock                 : %s \n',PRM.DIRBlock)
 fprintf('DIRBlock_Interface       : %s \n',PRM.DIRBlock_Interface) 
 fprintf('File fixed epole         : %s \n',PRM.FilePole) 
 fprintf('File Rigid boundary      : %s \n',PRM.FileRigb) 
-% fprintf('File Internal deformation: %s \n',PRM.FileInternal) 
+fprintf('File Internal deformation: %s \n',PRM.FileInternal) 
 fprintf('DIRResult                : %s \n',PRM.DirResult) 
 fprintf('GPUdev (CPU:99)          : %i \n',PRM.GPU) 
 fprintf('ITR(Max_Nitr)            : %i \n',PRM.ITR) 
@@ -326,6 +326,7 @@ end
 %% MAKE MATRIX
 function [D,G]=COMB_GREEN(BLK,OBS,TRI,D)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
+% Coded by Hiroshi Kimura 2018/05/01 (ver 1.2)
 % pole unit is mm
 NOBS=length(OBS(1).EVEC);
 TMP.OBS(1:3:3*NOBS)=OBS(1).EVEC;
@@ -342,15 +343,18 @@ D(1).MID=[];
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
+% 
+% (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp +
+% G(1).I * Mi  % including internal deformation
 %
 G(1).T =zeros(3*BLK(1).NB,2.*BLK(1).NB);
 G(1).B =zeros(2*BLK(1).NB,3.*BLK(1).NBlock);
 TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
-% TMP.I=zeros(3*NOBS,3.*BLK(1).NBlock);
+TMP.I=zeros(3*NOBS,3.*BLK(1).NBlock);
 % 
-% ALAT=mean(OBS(1).ALAT(:));
-% ALON=mean(OBS(1).ALON(:));
-% [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
+ALAT=mean(OBS(1).ALAT(:));
+ALON=mean(OBS(1).ALON(:));
+[OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 %
 MC=1;
 MT=1;
@@ -402,16 +406,17 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
-%   TMP.I(EIND,3*NB1-2)= (OBSx(IND)-BLK(N).Xinter).*BLK(NB).FLAGinter;
-%   TMP.I(EIND,3*NB1-1)= (OBSy(IND)-BLK(N).Yinter).*BLK(NB).FLAGinter;
-%   TMP.I(EIND,3*NB1  )= 0;
-%   TMP.I(NIND,3*NB1-2)= 0;
-%   TMP.I(NIND,3*NB1-1)= (OBSx(IND)-BLK(N).Xinter).*BLK(NB).FLAGinter;
-%   TMP.I(NIND,3*NB1  )= (OBSy(IND)-BLK(N).Yinter).*BLK(NB).FLAGinter;
+  TMP.I(EIND,3*NB1-2)= (OBSx(IND)-BLK(N).Xinter);
+  TMP.I(EIND,3*NB1-1)= (OBSy(IND)-BLK(N).Yinter);
+  TMP.I(EIND,3*NB1  )= 0;
+  TMP.I(NIND,3*NB1-2)= 0;
+  TMP.I(NIND,3*NB1-1)= (OBSx(IND)-BLK(N).Xinter);
+  TMP.I(NIND,3*NB1  )= (OBSy(IND)-BLK(N).Yinter);
 end
 % 
 G(1).C  =TMP.C(D(1).IND,:);
 G(1).P  =TMP.P(D(1).IND,:);
+G(1).I  =TMP.I(D(1).IND,:);
 G(1).TB =sparse(G(1).T*G(1).B);
 D(1).MID=logical(repmat(D(1).MID,3,1));
 D(1).CFINV =TRI(1).CF.*(TRI(1).INV);
@@ -434,33 +439,41 @@ precision='double';
 RWD=PRM.RWD;
 Mc.INT=1e-2;
 Mp.INT=1e-10;
+Mi.INT=1e-10;
 La.INT=1e+1;
 Mc.N=BLK(1).NB;
 Mp.N=3.*BLK(1).NBlock;
+Mi.N=3.*BLK(1).NBlock;
 La.N=1;
 Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
+Mi.STD=Mi.INT.*ones(Mi.N,1,precision);
 La.STD=La.INT.*ones(La.N,1,precision);
 % Mc.OLD=       randn(Mc.N,1,precision);                % Normal distribution
 % Mc.OLD=(Mc.OLD-min(Mc.OLD))./max(Mc.OLD-min(Mc.OLD)); % Normal distribution
 % Mc.OLD=   -0.5+rand(Mc.N,1,precision);                % Uniform distribution(-1 to 1)
 Mc.OLD=  0.5.*+rand(Mc.N,1,precision);                % Uniform distribution( 0 to 1)
 Mp.OLD= double(BLK(1).POLE);
+Mi.OLD= 1e-10.*(-0.5+rand(Mi.N,1,precision));
 La.OLD= zeros(La.N,1,precision);
 CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
 CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
+CHA.Mi= zeros(Mi.N,PRM.KEP,precision);
 CHA.La= zeros(La.N,PRM.KEP,precision);
 % Set FIX POLES if POL.FIXflag=1
 % MpScale=Mp.INT.*ones(Mp.N,1,precision);
 Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
 Mp.STD(POL.ID)=0;
-% end
 %
+Mi.OLD=Mi.OLD.*BLK(1).IDinter;
+Mi.STD=Mi.STD.*BLK(1).IDinter;
+% 
 RES.OLD=inf(1,1,precision);
 % PRI.OLD=inf(1,1,precision);
 RWDSCALE=1000*RWD/(PRM.CHA);
 McScale=RWDSCALE*0.13;
 MpScale=RWDSCALE*(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
+MiScale=RWDSCALE*1e-10;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
 LO_Mc=0;
@@ -481,15 +494,18 @@ if PRM.GPU~=99
 %   CHA.La=gpuArray(CHA.La);
   Mc.STD=gpuArray(Mc.STD);
   Mp.STD=gpuArray(Mp.STD);
+  Mi.STD=gpuArray(Mi.STD);
   La.STD=gpuArray(La.STD);
   Mc.OLD=gpuArray(Mc.OLD);
   Mp.OLD=gpuArray(Mp.OLD);
+  Mi.OLD=gpuArray(Mi.OLD);
   La.OLD=gpuArray(La.OLD);
   D(1).OBS=gpuArray(D(1).OBS);
   D(1).ERR=gpuArray(D(1).ERR);
   G.TB=gpuArray(G.TB);
   G.C=gpuArray(G.C);
   G.P=gpuArray(G.P);
+  G.I=gpuArray(G.I);
   D(1).CFINV=gpuArray(D(1).CFINV);
   McScale=gpuArray(McScale);
   MpScale=gpuArray(MpScale);
@@ -514,13 +530,16 @@ while not(COUNT==PRM.THR)
     logU=log(rand(PRM.CHA,1,precision,'gpuArray'));
     rMc = randn(Mc.N,PRM.CHA,precision,'gpuArray');
     rMp = randn(Mp.N,PRM.CHA,precision,'gpuArray');
+    rMi = randn(Mi.N,PRM.CHA,precision,'gpuArray');
     rLa = randn(La.N,PRM.CHA,precision,'gpuArray');
   else
     logU=log(rand(PRM.CHA,1,precision));
     rMc =randn(Mc.N,PRM.CHA,precision);
     rMp =randn(Mp.N,PRM.CHA,precision);
+    rMi =randn(Mi.N,PRM.CHA,precision);
     rLa =randn(La.N,PRM.CHA,precision);
   end
+  rMi(find(~BLK(1).IDinter),:)=0;
   for iT=1:PRM.CHA
 % SAMPLE SECTION
 %     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
@@ -533,6 +552,7 @@ while not(COUNT==PRM.THR)
 %     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
 %     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
+    Mi.SMP=Mi.OLD+RWD.*MiScale.*rMi(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
@@ -546,10 +566,11 @@ while not(COUNT==PRM.THR)
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
     CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-    CAL.SMP=CAL.RIG+CAL.ELA;
-    
+    CAL.INE=G.I*Mi.SMP;
+%     CAL.SMP=CAL.RIG+CAL.ELA;
+    CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
     if PRM.GPU~=99
-      clear('CAL.RIG','CAL.ela','CAL,ELA','CF','CFsq');
+      clear('CAL.RIG','CAL,ELA','CAL.INE');
     end
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
@@ -572,6 +593,7 @@ while not(COUNT==PRM.THR)
     if ACC
       Mc.OLD  = Mc.SMP;
       Mp.OLD  = Mp.SMP;
+      Mi.OLD  = Mi.SMP;
       La.OLD  = La.SMP;
       RES.OLD = RES.SMP;
 %       PRI.OLD = PRI.SMP;
@@ -581,10 +603,12 @@ while not(COUNT==PRM.THR)
       if PRM.GPU~=99
         CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=gather(Mc.SMP);
         CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=gather(Mp.SMP);
+        CHA.Mi(:,iT-(PRM.CHA-PRM.KEP))=gather(Mi.SMP);
         CHA.La(:,iT-(PRM.CHA-PRM.KEP))=gather(La.SMP);
       else
         CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=Mc.SMP;
         CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=Mp.SMP;
+        CHA.Mi(:,iT-(PRM.CHA-PRM.KEP))=Mi.SMP;
         CHA.La(:,iT-(PRM.CHA-PRM.KEP))=La.SMP;
       end
       if ACC; NACC=NACC+1; end;
@@ -596,6 +620,7 @@ while not(COUNT==PRM.THR)
 %
   Mc.STD=std(CHA.Mc,1,2);
   Mp.STD=std(CHA.Mp,1,2); 
+  Mi.STD=std(CHA.Mi,1,2); 
   La.STD=std(CHA.La,1,2);
 %
   fprintf('T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
@@ -643,15 +668,19 @@ while not(COUNT==PRM.THR)
   % debug-----------
   Mpmean=mean(CHA.Mp,2);
   Mcmean=mean(CHA.Mc,2);
+  Mimean=mean(CHA.Mi,2);
   Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
   VEC.RIG=G.P*Mpmean;
   VEC.ELA=G.C*((G.TB*Mpmean).*D(1).CFINV.*Mcmeanrep);
-  VEC.SUM=VEC.RIG+VEC.ELA;
+  VEC.INE=G.I*Mimean;
+%   VEC.SUM=VEC.RIG+VEC.ELA;
+  VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
   if PRM.GPU~=99
     cCHA.Mc=gather(CHA.Mc);
     cCHA.Mp=gather(CHA.Mp);
+    cCHA.Mi=gather(CHA.Mi);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
     MAKE_FIG(cCHA,BLK,OBS,RT,gather(LO_Mc),gather(UP_Mc),VEC)
@@ -663,6 +692,7 @@ end
 if PRM.GPU~=99
   CHA.Mc=gather(CHA.Mc);
   CHA.Mp=gather(CHA.Mp);
+  CHA.Mi=gather(CHA.Mi);
   CHA.La=gather(CHA.La);
   CHA.SMP=gather(CHA.SMP);
 end
@@ -1007,20 +1037,28 @@ if exist(PRM.FileInternal,'file')~=2; return; end
 FID=fopen(PRM.FileInternal,'r');
 TMP=fscanf(FID,'%d %d %d %f %f\n',[5 Inf]);
 BLK(1).INTERNAL=TMP';
-for NB=1:BLK(1).NB
+IDinter=zeros(1,BLK(1).NBlock);
+for NB=1:BLK(1).NBlock
   [id,flag]=find(BLK(1).INTERNAL(:,1)==NB);
   BLK(NB).FLAGinter=flag;
   if flag==1
     if BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)==1
       [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(BLK(1).INTERNAL(id,4),BLK(1).INTERNAL(id,4),ALAT,ALON);
+      BLK(NB).FLAGinter=flag;
     elseif BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)~=1
       [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
+      BLK(NB).FLAGinter=flag;
+    else
+      [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
+      BLK(NB).FLAGinter=0;
     end
   else
     [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
-    BLK(NB).FLAGinter=flag;
+    BLK(NB).FLAGinter=0;
   end
+  IDinter(NB)=BLK(NB).FLAGinter;
 end
+BLK(1).IDinter=reshape([repmat(IDinter,2,1); zeros(1,BLK(1).NBlock)], 3*BLK(1).NBlock,1);
 end
 %% MAKE GREEN FUNCTION
 function [TRI,OBS]=GREEN_TRI(BLK,OBS)
