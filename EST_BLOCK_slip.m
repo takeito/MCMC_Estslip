@@ -860,6 +860,9 @@ colorbar
 hold on
 %
 %---------Show Obs and Cal vector at sites -------------
+% Color of arrows
+% Green : Observed deformation
+% Blue  : Calculated deformation
 figure(130);clf(130)
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 hold on
@@ -869,6 +872,11 @@ axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
 title(['Iteration Number: ',num2str(RT)]);
 % 
 %---------Show Rig and Ela vectors and Principal Strain-------------
+% Color of arrows
+% Black   : Rigid rotation
+% Red     : Elastic deformation due to slip deficit
+% Cyan    : Extension of principal strain
+% Magenta : Compression of principal strain
 figure(140);clf(140)
 quiver(OBS(1).ALON,OBS(1).ALAT,VEC.RIG(1:3:end)',VEC.RIG(2:3:end)','k')
 hold on
