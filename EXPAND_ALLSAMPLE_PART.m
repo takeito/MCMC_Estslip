@@ -35,6 +35,7 @@ for ii=1:NIT
     NCH=size(cha.MpCOMPRESS.SMPMp,2);
     NPOL=length(cha.MpCOMPRESS.NPOL);
     NFLT=length(cha.McCOMPRESS.NFLT);
+    NINE=length(cha.McCOMPRESS.NFLT);
     SUMPOL=zeros(NPOL,1);
     SUMFLT=zeros(NFLT,1);    
     SUMPOLPAIR=zeros(NPOL,NPOL);
