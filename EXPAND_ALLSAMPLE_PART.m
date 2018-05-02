@@ -25,6 +25,7 @@ function [TCHA]=cal_avestdbin(INPUT,burnin)
 NIT=size(INPUT,2);
 Mpbin=[-1E-7:1E-9:1E-7];
 Mcbin=[-1:0.01:1];
+Mibin=[-1E-7:1E-9:1E-7];
 SMPINT=50; % sampling interval
 BURNIN=floor(burnin*NIT/100)+1;
 ACCTOTAL=0;
@@ -81,7 +82,7 @@ for ii=1:NIT
       NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     end
     for ll=1:NINE
-      infid=cha.MiCOMPRESS.NINE(kk).Miscale==Inf;
+      infid=cha.MiCOMPRESS.NINE(ll).Miscale==Inf;
       if ~infid
         smpine(ll,:)=(double(cha.MiCOMPRESS.SMPMi(ll,:))+128)./(2.55.*cha.MiCOMPRESS.NINE(ll).Miscale)+cha.MiCOMPRESS.NINE(ll).MiMIN;
       else
@@ -114,7 +115,7 @@ for ii=1:NIT
       end
     end
     for ll=1:NINE
-      infid=cha.MiCOMPRESS.NFLT(ll).Mcscale==Inf;
+      infid=cha.MiCOMPRESS.NINE(ll).Miscale==Inf;
       if ~infid
         smpine(ll,:)=(double(cha.MiCOMPRESS.SMPMi(ll,:))+128)./(2.55.*cha.MiCOMPRESS.NINE(ll).Miscale)+cha.MiCOMPRESS.NINE(ll).MiMIN;
       else
