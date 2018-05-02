@@ -539,6 +539,7 @@ while not(COUNT==PRM.THR)
     rMi =randn(Mi.N,PRM.CHA,precision);
     rLa =randn(La.N,PRM.CHA,precision);
   end
+  rMp(find(POL.ID),:)=0;
   rMi(find(~BLK(1).IDinter),:)=0;
   for iT=1:PRM.CHA
 % SAMPLE SECTION
