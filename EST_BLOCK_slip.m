@@ -683,9 +683,9 @@ while not(COUNT==PRM.THR)
     cCHA.Mi=gather(CHA.Mi);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    MAKE_FIG(cCHA,BLK,OBS,RT,gather(LO_Mc),gather(UP_Mc),VEC)
+    MAKE_FIG(cCHA,BLK,OBS,RT,gather(LO_Mc),gather(UP_Mc),VEC,Mimean)
   else
-    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC)
+    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mimean)
   end
   if RT > PRM.ITR; break; end;
 end
@@ -791,7 +791,7 @@ save(fullfile(PRM.DirResult,['CHA_test',num2str(ITR,'%03i')]),'cha','-v7.3');
 % 
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC)
+function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mimean)
 % Color palette(POLAR)
 red=[0:1/32:1 ones(1,32)]';
 green=[0:1/32:1 1-1/32:-1/32:0]';
@@ -801,6 +801,7 @@ rw =rwb(33:end,:);
 if LO_Mc==-1; cmap=rwb;
 else cmap=rw; end
 % 
+%---------Show estimated coupling ratio------------------
 figure(100);clf(100)
 % BUG to wait zero
 NN=1;
@@ -819,6 +820,7 @@ ax.CLim=[LO_Mc UP_Mc];
 colormap(cmap)
 colorbar
 %
+%---------Show standard deviation for subfaults----------
 figure(110);clf(110)
 % BUG to wait zero
 NN=1;
@@ -835,6 +837,7 @@ end
 colormap(parula)
 colorbar
 %
+%---------Show 2-D histogram of sampled Euler pole-------------
 figure(120);clf(120)
 for NB=1:BLK(1).NBlock
   plot(BLK(NB).LON,BLK(NB).LAT,'red')
@@ -856,6 +859,7 @@ quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
 colorbar
 hold on
 %
+%---------Show Obs and Cal vector at sites -------------
 figure(130);clf(130)
 quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 hold on
@@ -864,11 +868,27 @@ hold on
 axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
 title(['Iteration Number: ',num2str(RT)]);
 % 
-% debug----------
+%---------Show Rig and Ela vectors and Principal Strain-------------
 figure(140);clf(140)
 quiver(OBS(1).ALON,OBS(1).ALAT,VEC.RIG(1:3:end)',VEC.RIG(2:3:end)','k')
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,VEC.ELA(1:3:end)',VEC.ELA(2:3:end)','r')
+efactor=1e8;
+for NB=1:BLK(1).NBlock
+  E=[Mimean(3*NB-2) Mimean(3*NB-1);...
+     Mimean(3*NB-1) Mimean(3*NB  )];
+  [eigV,eigD]=eig(E);
+  e1=eigD(1,1); e2=eigD(2,2);
+  v1=eigV(:,1); v2=eigV(:,2);
+  if e1>=0; c1='c'; else; c1='m'; end
+  if e2>=0; c2='c'; else; c2='m'; end
+  figure(140)
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor* e1*v1(1),efactor* e1*v1(2),c1,'ShowArrowHead','off','LineWidth',1);
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor*-e1*v1(1),efactor*-e1*v1(2),c1,'ShowArrowHead','off','LineWidth',1);
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor* e2*v2(1),efactor* e2*v2(2),c2,'ShowArrowHead','off','LineWidth',1);
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor*-e2*v2(1),efactor*-e2*v2(2),c2,'ShowArrowHead','off','LineWidth',1);
+  hold on; plot(BLK(NB).LONinter,BLK(NB).LATinter,'.k','MarkerSize',5)
+end
 % hold on
 % quiver(OBS(1).ALON,OBS(1).ALAT,vec.rel(1:3:end)',vec.rel(2:3:end)','m')
 axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
@@ -1063,21 +1083,24 @@ IDinter=zeros(1,BLK(1).NBlock);
 for NB=1:BLK(1).NBlock
   [id,flag]=find(BLK(1).INTERNAL(:,1)==NB);
   BLK(NB).FLAGinter=flag;
-  if flag==1
-    if BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)==1
-      [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(BLK(1).INTERNAL(id,4),BLK(1).INTERNAL(id,4),ALAT,ALON);
-      BLK(NB).FLAGinter=flag;
-    elseif BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)~=1
-      [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
-      BLK(NB).FLAGinter=flag;
-    else
-      [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
-      BLK(NB).FLAGinter=0;
-    end
+  if flag==1 && BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)==1
+    BLK(NB).LATinter=BLK(1).INTERNAL(id,4);
+    BLK(NB).LONinter=BLK(1).INTERNAL(id,5);
+    BLK(NB).FLAGinter=1;
+  elseif (flag==1 && BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)~=1) || flag==0
+    BLK(NB).LATinter=mean(BLK(NB).LAT);
+    BLK(NB).LONinter=mean(BLK(NB).LON);
+    BLK(NB).FLAGinter=1;
+  elseif flag==1 && BLK(1).INTERNAL(id,2)~=1 && BLK(1).INTERNAL(id,3)==1
+    BLK(NB).LATinter=BLK(1).INTERNAL(id,4);
+    BLK(NB).LONinter=BLK(1).INTERNAL(id,5);
+    BLK(NB).FLAGinter=0;
   else
-    [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(mean(BLK(NB).LAT),mean(BLK(NB).LON),ALAT,ALON);
+    BLK(NB).LATinter=mean(BLK(NB).LAT);
+    BLK(NB).LONinter=mean(BLK(NB).LON);
     BLK(NB).FLAGinter=0;
   end
+  [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(BLK(NB).LATinter,BLK(NB).LONinter,ALAT,ALON);
   IDinter(NB)=BLK(NB).FLAGinter;
 end
 BLK(1).IDinter=reshape([repmat(IDinter,2,1); zeros(1,BLK(1).NBlock)], 3*BLK(1).NBlock,1);
