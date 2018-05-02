@@ -776,10 +776,10 @@ cha.MpCOMPRESS.MEANMp=MEANMp;
 cha.MpCOMPRESS.SMPMp=int8(MpBASE);
 % 
 for ii=1:size(Miint8,1)
-  cha.MiCOMPRESS.NPOL(ii).Miscale=Miscale(ii);
-  cha.MiCOMPRESS.NPOL(ii).MiMAX=MiMAX(ii);
-  cha.MiCOMPRESS.NPOL(ii).MiMIN=MiMIN(ii);
-  cha.MiCOMPRESS.NPOL(ii).MiHIST=histcounts(Miint8(ii,:),binedge);
+  cha.MiCOMPRESS.NINE(ii).Miscale=Miscale(ii);
+  cha.MiCOMPRESS.NINE(ii).MiMAX=MiMAX(ii);
+  cha.MiCOMPRESS.NINE(ii).MiMIN=MiMIN(ii);
+  cha.MiCOMPRESS.NINE(ii).MiHIST=histcounts(Miint8(ii,:),binedge);
 end
 cha.MiCOMPRESS.COVMi=COVMi;
 cha.MiCOMPRESS.MEANMi=MEANMi;
