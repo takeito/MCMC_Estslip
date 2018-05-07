@@ -346,7 +346,7 @@ NN=1;
 exid=exist([DIR,'/rigid']);
 if exid~=7; mkdir([DIR,'/rigid']); end
 FIDinternal=fopen([DIR,'/rigid/Internal_Deformation.txt'],'w');
-fprintf(FIDinternal,'Block exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+fprintf(FIDinternal,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
 for NB=1:BLK(1).NBlock
   exx=TCHA.AVEINE(3*NB-2);
   exy=TCHA.AVEINE(3*NB-1);
