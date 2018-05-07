@@ -346,8 +346,42 @@ NN=1;
 exid=exist([DIR,'/rigid']);
 if exid~=7; mkdir([DIR,'/rigid']); end
 FIDinternal=fopen([DIR,'/rigid/Internal_Deformation.txt'],'w');
-fprintf(FIDinternal,'Block e_xx e_xy e_yy e_max e_min p_theta e_strainMAX \n');
-
+fprintf(FIDinternal,'Block exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+for NB=1:BLK(1).NBlock
+  exx=TCHA.AVEINE(3*NB-2);
+  exy=TCHA.AVEINE(3*NB-1);
+  eyy=TCHA.AVEINE(3*NB  );
+  sigexx=TCHA.STDINE(3*NB-2);
+  sigexy=TCHA.STDINE(3*NB-1);
+  sigeyy=TCHA.STDINE(3*NB  );
+  E=[exx exy;...
+     exy eyy];
+  [eigV,eigD]=eig(E);
+  e1=eigD(1,1); e2=eigD(2,2);
+  v1=eigV(:,1); v2=eigV(:,2);
+  if e1>=e2
+    emax=e1; axmax=v1;
+    emin=e2; axmin=v2;
+  else
+    emax=e2; axmax=v2;
+    emin=e1; axmin=v1;
+  end
+  thetaP=rad2deg(atan2(axmax(2),axmax(1)));
+  shearMAX=sqrt((1/4)*(exx-eyy)^2+exy^2);
+  sigemax    =sqrt( ( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
+                   +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
+                   +( 0.5 - 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
+  sigemin    =sqrt( ( 0.5 - 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
+                   +(         -1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
+                   +( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
+  sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
+                   +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
+                   +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
+  fprintf(FIDinternal,'%2d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n',...
+      NB,BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
+      shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
+end
+fclose(FIDinternal);
 end
 %% Translate coupling to slip deficit rate.
 function [SDR]=coupling2sdr(TCHA,D,G)
