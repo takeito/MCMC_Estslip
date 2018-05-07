@@ -1,4 +1,4 @@
-function out_allanalysis_v2(DIR)
+function out_allanalysis_v3(DIR)
 % 
 Parfile='PARAMETER/parameter_export.txt';
 [Par]=ReadPara(Parfile);
@@ -18,6 +18,7 @@ G(1).TB=full(G(1).TB);
 % 
 [SDR]=coupling2sdr(TCHA,D,G);
 ExportCoupling(DIR,TCHA,BLK,SDR);
+ExportInternalDeformation(DIR,TCHA,BLK);
 for CP=1:size(Par.Coupling_Pair,2)
   ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
 end
@@ -338,6 +339,15 @@ for NB1=1:BLK(1).NBlock
   end
 end
 fclose(FIDstdinfo);
+end
+%% Export strain rates of internal deformation.
+function ExportInternalDeformation(DIR,TCHA,BLK)
+NN=1;
+exid=exist([DIR,'/rigid']);
+if exid~=7; mkdir([DIR,'/rigid']); end
+FIDinternal=fopen([DIR,'/rigid/Internal_Deformation.txt'],'w');
+fprintf(FIDinternal,'Block e_xx e_xy e_yy e_max e_min p_theta e_strainMAX \n');
+
 end
 %% Translate coupling to slip deficit rate.
 function [SDR]=coupling2sdr(TCHA,D,G)
