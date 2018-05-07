@@ -1112,7 +1112,7 @@ for NB=1:BLK(1).NBlock
   [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(BLK(NB).LATinter,BLK(NB).LONinter,ALAT,ALON);
   IDinter(NB)=BLK(NB).FLAGinter;
 end
-BLK(1).IDinter=reshape([repmat(IDinter,2,1); zeros(1,BLK(1).NBlock)], 3*BLK(1).NBlock,1);
+BLK(1).IDinter=reshape(repmat(IDinter,3,1),3*BLK(1).NBlock,1);
 end
 %% MAKE GREEN FUNCTION
 function [TRI,OBS]=GREEN_TRI(BLK,OBS)
