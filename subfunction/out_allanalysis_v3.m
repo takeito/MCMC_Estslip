@@ -216,8 +216,8 @@ end
 function out_epole_allchain(DIR,TCHA,BLK,NAMEMAT)
 % 
 FID=fopen([DIR,'/est_euler_pole.txt'],'w');
-fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) a b c d e f(1e-8 (rad/Myr)^2) \n');
-fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) a b c d e f(1e-8 (rad/Myr)^2) \n');
+fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
 if isempty(NAMEMAT)
   for kk=1:BLK(1).NBlock
     NAMEMAT{ii}=num2str(kk,'%02i');
