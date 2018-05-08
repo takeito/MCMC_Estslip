@@ -801,7 +801,7 @@ rwb=[red green blue];
 rw =rwb(33:end,:);
 if LO_Mc==-1; cmap=rwb;
 else cmap=rw; end
-% 
+
 %---------Show estimated coupling ratio------------------
 figure(100);clf(100)
 % BUG to wait zero
@@ -820,7 +820,7 @@ ax=gca;
 ax.CLim=[LO_Mc UP_Mc];
 colormap(cmap)
 colorbar
-%
+
 %---------Show standard deviation for subfaults----------
 figure(110);clf(110)
 % BUG to wait zero
@@ -837,7 +837,7 @@ for NB1=1:BLK(1).NBlock
 end
 colormap(parula)
 colorbar
-%
+
 %---------Show 2-D histogram of sampled Euler pole-------------
 figure(120);clf(120)
 for NB=1:BLK(1).NBlock
@@ -859,7 +859,7 @@ quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
 quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
 colorbar
 hold on
-%
+
 %---------Show Obs and Cal vector at sites -------------
 % Color of arrows
 % Green : Observed deformation
@@ -870,20 +870,30 @@ hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,VEC.SUM(1:3:end)',VEC.SUM(2:3:end)','blue')
 hold on
 axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
-title(['Iteration Number: ',num2str(RT)]);
-% 
-%---------Show Rig and Ela vectors and Principal Strain-------------
+title(['Obs and Cal motion (Iteration Number: ',num2str(RT),')']);
+ 
+%-------------------- Show Rig and Ela vectors ----------------------------
 % Color of arrows
 % Black   : Rigid rotation
 % Red     : Elastic deformation due to slip deficit
-% Cyan    : Extension of principal strain
-% Magenta : Compression of principal strain
 figure(140);clf(140)
 quiver(OBS(1).ALON,OBS(1).ALAT,VEC.RIG(1:3:end)',VEC.RIG(2:3:end)','k')
 hold on
 quiver(OBS(1).ALON,OBS(1).ALAT,VEC.ELA(1:3:end)',VEC.ELA(2:3:end)','r')
+% hold on
+% quiver(OBS(1).ALON,OBS(1).ALAT,vec.rel(1:3:end)',vec.rel(2:3:end)','m')
+axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
+title(['Rigid and Elastic motion (Iteration Number: ',num2str(RT),')']);
+
+%------------------------Show Principal Strain-----------------------------
+% Color of arrows
+% cyan    : Extension of principal strain
+% Magenta : Compression of principal strain
+figure(150);clf(150)
 efactor=1e8;
 for NB=1:BLK(1).NBlock
+  hold on; plot(BLK(NB).LON,BLK(NB).LAT,'red')
+  hold on; text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB),'Color','r')
   E=[Mimean(3*NB-2) Mimean(3*NB-1);...
      Mimean(3*NB-1) Mimean(3*NB  )];
   [eigV,eigD]=eig(E);
@@ -891,17 +901,17 @@ for NB=1:BLK(1).NBlock
   v1=eigV(:,1); v2=eigV(:,2);
   if e1>=0; c1='c'; else; c1='m'; end
   if e2>=0; c2='c'; else; c2='m'; end
-  figure(140)
+  figure(150)
   hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor* e1*v1(1),efactor* e1*v1(2),c1,'ShowArrowHead','off','LineWidth',1);
   hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor*-e1*v1(1),efactor*-e1*v1(2),c1,'ShowArrowHead','off','LineWidth',1);
   hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor* e2*v2(1),efactor* e2*v2(2),c2,'ShowArrowHead','off','LineWidth',1);
   hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor*-e2*v2(1),efactor*-e2*v2(2),c2,'ShowArrowHead','off','LineWidth',1);
   hold on; plot(BLK(NB).LONinter,BLK(NB).LATinter,'.k','MarkerSize',5)
+  hold on; text(BLK(NB).LONinter,BLK(NB).LATinter,int2str(NB),'Color','k')
 end
-% hold on
-% quiver(OBS(1).ALON,OBS(1).ALAT,vec.rel(1:3:end)',vec.rel(2:3:end)','m')
 axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
-title(['Iteration Number: ',num2str(RT)]);
+title(['Principle Strain (Iteration Number: ',num2str(RT),')']);
+
 % debug----------
 drawnow
 end
@@ -1080,7 +1090,7 @@ function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM)
 BLK(1).INTERNAL=zeros(1,5);
 if exist(PRM.FileInternal,'file')~=2; return; end
 FID=fopen(PRM.FileInternal,'r');
-TMP=fscanf(FID,'%d %d %d %f %f\n',[5 Inf]);
+TMP=fscanf(FID,'%d %d\n',[2 Inf]);
 BLK(1).INTERNAL=TMP';
 IDinter=zeros(1,BLK(1).NBlock);
 for NB=1:BLK(1).NBlock
