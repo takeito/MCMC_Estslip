@@ -406,12 +406,12 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,3)+OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,3)-OBS(1).AXYZ(IND,6).*OBS(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,7).*OBS(1).AXYZ(IND,2)-OBS(1).AXYZ(IND,4).*OBS(1).AXYZ(IND,5).*OBS(1).AXYZ(IND,1);
-  TMP.I(EIND,3*NB1-2)= (OBSx(IND)-BLK(NB1).Xinter);
-  TMP.I(EIND,3*NB1-1)= (OBSy(IND)-BLK(NB1).Yinter);
+  TMP.I(EIND,3*NB1-2)= (BLK(NB1).Xinter).*10^6;
+  TMP.I(EIND,3*NB1-1)= (BLK(NB1).Yinter).*10^6;
   TMP.I(EIND,3*NB1  )= 0;
   TMP.I(NIND,3*NB1-2)= 0;
-  TMP.I(NIND,3*NB1-1)= (OBSx(IND)-BLK(NB1).Xinter);
-  TMP.I(NIND,3*NB1  )= (OBSy(IND)-BLK(NB1).Yinter);
+  TMP.I(NIND,3*NB1-1)= (BLK(NB1).Xinter).*10^6;
+  TMP.I(NIND,3*NB1  )= (BLK(NB1).Yinter).*10^6;
 end
 % 
 G(1).C  =TMP.C(D(1).IND,:);
@@ -452,7 +452,7 @@ La.STD=La.INT.*ones(La.N,1,precision);
 % Mc.OLD=       randn(Mc.N,1,precision);                % Normal distribution
 % Mc.OLD=(Mc.OLD-min(Mc.OLD))./max(Mc.OLD-min(Mc.OLD)); % Normal distribution
 % Mc.OLD=   -0.5+rand(Mc.N,1,precision);                % Uniform distribution(-1 to 1)
-Mc.OLD=  0.5.*+rand(Mc.N,1,precision);                % Uniform distribution( 0 to 1)
+Mc.OLD=  rand(Mc.N,1,precision);                % Uniform distribution( 0 to 1)
 Mp.OLD= double(BLK(1).POLE);
 Mi.OLD= 1e-10.*(-0.5+rand(Mi.N,1,precision));
 La.OLD= zeros(La.N,1,precision);
@@ -1071,18 +1071,11 @@ function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM)
 %------------------------- Parameter file format --------------------------
 % Block_Num. Flag1 Flag2 Lat. Lon.
 % Flag1 : If uniform internal deformation is calculated, 1, else, 0
-% Flag2 : If calculation point is set by manual, 1, else, 0
-% Lat. : Latitude of calculation point. If Flag1 is set to 0, Lat. is 0
-% Lon. : Longitude of calculation point. If Flag1 is set to 0, Lon. is 0
 % If there is no description about a certain block, internal deformation is
-% calculated for the block. In that case, the point where internal
-% deformation is calculated is set to the geometric center of the block. If
-% you 'do not' want to calculate internal deformation for a certain block,
+% calculated for the block. If% you 'do not' want to calculate internal deformation for a certain block,
 % you have to describe about the block and set FLAG1 to '0', whereas other 
 % columns shold be arbitrary value.
 % -------------------------------------------------------------------------
-ALAT=mean(OBS(1).ALAT(:));
-ALON=mean(OBS(1).ALON(:));
 BLK(1).INTERNAL=zeros(1,5);
 if exist(PRM.FileInternal,'file')~=2; return; end
 FID=fopen(PRM.FileInternal,'r');
@@ -1091,25 +1084,15 @@ BLK(1).INTERNAL=TMP';
 IDinter=zeros(1,BLK(1).NBlock);
 for NB=1:BLK(1).NBlock
   [id,flag]=find(BLK(1).INTERNAL(:,1)==NB);
-  BLK(NB).FLAGinter=flag;
-  if flag==1 && BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)==1
-    BLK(NB).LATinter=BLK(1).INTERNAL(id,4);
-    BLK(NB).LONinter=BLK(1).INTERNAL(id,5);
+  BLK(NB).FLAGinter=0;
+  BLK(NB).LATinter=0;
+  BLK(NB).LONinter=0;
+  if (flag==1 && BLK(1).INTERNAL(id,2)==1) || flag==0
+    BLK(NB).LATinter=mean(OBS(NB).LAT);
+    BLK(NB).LONinter=mean(OBS(NB).LON);
     BLK(NB).FLAGinter=1;
-  elseif (flag==1 && BLK(1).INTERNAL(id,2)==1 && BLK(1).INTERNAL(id,3)~=1) || flag==0
-    BLK(NB).LATinter=mean(BLK(NB).LAT);
-    BLK(NB).LONinter=mean(BLK(NB).LON);
-    BLK(NB).FLAGinter=1;
-  elseif flag==1 && BLK(1).INTERNAL(id,2)~=1 && BLK(1).INTERNAL(id,3)==1
-    BLK(NB).LATinter=BLK(1).INTERNAL(id,4);
-    BLK(NB).LONinter=BLK(1).INTERNAL(id,5);
-    BLK(NB).FLAGinter=0;
-  else
-    BLK(NB).LATinter=mean(BLK(NB).LAT);
-    BLK(NB).LONinter=mean(BLK(NB).LON);
-    BLK(NB).FLAGinter=0;
   end
-  [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(BLK(NB).LATinter,BLK(NB).LONinter,ALAT,ALON);
+  [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(OBS(NB).LAT,OBS(NB).LON,BLK(NB).LATinter,BLK(NB).LONinter);
   IDinter(NB)=BLK(NB).FLAGinter;
 end
 BLK(1).IDinter=reshape(repmat(IDinter,3,1),3*BLK(1).NBlock,1);
