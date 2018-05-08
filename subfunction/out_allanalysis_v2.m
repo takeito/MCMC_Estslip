@@ -215,8 +215,8 @@ end
 function out_epole_allchain(DIR,TCHA,BLK,NAMEMAT)
 % 
 FID=fopen([DIR,'/est_euler_pole.txt'],'w');
-fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) a b c d e f(1e-8 (rad/Myr)^2) \n');
-fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) a b c d e f(1e-8 (rad/Myr)^2) \n');
+fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
 if isempty(NAMEMAT)
   for kk=1:BLK(1).NBlock
     NAMEMAT{ii}=num2str(kk,'%02i');
@@ -1045,9 +1045,9 @@ warning('off','all')
 %	sphere of radius A at depth F, in a homogeneous, semi-infinite elastic
 %	body and approximation for A << F (center of dilatation).
 %
-%	MOGI(R,F,V) and MOGI(R,F,A,?ï¿½,P) are also allowed for compatibility 
+%	MOGI(R,F,V) and MOGI(R,F,A,??½,P) are also allowed for compatibility 
 %	(Mogi's original equation considers an isotropic material with Lam?s 
-%	constants equal, i.e., lambda = ?ï¿½, Poisson's ratio = 0.25).
+%	constants equal, i.e., lambda = ??½, Poisson's ratio = 0.25).
 %
 %	Input variables are:
 %	   F: depth of the center of the sphere from the surface,
@@ -1056,15 +1056,15 @@ warning('off','all')
 %	   P: hydrostatic pressure change in the sphere,
 %	   E: elasticity (Young's modulus),
 %	  nu: Poisson's ratio,
-%	   ?ï¿½: rigidity (Lam?s constant in case of isotropic material).
+%	   ??½: rigidity (Lam?s constant in case of isotropic material).
 %
 %	Notes:
-%		- Equations are all vectorized, so variables R,F,V,A,?ï¿½ and P are 
+%		- Equations are all vectorized, so variables R,F,V,A,??½ and P are 
 %		  scalar but any of them can be vector or matrix, then outputs 
 %		  will be vector or matrix of the same size.
 %		- Convention: Uz > 0 = UP, F is depth so in -Z direction.
 %		- Units should be constistent, e.g.: R, F, A, Ur and Uz in m imply
-%		  V in m3; E, ?ï¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
+%		  V in m3; E, ??½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
 %
 %	Example for a 3-D plot of exagerated deformed surface due to a 1-bar
 %	overpressure in a 10-cm radius sphere at 1-m depth in rock:
@@ -1100,7 +1100,7 @@ switch nargin
 	case 4	% MOGI(R,F,V,nu)
 		v = varargin{3};
 		nu = varargin{4};
-	case 5	% MOGI(R,F,A,?ï¿½,P)
+	case 5	% MOGI(R,F,A,??½,P)
 		a = varargin{3};
 		mu = varargin{4};
 		p = varargin{5};
