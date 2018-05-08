@@ -1068,13 +1068,14 @@ end
 %% READ RIGID BLOCK BOUNDARY PAIR
 function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM)
 % Coded by Hiroshi Kimura 2018/05/01 (ver 1.0)
+% Revised by Hiroshi Kimura 2018/05/08 (ver 1.1)
 %------------------------- Parameter file format --------------------------
-% Block_Num. Flag1 Flag2 Lat. Lon.
+% Block_Num. Flag1
 % Flag1 : If uniform internal deformation is calculated, 1, else, 0
 % If there is no description about a certain block, internal deformation is
-% calculated for the block. If% you 'do not' want to calculate internal deformation for a certain block,
-% you have to describe about the block and set FLAG1 to '0', whereas other 
-% columns shold be arbitrary value.
+% calculated for the block. If you 'do not' want to calculate internal
+% deformation for a certain block, describe the block number and set FLAG1
+% to '0'.
 % -------------------------------------------------------------------------
 BLK(1).INTERNAL=zeros(1,5);
 if exist(PRM.FileInternal,'file')~=2; return; end
