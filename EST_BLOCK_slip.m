@@ -1096,11 +1096,9 @@ IDinter=zeros(1,BLK(1).NBlock);
 for NB=1:BLK(1).NBlock
   [id,flag]=find(BLK(1).INTERNAL(:,1)==NB);
   BLK(NB).FLAGinter=0;
-  BLK(NB).LATinter=0;
-  BLK(NB).LONinter=0;
+  BLK(NB).LATinter=mean(OBS(NB).LAT);
+  BLK(NB).LONinter=mean(OBS(NB).LON);
   if (flag==1 && BLK(1).INTERNAL(id,2)==1) || flag==0
-    BLK(NB).LATinter=mean(OBS(NB).LAT);
-    BLK(NB).LONinter=mean(OBS(NB).LON);
     BLK(NB).FLAGinter=1;
   end
   [BLK(NB).Xinter,BLK(NB).Yinter]=PLTXY(OBS(NB).LAT,OBS(NB).LON,BLK(NB).LATinter,BLK(NB).LONinter);
