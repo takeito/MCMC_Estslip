@@ -1,7 +1,6 @@
 function EST_BLOCK_slip
 % Estimate BLOCK MOTION
 % Code by T.ITO 2016/03/02
-% Code by Hiroshi
 %
 warning('off','all')
 INPUT.Parfile='./PARAMETER/parameter.txt';
