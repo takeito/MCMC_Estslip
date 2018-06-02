@@ -73,8 +73,14 @@ MpScale=repmat(MpScale,Parallel,1);
 % 
 D(1).OBS=repmat(D(1).OBS,Parallel,1);
 D(1).ERR=repmat(D(1).ERR,Parallel,1);
+GPT.TB=repmat(zeros(size(G(1).TB)),Parallel,Parallel);
+GPT.C =repmat(zeros(size(G(1).C )),Parallel,Parallel);
+GPT.P =repmat(zeros(size(G(1).P )),Parallel,Parallel);
+GPT.I =repmat(zeros(size(G(1).I )),Parallel,Parallel);
+for PT=1:Parallel
+end
 G.TB=repmat(G.TB,Parallel,1);
-G.C=repmat(D.C,Parallel,1);
+G.C=repmat(G.C,Parallel,1);
 G.P=repmat(G.P,Parallel,1);
 G.I=repmat(G.I,Parallel,1);
 D(1).CFINV=repmat(D(1).CFINV,Parallel,1);
