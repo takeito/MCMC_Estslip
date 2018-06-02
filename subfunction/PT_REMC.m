@@ -54,6 +54,31 @@ MpScale=RWDSCALE*(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
 MiScale=RWDSCALE*1e-10;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
+%% Parallelization 
+Parallel=5;
+Mc.STD=repmat(Mc.STD,Parallel,1);
+Mp.STD=repmat(Mp.STD,Parallel,1);
+Mi.STD=repmat(Mi.STD,Parallel,1);
+La.STD=repmat(La.STD,Parallel,1);
+Mc.OLD=repmat(Mc.OLD,Parallel,1);
+Mp.OLD=repmat(Mp.OLD,Parallel,1);
+Mi.OLD=repmat(Mi.OLD,Parallel,1);
+La.OLD=repmat(La.OLD,Parallel,1);
+CHA.Mc=repmat(CHA.Mc,Parallel,1);
+CHA.Mp=repmat(CHA.Mp,Parallel,1);
+CHA.Mi=repmat(CHA.Mi,Parallel,1);
+CHA.La=repmat(CHA.La,Parallel,1);
+% 
+MpScale=repmat(MpScale,Parallel,1);
+% 
+D(1).OBS=repmat(D(1).OBS,Parallel,1);
+D(1).ERR=repmat(D(1).ERR,Parallel,1);
+G.TB=repmat(G.TB,Parallel,1);
+G.C=repmat(D.C,Parallel,1);
+G.P=repmat(G.P,Parallel,1);
+G.I=repmat(G.I,Parallel,1);
+D(1).CFINV=repmat(D(1).CFINV,Parallel,1);
+%% 
 LO_Mc=0;
 UP_Mc=1;
 % GPU Initialize 
@@ -67,9 +92,9 @@ if PRM.GPU~=99
            PRM.CHA,PRM.ITR,Mc.N,Mp.N,res_m./(1024.*1024.*1024));      
   fprintf(logFID,'USE GPU Max Chain=%4d Nitr=%2d Mc=%4d Mp=%3d res_Memory(GB)=%6.3f\n',...
            PRM.CHA,PRM.ITR,Mc.N,Mp.N,res_m./(1024.*1024.*1024));      
-%   CHA.Mc=gpuArray(CHA.Mc);
-%   CHA.Mp=gpuArray(CHA.Mp);
-%   CHA.La=gpuArray(CHA.La);
+  CHA.Mc=gpuArray(CHA.Mc);
+  CHA.Mp=gpuArray(CHA.Mp);
+  CHA.La=gpuArray(CHA.La);
   Mc.STD=gpuArray(Mc.STD);
   Mp.STD=gpuArray(Mp.STD);
   Mi.STD=gpuArray(Mi.STD);
@@ -100,7 +125,6 @@ end
 RT=0;
 COUNT=0;
 Burn=1;
-Parallel=5;
 %
 while not(COUNT==PRM.THR)
   RT  =RT+1;
@@ -112,23 +136,24 @@ while not(COUNT==PRM.THR)
   if PRM.GPU~=99
     logU=log(rand(PRM.CHA,1,precision,'gpuArray'));
     for PT=1:Parallel
-      rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,1,Mc.N,PRM.CHA,precision,'gpuArray');
-      rMc(PT).ch=random('Normal',0,1,Mc.N,PRM.CHA,precision,'gpuArray');
-      rMp(PT).ch=random('Normal',0,1,Mp.N,PRM.CHA,precision,'gpuArray');
-      rMi(PT).ch=random('Normal',0,1,Mi.N,PRM.CHA,precision,'gpuArray');
-      rLa(PT).ch=random('Normal',0,1,La.N,PRM.CHA,precision,'gpuArray');
+      rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision,'gpuArray');
+      rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision,'gpuArray');
+      rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA,precision,'gpuArray');
+      rLa(La.N*(PT-1)+1:La.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,La.N,PRM.CHA,precision,'gpuArray');
+      rMp(find(POL.ID).*PT,:)=0;
+      rMi(find(~BLK(1).IDinter).*PT,:)=0;
     end
   else
     logU=log(rand(PRM.CHA,1,precision));
     for PT=1:Parallel
-      rMc(PT).ch=random('Normal',0,1,Mc.N,PRM.CHA,precision);
-      rMp(PT).ch=random('Normal',0,1,Mp.N,PRM.CHA,precision);
-      rMi(PT).ch=random('Normal',0,1,Mi.N,PRM.CHA,precision);
-      rLa(PT).ch=random('Normal',0,1,La.N,PRM.CHA,precision);
+      rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision);
+      rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision);
+      rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA,precision);
+      rLa(La.N*(PT-1)+1:La.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,La.N,PRM.CHA,precision);
+      rMp(find(POL.ID).*PT,:)=0;
+      rMi(find(~BLK(1).IDinter).*PT,:)=0;
     end
   end
-  rMp(find(POL.ID),:)=0;
-  rMi(find(~BLK(1).IDinter),:)=0;
   for iT=1:PRM.CHA
 % SAMPLE SECTION
 %     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
@@ -144,8 +169,14 @@ while not(COUNT==PRM.THR)
     Mi.SMP=Mi.OLD+RWD.*MiScale.*rMi(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
 % MAKE Mc.SMPMAT
-    Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
-    Mc.SMPMAT=Mc.SMPMAT(D.MID);
+    Mc.SMPMAT=repmat(...
+             reshape(...
+             repmat(...
+             reshape(Mc.SMP,Mc.N,Parallel)...
+             ,3,1)...
+             ,Mc.N*Parallel,1)...
+             ,1,D.CNT);
+    Mc.SMPMAT=Mc.SMPMAT(repmat(D.MID,Parallel,1));
 % Calc GPU memory free capacity
     if PRM.GPU~=99
       Byte1=whos('G');
