@@ -73,16 +73,20 @@ MpScale=repmat(MpScale,Parallel,1);
 % 
 D(1).OBS=repmat(D(1).OBS,Parallel,1);
 D(1).ERR=repmat(D(1).ERR,Parallel,1);
-GPT.TB=repmat(zeros(size(G(1).TB)),Parallel,Parallel);
-GPT.C =repmat(zeros(size(G(1).C )),Parallel,Parallel);
-GPT.P =repmat(zeros(size(G(1).P )),Parallel,Parallel);
-GPT.I =repmat(zeros(size(G(1).I )),Parallel,Parallel);
+nGTB=size(G(1).TB);
+nGC =size(G(1).C );
+nGP =size(G(1).P );
+nGI =size(G(1).I );
+GPT.TB=repmat(zeros(nGTB),Parallel,Parallel);
+GPT.C =repmat(zeros(nGC ),Parallel,Parallel);
+GPT.P =repmat(zeros(nGP ),Parallel,Parallel);
+GPT.I =repmat(zeros(nGI ),Parallel,Parallel);
 for PT=1:Parallel
+  GPT.TB(nGTB(1)*(PT-1)+1:nGTB(1)*PT,nGTB(2)*(PT-1)+1:nGTB(2)*PT)=G(1).TB;
+  GPT.C(  nGC(1)*(PT-1)+1: nGC(1)*PT, nGC(2)*(PT-1)+1: nGC(2)*PT)=G(1).C;
+  GPT.P(  nGP(1)*(PT-1)+1: nGP(1)*PT, nGP(2)*(PT-1)+1: nGP(2)*PT)=G(1).P;
+  GPT.I(  nGI(1)*(PT-1)+1: nGI(1)*PT, nGI(2)*(PT-1)+1: nGI(2)*PT)=G(1).I;
 end
-G.TB=repmat(G.TB,Parallel,1);
-G.C=repmat(G.C,Parallel,1);
-G.P=repmat(G.P,Parallel,1);
-G.I=repmat(G.I,Parallel,1);
 D(1).CFINV=repmat(D(1).CFINV,Parallel,1);
 %% 
 LO_Mc=0;
