@@ -56,23 +56,26 @@ MiScale=RWDSCALE*1e-10;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
 %% Parallelization 
 Parallel=5;
-Mc.STD=repmat(Mc.STD,Parallel,1);
-Mp.STD=repmat(Mp.STD,Parallel,1);
-Mi.STD=repmat(Mi.STD,Parallel,1);
-La.STD=repmat(La.STD,Parallel,1);
-Mc.OLD=repmat(Mc.OLD,Parallel,1);
-Mp.OLD=repmat(Mp.OLD,Parallel,1);
-Mi.OLD=repmat(Mi.OLD,Parallel,1);
-La.OLD=repmat(La.OLD,Parallel,1);
-CHA.Mc=repmat(CHA.Mc,Parallel,1);
-CHA.Mp=repmat(CHA.Mp,Parallel,1);
-CHA.Mi=repmat(CHA.Mi,Parallel,1);
-CHA.La=repmat(CHA.La,Parallel,1);
+RES.OLD=repmat(RES.OLD,Parallel,1);
+Mc.STD =repmat( Mc.STD,Parallel,1);
+Mp.STD =repmat( Mp.STD,Parallel,1);
+Mi.STD =repmat( Mi.STD,Parallel,1);
+La.STD =repmat( La.STD,Parallel,1);
+Mc.OLD =repmat( Mc.OLD,Parallel,1);
+Mp.OLD =repmat( Mp.OLD,Parallel,1);
+Mi.OLD =repmat( Mi.OLD,Parallel,1);
+La.OLD =repmat( La.OLD,Parallel,1);
+CHA.Mc =repmat( CHA.Mc,Parallel,1);
+CHA.Mp =repmat( CHA.Mp,Parallel,1);
+CHA.Mi =repmat( CHA.Mi,Parallel,1);
+CHA.La =repmat( CHA.La,Parallel,1);
 % 
 MpScale=repmat(MpScale,Parallel,1);
 % 
-D(1).OBS=repmat(D(1).OBS,Parallel,1);
-D(1).ERR=repmat(D(1).ERR,Parallel,1);
+nOBS=size(D(1).OBS,1);
+DP(1).OBS=repmat(D(1).OBS,Parallel,1);
+DP(1).ERR=repmat(D(1).ERR,Parallel,1);
+PID=repmat(zeros(size(DP(1).OBS)),1,Parallel);
 nGTB=size(G(1).TB);
 nGC =size(G(1).C );
 nGP =size(G(1).P );
@@ -82,6 +85,7 @@ GPT.C =repmat(zeros(nGC ),Parallel,Parallel);
 GPT.P =repmat(zeros(nGP ),Parallel,Parallel);
 GPT.I =repmat(zeros(nGI ),Parallel,Parallel);
 for PT=1:Parallel
+  PID(nOBS*(PT-1)+1:nOBS*PT,Parallel)=1;
   GPT.TB(nGTB(1)*(PT-1)+1:nGTB(1)*PT,nGTB(2)*(PT-1)+1:nGTB(2)*PT)=G(1).TB;
   GPT.C(  nGC(1)*(PT-1)+1: nGC(1)*PT, nGC(2)*(PT-1)+1: nGC(2)*PT)=G(1).C;
   GPT.P(  nGP(1)*(PT-1)+1: nGP(1)*PT, nGP(2)*(PT-1)+1: nGP(2)*PT)=G(1).P;
@@ -205,7 +209,8 @@ while not(COUNT==PRM.THR)
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
-    RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
+    RES.SMP=sum((((D(1).OBS-CAL.SMP)./D(1).ERR).^2).*PID,1)';
+%     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 % Mc is better Zero 
 %     PRI.SMP=sum(abs(Mc.SMP),1);   
 %% MAKE Probably Density Function
@@ -214,20 +219,29 @@ while not(COUNT==PRM.THR)
 %   q1 = logproppdf(x0,y);
 %   q2 = logproppdf(y,x0);
 % this is a generic formula.
-%   rho = (q1+logpdf(y))-(q2+logpdf(x0));  
+%   rho = (q1+logpdf(y))-(q2+logpdf(x0));
     Pdf = -0.5.*...
          ((RES.SMP+La.SMP+exp(-La.SMP))...
          -(RES.OLD+La.OLD+exp(-La.OLD)));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
-    if ACC
-      Mc.OLD  = Mc.SMP;
-      Mp.OLD  = Mp.SMP;
-      Mi.OLD  = Mi.SMP;
-      La.OLD  = La.SMP;
-      RES.OLD = RES.SMP;
-%       PRI.OLD = PRI.SMP;
+    ACCID=find( ACC);
+    REJID=find(~ACC);
+    for AC=1:size(ACCID,1)
+      Mc.OLD(Mc.N*(AC-1)+1:Mc.N*AC)=Mc.SMP(Mc.N*(AC-1)+1:Mc.N*AC);
+      Mp.OLD(Mp.N*(AC-1)+1:Mp.N*AC)=Mp.SMP(Mp.N*(AC-1)+1:Mp.N*AC);
+      Mi.OLD(Mi.N*(AC-1)+1:Mi.N*AC)=Mi.SMP(Mi.N*(AC-1)+1:Mi.N*AC);
+      La.OLD(La.N*(AC-1)+1:La.N*AC)=La.SMP(La.N*(AC-1)+1:La.N*AC);
+      RES.OLD(AC)                  =                  RES.SMP(AC);
     end
+%     if ACC
+%       Mc.OLD  = Mc.SMP;
+%       Mp.OLD  = Mp.SMP;
+%       Mi.OLD  = Mi.SMP;
+%       La.OLD  = La.SMP;
+%       RES.OLD = RES.SMP;
+% %       PRI.OLD = PRI.SMP;
+%     end
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
       if PRM.GPU~=99
