@@ -197,9 +197,30 @@ while not(COUNT==PRM.THR)
              ,Mc.N*Parallel,1)...
              ,1,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(repmat(D.MID,Parallel,1));
+
+% Calc GPU memory free capacity
+    if PRM.GPU~=99
+      Byte1=whos('G');
+      Byte2=whos('Mp');
+      b=waitGPU(Byte1.bytes+Byte2.bytes);
+    end
+% CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
+    CAL.RIG=G.P*Mp.SMP;
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
+    CAL.INE=G.I*Mi.SMP;
+%     CAL.SMP=CAL.RIG+CAL.ELA;
+    CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
+    if PRM.GPU~=99
+      clear('CAL.RIG','CAL,ELA','CAL.INE');
+    end
+%   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
+%   CAL.SMP=G.P*Mp.SMP;
+% CALC RESIDUAL SECTION
+    RES.SMP=sum((((D(1).OBS-CAL.SMP)./D(1).ERR).^2).*PID,1)';
+%     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 % Replica exchange section
     EXCID=mod(iT,exFREQ);
-    if EXCID=0
+    if EXCID==0
       EXN=EXN+1;
       rMcEX1=rMc(Mc.N*(rEx(EXN)-1)+1:Mc.N* rEx(EXN)   );
       rMcEX2=rMc(Mc.N*(rEx(EXN)  )+1:Mc.N*(rEx(EXN)+1));
@@ -209,8 +230,8 @@ while not(COUNT==PRM.THR)
       rMiEX2=rMi(Mi.N*(rEx(EXN)  )+1:Mi.N*(rEx(EXN)+1));
       rLaEX1=rLa(La.N*(rEx(EXN)-1)+1:La.N* rEx(EXN)   );
       rLaEX2=rLa(La.N*(rEx(EXN)  )+1:La.N*(rEx(EXN)+1));
-      LaSTDEX1=La.STD(rEX(EXN)-1);
-      LaSTDEX2=La.STD(rEX(EXN)  );
+      LaSTDEX1=La.STD(rEX(EXN)  );
+      LaSTDEX2=La.STD(rEX(EXN)+1);
       rMcEX=rMc(:,iT);
       rMpEX=rMp(:,iT);
       rMiEX=rMi(:,iT);
@@ -224,8 +245,8 @@ while not(COUNT==PRM.THR)
       rMiEX(Mi.N*(rEx(EXN)  )+1:Mi.N*(rEx(EXN)+1))=rMiEX2;
       rLaEX(La.N*(rEx(EXN)-1)+1:La.N* rEx(EXN)   )=rLaEX1;
       rLaEX(La.N*(rEx(EXN)  )+1:La.N*(rEx(EXN)+1))=rLaEX2;
-      LaEX.STD(rEX(EXN)-1)=LaSTDEX1;
-      LaEX.STD(rEX(EXN)  )=LaSTDEX2;
+      LaEX.STD(rEX(EXN)  )=LaSTDEX1;
+      LaEX.STD(rEX(EXN)+1)=LaSTDEX2;
 % Exchanged sample      
       McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMcEX(:,iT);
       McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
@@ -249,27 +270,14 @@ while not(COUNT==PRM.THR)
       if PRM.GPU~=99
           clear('CALEX.RIG','CALEX,ELA','CALEX.INE');
       end
+      RES.EXSMP=sum((((D(1).OBS-CALEX.SMP)./D(1).ERR).^2).*PID,1)';
+      EXPdf = -0.5.*...
+            ((RES.EXSMP(rEx(EXN)  )+LaEX.SMP(rEx(EXN)  )+exp(-LaEX.SMP(rEx(EXN)  ))...
+             +RES.EXSMP(rEx(EXN)+1)+LaEX.SMP(rEx(EXN)+1)+exp(-LaEX.SMP(rEx(EXN)+1)))...
+            -(RES.SMP(rEx(EXN)  )+La.SMP(rEx(EXN)  )+exp(-La.SMP(rEx(EXN)  ))...
+             +RES.SMP(rEx(EXN)+1)+La.SMP(rEx(EXN)+1)+exp(-La.SMP(rEx(EXN)+1))));
+      
     end
-% Calc GPU memory free capacity
-    if PRM.GPU~=99
-      Byte1=whos('G');
-      Byte2=whos('Mp');
-      b=waitGPU(Byte1.bytes+Byte2.bytes);
-    end
-% CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-    CAL.INE=G.I*Mi.SMP;
-%     CAL.SMP=CAL.RIG+CAL.ELA;
-    CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
-    if PRM.GPU~=99
-      clear('CAL.RIG','CAL,ELA','CAL.INE');
-    end
-%   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
-%   CAL.SMP=G.P*Mp.SMP;
-% CALC RESIDUAL SECTION
-    RES.SMP=sum((((D(1).OBS-CAL.SMP)./D(1).ERR).^2).*PID,1)';
-%     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 % Mc is better Zero 
 %     PRI.SMP=sum(abs(Mc.SMP),1);   
 %% MAKE Probably Density Function
