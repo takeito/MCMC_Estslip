@@ -1,5 +1,5 @@
 %% Compress CHA sampling
-function COMPRESS_DATA(CHA,PRM,ITR,NACC)
+function COMPRESS_DATA(CHA,PRM,ITR,NACC,Parallel)
 % Compressing CHA sampled parameter to int8
 % 
 CHA.Mc=single(CHA.Mc);

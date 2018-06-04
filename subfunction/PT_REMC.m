@@ -2,7 +2,6 @@
 function [CHA]=PT_REMC(D,G,BLK,PRM,OBS,POL)
 % Coded by H. Kimura 2018/06/02 (Original is MH_MCMC coded by T. Ito)
 % Replica change Monte Calro (Parallel tempering) method
-% Refering Kano et al. (2017); Earl & Deem (2005); Swendsen & Wang (1986).
 logfile=fullfile(PRM.DirResult,'log.txt');
 logFID=fopen(logfile,'a');
 RR=(D(1).OBS./D(1).ERR)'*(D(1).OBS./D(1).ERR);
@@ -153,24 +152,24 @@ while not(COUNT==PRM.THR)
   rLa=zeros(Parallel*La.M,PRM.CHA);
   if PRM.GPU~=99
     logU =log(rand(PRM.CHA,1,precision,'gpuArray'));
-    logEX=log(rand(Ex.N,1,precision,'gpuArray'));
+    logEX=log(rand(   Ex.N,1,precision,'gpuArray'));
     for PT=1:Parallel
       rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision,'gpuArray');
       rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision,'gpuArray');
       rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA,precision,'gpuArray');
       rLa(La.N*(PT-1)+1:La.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,La.N,PRM.CHA,precision,'gpuArray');
-      rMp(find(POL.ID).*PT,:)=0;
+      rMp(         find(POL.ID).*PT,:)=0;
       rMi(find(~BLK(1).IDinter).*PT,:)=0;
     end
   else
     logU =log(rand(PRM.CHA,1,precision));
-    logEX=log(rand(Ex.N,1,precision));
+    logEX=log(rand(   Ex.N,1,precision));
     for PT=1:Parallel
       rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision);
       rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision);
       rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA,precision);
       rLa(La.N*(PT-1)+1:La.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,La.N,PRM.CHA,precision);
-      rMp(find(POL.ID).*PT,:)=0;
+      rMp(         find(POL.ID).*PT,:)=0;
       rMi(find(~BLK(1).IDinter).*PT,:)=0;
     end
   end
@@ -199,7 +198,6 @@ while not(COUNT==PRM.THR)
              ,Mc.N*Parallel,1)...
              ,1,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(repmat(D.MID,Parallel,1));
-
 % Calc GPU memory free capacity
     if PRM.GPU~=99
       Byte1=whos('G');
@@ -276,9 +274,9 @@ while not(COUNT==PRM.THR)
       EXPdf = -0.5.*...
             ((RES.EXSMP(rEx(EXN)  )+LaEX.SMP(rEx(EXN)  )+exp(-LaEX.SMP(rEx(EXN)  ))...
              +RES.EXSMP(rEx(EXN)+1)+LaEX.SMP(rEx(EXN)+1)+exp(-LaEX.SMP(rEx(EXN)+1)))...
-            -(RES.SMP(rEx(EXN)  )+La.SMP(rEx(EXN)  )+exp(-La.SMP(rEx(EXN)  ))...
-             +RES.SMP(rEx(EXN)+1)+La.SMP(rEx(EXN)+1)+exp(-La.SMP(rEx(EXN)+1))));
-      ACEX=PDF > logEX(EXN);
+            -(RES.SMP(  rEx(EXN)  )+La.SMP(  rEx(EXN)  )+exp(-La.SMP(  rEx(EXN)  ))...
+             +RES.SMP(  rEx(EXN)+1)+La.SMP(  rEx(EXN)+1)+exp(-La.SMP(  rEx(EXN)+1))));
+      ACEX=EXPdf > logEX(EXN);
       if ACEX
         Mc.SMP=McEX.SMP;
         Mp.SMP=MpEX.SMP;
@@ -302,22 +300,13 @@ while not(COUNT==PRM.THR)
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
     ACCID=find( ACC);
-    REJID=find(~ACC);
     for AC=1:size(ACCID,1)
       Mc.OLD(Mc.N*(AC-1)+1:Mc.N*AC)=Mc.SMP(Mc.N*(AC-1)+1:Mc.N*AC);
       Mp.OLD(Mp.N*(AC-1)+1:Mp.N*AC)=Mp.SMP(Mp.N*(AC-1)+1:Mp.N*AC);
       Mi.OLD(Mi.N*(AC-1)+1:Mi.N*AC)=Mi.SMP(Mi.N*(AC-1)+1:Mi.N*AC);
       La.OLD(La.N*(AC-1)+1:La.N*AC)=La.SMP(La.N*(AC-1)+1:La.N*AC);
-      RES.OLD(AC)                  =                  RES.SMP(AC);
+      RES.OLD(AC)=RES.SMP(AC);
     end
-%     if ACC
-%       Mc.OLD  = Mc.SMP;
-%       Mp.OLD  = Mp.SMP;
-%       Mi.OLD  = Mi.SMP;
-%       La.OLD  = La.SMP;
-%       RES.OLD = RES.SMP;
-% %       PRI.OLD = PRI.SMP;
-%     end
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
       if PRM.GPU~=99
@@ -334,7 +323,7 @@ while not(COUNT==PRM.THR)
       if ACC; NACC=NACC+1; end;
     end
   end
-  COMPRESS_DATA(CHA,PRM,RT,NACC);
+  COMPRESS_DATA(CHA,PRM,RT,NACC,Parallel);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -375,15 +364,6 @@ while not(COUNT==PRM.THR)
       Burn=0;
     end
   end
-%   if CHA.AJR > 0.24
-%     RWD=RWD*1.1;
-%     COUNT=0;
-%   elseif CHA.AJR < 0.22
-%     RWD=RWD*0.9;
-%     COUNT=0;
-%   else
-%     COUNT=COUNT+1;
-%   end
   CHA.SMP=CAL.SMP;
   % debug-----------
   Mpmean=mean(CHA.Mp,2);
