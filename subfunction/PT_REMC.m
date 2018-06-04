@@ -14,6 +14,10 @@ fprintf(logFID,'Residual=%9.3f \n',RR);
 %   precision='single';
 % end
 precision='double';
+% Parallel=PRM.NCH;
+Parallel=5;
+% exFREQ=PRM.EXF;
+exFREQ=100;
 RWD=PRM.RWD;
 Mc.INT=1e-2;
 Mp.INT=1e-10;
@@ -23,6 +27,7 @@ Mc.N=BLK(1).NB;
 Mp.N=3.*BLK(1).NBlock;
 Mi.N=3.*BLK(1).NBlock;
 La.N=1;
+Ex.N=floor(PRM.CHA/exFREQ);
 Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
 Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
 Mi.STD=Mi.INT.*ones(Mi.N,1,precision);
@@ -55,7 +60,6 @@ MiScale=RWDSCALE*1e-10;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
 %% Parallelization 
-Parallel=5;
 RES.OLD=repmat(RES.OLD,Parallel,1);
 Mc.STD =repmat( Mc.STD,Parallel,1);
 Mp.STD =repmat( Mp.STD,Parallel,1);
@@ -168,6 +172,8 @@ while not(COUNT==PRM.THR)
       rMi(find(~BLK(1).IDinter).*PT,:)=0;
     end
   end
+  rEx=floor(4*rand(Ex.N,1));
+  EXN=0;
   for iT=1:PRM.CHA
 % SAMPLE SECTION
 %     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
@@ -191,6 +197,59 @@ while not(COUNT==PRM.THR)
              ,Mc.N*Parallel,1)...
              ,1,D.CNT);
     Mc.SMPMAT=Mc.SMPMAT(repmat(D.MID,Parallel,1));
+% Replica exchange section
+    EXCID=mod(iT,exFREQ);
+    if EXCID=0
+      EXN=EXN+1;
+      rMcEX1=rMc(Mc.N*(rEx(EXN)-1)+1:Mc.N* rEx(EXN)   );
+      rMcEX2=rMc(Mc.N*(rEx(EXN)  )+1:Mc.N*(rEx(EXN)+1));
+      rMpEX1=rMp(Mp.N*(rEx(EXN)-1)+1:Mp.N* rEx(EXN)   );
+      rMpEX2=rMp(Mp.N*(rEx(EXN)  )+1:Mp.N*(rEx(EXN)+1));
+      rMiEX1=rMi(Mi.N*(rEx(EXN)-1)+1:Mi.N* rEx(EXN)   );
+      rMiEX2=rMi(Mi.N*(rEx(EXN)  )+1:Mi.N*(rEx(EXN)+1));
+      rLaEX1=rLa(La.N*(rEx(EXN)-1)+1:La.N* rEx(EXN)   );
+      rLaEX2=rLa(La.N*(rEx(EXN)  )+1:La.N*(rEx(EXN)+1));
+      LaSTDEX1=La.STD(rEX(EXN)-1);
+      LaSTDEX2=La.STD(rEX(EXN)  );
+      rMcEX=rMc(:,iT);
+      rMpEX=rMp(:,iT);
+      rMiEX=rMi(:,iT);
+      rLaEX=rLa(:,iT);
+      LaEX.STD=La.STD;
+      rMcEX(Mc.N*(rEx(EXN)-1)+1:Mc.N* rEx(EXN)   )=rMcEX1;
+      rMcEX(Mc.N*(rEx(EXN)  )+1:Mc.N*(rEx(EXN)+1))=rMcEX2;
+      rMpEX(Mp.N*(rEx(EXN)-1)+1:Mp.N* rEx(EXN)   )=rMpEX1;
+      rMpEX(Mp.N*(rEx(EXN)  )+1:Mp.N*(rEx(EXN)+1))=rMpEX2;
+      rMiEX(Mi.N*(rEx(EXN)-1)+1:Mi.N* rEx(EXN)   )=rMiEX1;
+      rMiEX(Mi.N*(rEx(EXN)  )+1:Mi.N*(rEx(EXN)+1))=rMiEX2;
+      rLaEX(La.N*(rEx(EXN)-1)+1:La.N* rEx(EXN)   )=rLaEX1;
+      rLaEX(La.N*(rEx(EXN)  )+1:La.N*(rEx(EXN)+1))=rLaEX2;
+      LaEX.STD(rEX(EXN)-1)=LaSTDEX1;
+      LaEX.STD(rEX(EXN)  )=LaSTDEX2;
+% Exchanged sample      
+      McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMcEX(:,iT);
+      McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
+      McTMP(McREJID)=Mc.OLD(McREJID);
+      McEX.SMP=McTMP;
+      MpEX.SMP=Mp.OLD+RWD.*MpScale.*rMpEX(:,iT);
+      MiEX.SMP=Mi.OLD+RWD.*MiScale.*rMiEX(:,iT);
+      LaEX.SMP=La.OLD+RWD.*LaEX.STD.*rLaEX(:,iT);
+      McEX.SMPMAT=repmat(...
+          reshape(...
+          repmat(...
+          reshape(McEX.SMP,Mc.N,Parallel)...
+          ,3,1)...
+          ,Mc.N*Parallel,1)...
+          ,1,D.CNT);
+      Mc.SMPMAT=Mc.SMPMAT(repmat(D.MID,Parallel,1));
+      CALEX.RIG=G.P*MpEX.SMP;
+      CALEX.ELA=G.C*((G.TB*MpEX.SMP).*D(1).CFINV.*McEX.SMPMAT);
+      CALEX.INE=G.I*MiEX.SMP;
+      CALEX.SMP=CALEX.RIG+CALEX.ELA+CALEX.INE;
+      if PRM.GPU~=99
+          clear('CALEX.RIG','CALEX,ELA','CALEX.INE');
+      end
+    end
 % Calc GPU memory free capacity
     if PRM.GPU~=99
       Byte1=whos('G');
