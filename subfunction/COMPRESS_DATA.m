@@ -1,5 +1,5 @@
 %% Compress CHA sampling
-function COMPRESS_DATA(CHA,PRM,ITR,NACC,Parallel)
+function COMPRESS_DATA(CHA,PRM,ITR,NACC,NREP)
 % Compressing CHA sampled parameter to int8
 % 
 CHA.Mc=single(CHA.Mc);
@@ -81,6 +81,7 @@ cha.MiCOMPRESS.MEANMi=MEANMi;
 cha.MiCOMPRESS.SMPMi=int8(MiBASE);
 % 
 cha.AJR=NACC./PRM.CHA;
+cha.NREP=NREP;
 save(fullfile(PRM.DirResult,['CHA_test',num2str(ITR,'%03i')]),'cha','-v7.3');
 % save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
 % 
