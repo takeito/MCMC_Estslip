@@ -152,7 +152,8 @@ while not(COUNT==PRM.THR)
   rMi=zeros(Parallel*Mi.M,PRM.CHA);
   rLa=zeros(Parallel*La.M,PRM.CHA);
   if PRM.GPU~=99
-    logU=log(rand(PRM.CHA,1,precision,'gpuArray'));
+    logU =log(rand(PRM.CHA,1,precision,'gpuArray'));
+    logEX=log(rand(Ex.N,1,precision,'gpuArray'));
     for PT=1:Parallel
       rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision,'gpuArray');
       rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision,'gpuArray');
@@ -162,7 +163,8 @@ while not(COUNT==PRM.THR)
       rMi(find(~BLK(1).IDinter).*PT,:)=0;
     end
   else
-    logU=log(rand(PRM.CHA,1,precision));
+    logU =log(rand(PRM.CHA,1,precision));
+    logEX=log(rand(Ex.N,1,precision));
     for PT=1:Parallel
       rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision);
       rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision);
@@ -276,7 +278,14 @@ while not(COUNT==PRM.THR)
              +RES.EXSMP(rEx(EXN)+1)+LaEX.SMP(rEx(EXN)+1)+exp(-LaEX.SMP(rEx(EXN)+1)))...
             -(RES.SMP(rEx(EXN)  )+La.SMP(rEx(EXN)  )+exp(-La.SMP(rEx(EXN)  ))...
              +RES.SMP(rEx(EXN)+1)+La.SMP(rEx(EXN)+1)+exp(-La.SMP(rEx(EXN)+1))));
-      
+      ACEX=PDF > logEX(EXN);
+      if ACEX
+        Mc.SMP=McEX.SMP;
+        Mp.SMP=MpEX.SMP;
+        Mi.SMP=MiEX.SMP;
+        La.SMP=LaEX.SMP;
+        RES.SMP=RES.EXSMP;
+      end
     end
 % Mc is better Zero 
 %     PRI.SMP=sum(abs(Mc.SMP),1);   
