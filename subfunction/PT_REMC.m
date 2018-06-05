@@ -13,8 +13,8 @@ fprintf(logFID,'Residual=%9.3f \n',RR);
 %   precision='single';
 % end
 precision='double';
-% Parallel=PRM.NCH;
-Parallel=5;
+% NReplica=PRM.NCH;
+NReplica=5;
 % exFREQ=PRM.EXF;
 exFREQ=100;
 RWD=PRM.RWD;
@@ -59,42 +59,43 @@ MiScale=RWDSCALE*1e-10;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
 %% Parallelization 
-RES.OLD=repmat(RES.OLD,Parallel,1);
-Mc.STD =repmat( Mc.STD,Parallel,1);
-Mp.STD =repmat( Mp.STD,Parallel,1);
-Mi.STD =repmat( Mi.STD,Parallel,1);
-La.STD =repmat( La.STD,Parallel,1);
-Mc.OLD =repmat( Mc.OLD,Parallel,1);
-Mp.OLD =repmat( Mp.OLD,Parallel,1);
-Mi.OLD =repmat( Mi.OLD,Parallel,1);
-La.OLD =repmat( La.OLD,Parallel,1);
-CHA.Mc =repmat( CHA.Mc,Parallel,1);
-CHA.Mp =repmat( CHA.Mp,Parallel,1);
-CHA.Mi =repmat( CHA.Mi,Parallel,1);
-CHA.La =repmat( CHA.La,Parallel,1);
+RES.OLD=repmat(RES.OLD,NReplica,1);
+Mc.STD =repmat( Mc.STD,NReplica,1);
+Mp.STD =repmat( Mp.STD,NReplica,1);
+Mi.STD =repmat( Mi.STD,NReplica,1);
+La.STD =repmat( La.STD,NReplica,1);
+Mc.OLD =repmat( Mc.OLD,NReplica,1);
+Mp.OLD =repmat( Mp.OLD,NReplica,1);
+Mi.OLD =repmat( Mi.OLD,NReplica,1);
+La.OLD =repmat( La.OLD,NReplica,1);
+CHA.Mc =repmat( CHA.Mc,NReplica,1);
+CHA.Mp =repmat( CHA.Mp,NReplica,1);
+CHA.Mi =repmat( CHA.Mi,NReplica,1);
+CHA.La =repmat( CHA.La,NReplica,1);
 % 
-MpScale=repmat(MpScale,Parallel,1);
+MpScale=repmat(MpScale,NReplica,1);
 % 
 nOBS=size(D(1).OBS,1);
-DP(1).OBS=repmat(D(1).OBS,Parallel,1);
-DP(1).ERR=repmat(D(1).ERR,Parallel,1);
-PID=repmat(zeros(size(DP(1).OBS)),1,Parallel);
+DPT(1).OBS=repmat(D(1).OBS,NReplica,1);
+DPT(1).ERR=repmat(D(1).ERR,NReplica,1);
+PID=repmat(zeros(size(DPT(1).OBS)),1,NReplica);
 nGTB=size(G(1).TB);
 nGC =size(G(1).C );
 nGP =size(G(1).P );
 nGI =size(G(1).I );
-GPT.TB=repmat(zeros(nGTB),Parallel,Parallel);
-GPT.C =repmat(zeros(nGC ),Parallel,Parallel);
-GPT.P =repmat(zeros(nGP ),Parallel,Parallel);
-GPT.I =repmat(zeros(nGI ),Parallel,Parallel);
-for PT=1:Parallel
-  PID(nOBS*(PT-1)+1:nOBS*PT,Parallel)=1;
+GPT.TB=repmat(zeros(nGTB),NReplica,NReplica);
+GPT.C =repmat(zeros(nGC ),NReplica,NReplica);
+GPT.P =repmat(zeros(nGP ),NReplica,NReplica);
+GPT.I =repmat(zeros(nGI ),NReplica,NReplica);
+for PT=1:NReplica
+  PID(nOBS*(PT-1)+1:nOBS*PT,NReplica)=1;
   GPT.TB(nGTB(1)*(PT-1)+1:nGTB(1)*PT,nGTB(2)*(PT-1)+1:nGTB(2)*PT)=G(1).TB;
   GPT.C(  nGC(1)*(PT-1)+1: nGC(1)*PT, nGC(2)*(PT-1)+1: nGC(2)*PT)=G(1).C;
   GPT.P(  nGP(1)*(PT-1)+1: nGP(1)*PT, nGP(2)*(PT-1)+1: nGP(2)*PT)=G(1).P;
   GPT.I(  nGI(1)*(PT-1)+1: nGI(1)*PT, nGI(2)*(PT-1)+1: nGI(2)*PT)=G(1).I;
 end
-D(1).CFINV=repmat(D(1).CFINV,Parallel,1);
+DPT.MID=repmat(D(1).MID,1,NReplica);
+DPT.CFINV=repmat(D(1).CFINV,NReplica,1);
 %% 
 LO_Mc=0;
 UP_Mc=1;
@@ -120,13 +121,13 @@ if PRM.GPU~=99
   Mp.OLD=gpuArray(Mp.OLD);
   Mi.OLD=gpuArray(Mi.OLD);
   La.OLD=gpuArray(La.OLD);
-  D(1).OBS=gpuArray(D(1).OBS);
-  D(1).ERR=gpuArray(D(1).ERR);
-  G.TB=gpuArray(G.TB);
-  G.C=gpuArray(G.C);
-  G.P=gpuArray(G.P);
-  G.I=gpuArray(G.I);
-  D(1).CFINV=gpuArray(D(1).CFINV);
+  DPT(1).OBS=gpuArray(DPT(1).OBS);
+  DPT(1).ERR=gpuArray(DPT(1).ERR);
+  GPT.TB=gpuArray(GPT.TB);
+  GPT.C=gpuArray(GPT.C);
+  GPT.P=gpuArray(GPT.P);
+  GPT.I=gpuArray(GPT.I);
+  DPT(1).CFINV=gpuArray(DPT(1).CFINV);
   McScale=gpuArray(McScale);
   MpScale=gpuArray(MpScale);
   LO_Mc=gpuArray(LO_Mc);
@@ -146,14 +147,14 @@ Burn=1;
 while not(COUNT==PRM.THR)
   RT  =RT+1;
   NACC=0;tic
-  rMc=zeros(Parallel*Mc.M,PRM.CHA);
-  rMp=zeros(Parallel*Mp.M,PRM.CHA);
-  rMi=zeros(Parallel*Mi.M,PRM.CHA);
-  rLa=zeros(Parallel*La.M,PRM.CHA);
+  rMc=zeros(NReplica*Mc.M,PRM.CHA);
+  rMp=zeros(NReplica*Mp.M,PRM.CHA);
+  rMi=zeros(NReplica*Mi.M,PRM.CHA);
+  rLa=zeros(NReplica*La.M,PRM.CHA);
   if PRM.GPU~=99
     logU =log(rand(PRM.CHA,1,precision,'gpuArray'));
     logEX=log(rand(   Ex.N,1,precision,'gpuArray'));
-    for PT=1:Parallel
+    for PT=1:NReplica
       rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision,'gpuArray');
       rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision,'gpuArray');
       rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA,precision,'gpuArray');
@@ -164,7 +165,7 @@ while not(COUNT==PRM.THR)
   else
     logU =log(rand(PRM.CHA,1,precision));
     logEX=log(rand(   Ex.N,1,precision));
-    for PT=1:Parallel
+    for PT=1:NReplica
       rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA,precision);
       rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA,precision);
       rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA,precision);
@@ -188,16 +189,16 @@ while not(COUNT==PRM.THR)
 %     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
     Mi.SMP=Mi.OLD+RWD.*MiScale.*rMi(:,iT);
-    La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
+    La.SMP=La.OLD+RWD.*La.STD .*rLa(:,iT);
 % MAKE Mc.SMPMAT
-    Mc.SMPMAT=repmat(...
-             reshape(...
-             repmat(...
-             reshape(Mc.SMP,Mc.N,Parallel)...
-             ,3,1)...
-             ,Mc.N*Parallel,1)...
-             ,1,D.CNT);
-    Mc.SMPMAT=Mc.SMPMAT(repmat(D.MID,Parallel,1));
+%     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
+%     Mc.SMPMAT=Mc.SMPMAT(D.MID);
+    Mc.SMPMAT=reshape(...
+               repmat(...
+              reshape(Mc.SMP,Mc.N,NReplica)...
+                                ,3*D.CNT,1)...
+                    ,3*Mc.N,D.CNT*NReplica);
+    Mc.SMPMAT=Mc.SMPMAT(DPT.MID);
 % Calc GPU memory free capacity
     if PRM.GPU~=99
       Byte1=whos('G');
@@ -205,9 +206,9 @@ while not(COUNT==PRM.THR)
       b=waitGPU(Byte1.bytes+Byte2.bytes);
     end
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-    CAL.INE=G.I*Mi.SMP;
+    CAL.RIG=GPT.P*Mp.SMP;
+    CAL.ELA=GPT.C*((GPT.TB*Mp.SMP).*DPT(1).CFINV.*Mc.SMPMAT);
+    CAL.INE=GPT.I*Mi.SMP;
 %     CAL.SMP=CAL.RIG+CAL.ELA;
     CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
     if PRM.GPU~=99
@@ -216,7 +217,7 @@ while not(COUNT==PRM.THR)
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
-    RES.SMP=sum((((D(1).OBS-CAL.SMP)./D(1).ERR).^2).*PID,1)';
+    RES.SMP=sum((((DPT(1).OBS-CAL.SMP)./DPT(1).ERR).^2).*PID,1)';
 %     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
 % Replica exchange section
     EXCID=mod(iT,exFREQ);
@@ -247,7 +248,7 @@ while not(COUNT==PRM.THR)
       rLaEX(La.N*(rEx(EXN)  )+1:La.N*(rEx(EXN)+1))=rLaEX2;
       LaEX.STD(rEX(EXN)  )=LaSTDEX1;
       LaEX.STD(rEX(EXN)+1)=LaSTDEX2;
-% Exchanged sample      
+      % Exchanged sample
       McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMcEX(:,iT);
       McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
       McTMP(McREJID)=Mc.OLD(McREJID);
@@ -255,22 +256,20 @@ while not(COUNT==PRM.THR)
       MpEX.SMP=Mp.OLD+RWD.*MpScale.*rMpEX(:,iT);
       MiEX.SMP=Mi.OLD+RWD.*MiScale.*rMiEX(:,iT);
       LaEX.SMP=La.OLD+RWD.*LaEX.STD.*rLaEX(:,iT);
-      McEX.SMPMAT=repmat(...
-          reshape(...
-          repmat(...
-          reshape(McEX.SMP,Mc.N,Parallel)...
-          ,3,1)...
-          ,Mc.N*Parallel,1)...
-          ,1,D.CNT);
-      Mc.SMPMAT=Mc.SMPMAT(repmat(D.MID,Parallel,1));
-      CALEX.RIG=G.P*MpEX.SMP;
-      CALEX.ELA=G.C*((G.TB*MpEX.SMP).*D(1).CFINV.*McEX.SMPMAT);
-      CALEX.INE=G.I*MiEX.SMP;
+      McEX.SMPMAT=reshape(...
+                   repmat(...
+                  reshape(Mc.SMP,Mc.N,NReplica)...
+                                    ,3*D.CNT,1)...
+                        ,3*Mc.N,D.CNT*NReplica);
+      McEX.SMPMAT=Mc.SMPMAT(DPT.MID);
+      CALEX.RIG=GPT.P*MpEX.SMP;
+      CALEX.ELA=GPT.C*((GPT.TB*MpEX.SMP).*DPT(1).CFINV.*McEX.SMPMAT);
+      CALEX.INE=GPT.I*MiEX.SMP;
       CALEX.SMP=CALEX.RIG+CALEX.ELA+CALEX.INE;
       if PRM.GPU~=99
           clear('CALEX.RIG','CALEX,ELA','CALEX.INE');
       end
-      RES.EXSMP=sum((((D(1).OBS-CALEX.SMP)./D(1).ERR).^2).*PID,1)';
+      RES.EXSMP=sum((((DPT(1).OBS-CALEX.SMP)./DPT(1).ERR).^2).*PID,1)';
       EXPdf = -0.5.*...
             ((RES.EXSMP(rEx(EXN)  )+LaEX.SMP(rEx(EXN)  )+exp(-LaEX.SMP(rEx(EXN)  ))...
              +RES.EXSMP(rEx(EXN)+1)+LaEX.SMP(rEx(EXN)+1)+exp(-LaEX.SMP(rEx(EXN)+1)))...
@@ -320,10 +319,10 @@ while not(COUNT==PRM.THR)
         CHA.Mi(:,iT-(PRM.CHA-PRM.KEP))=Mi.SMP;
         CHA.La(:,iT-(PRM.CHA-PRM.KEP))=La.SMP;
       end
-      if ACC; NACC=NACC+1; end;
+      if ACC(1); NACC=NACC+1; end
     end
   end
-  COMPRESS_DATA(CHA,PRM,RT,NACC,Parallel);
+  COMPRESS_DATA(CHA,PRM,RT,NACC,NReplica);
 %
   CHA.AJR=NACC./PRM.CHA;
 %
@@ -370,9 +369,9 @@ while not(COUNT==PRM.THR)
   Mcmean=mean(CHA.Mc,2);
   Mimean=mean(CHA.Mi,2);
   Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
-  VEC.RIG=G.P*Mpmean;
-  VEC.ELA=G.C*((G.TB*Mpmean).*D(1).CFINV.*Mcmeanrep);
-  VEC.INE=G.I*Mimean;
+  VEC.RIG=GPT.P*Mpmean;
+  VEC.ELA=GPT.C*((GPT.TB*Mpmean).*DPT(1).CFINV.*Mcmeanrep);
+  VEC.INE=GPT.I*Mimean;
 %   VEC.SUM=VEC.RIG+VEC.ELA;
   VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
