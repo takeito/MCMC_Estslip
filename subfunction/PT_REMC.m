@@ -386,7 +386,7 @@ while not(COUNT==PRM.THR)
   else
     MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mimean)
   end
-  if RT > PRM.ITR; break; end;
+  if RT > PRM.ITR; break; end
 end
 if PRM.GPU~=99
   CHA.Mc=gather(CHA.Mc);
