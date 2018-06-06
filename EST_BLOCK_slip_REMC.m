@@ -3,7 +3,7 @@ function EST_BLOCK_slip_REMC
 % Code by T.ITO 2016/03/02
 %
 warning('off','all')
-INPUT.Parfile='./PARAMETER/parameter.txt';
+INPUT.Parfile='./PARAMETER/parameter_REMC.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
@@ -295,6 +295,10 @@ PRM.CHA=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
 PRM.KEP=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
+PRM.NRP=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
+PRM.EXF=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
 PRM.RWD=fscanf(Fid,'%f \n',[1,1]);
 fclose(Fid);
 %====================================================
@@ -318,6 +322,8 @@ fprintf('ITR(Max_Nitr)            : %i \n',PRM.ITR)
 fprintf('ITR(Threshold_Nitr)      : %i \n',PRM.THR) 
 fprintf('CHA(Chain)               : %i \n',PRM.CHA) 
 fprintf('KEP(KEEP)                : %i \n',PRM.KEP) 
+fprintf('NRP(Replica)             : %i \n',PRM.NRP) 
+fprintf('EXF(Exchanging frequency): %i \n',PRM.EXF) 
 fprintf('RWD(Walk_dis)            : %4.2f \n',PRM.RWD) 
 fprintf('==================\n') 
 %====================================================
@@ -436,10 +442,8 @@ fprintf(logFID,'Residual=%9.3f \n',RR);
 %   precision='single';
 % end
 precision='double';
-% NReplica=PRM.NCH;
-NReplica=5;
-% exFREQ=PRM.EXF;
-exFREQ=100;
+NReplica=PRM.NRP;
+exFREQ=PRM.EXF;
 RWD=PRM.RWD;
 Mc.INT=1e-2;
 Mp.INT=1e-10;
