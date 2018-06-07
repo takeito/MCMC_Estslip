@@ -3,7 +3,7 @@ function EST_BLOCK_slip_REMC
 % Code by T.ITO 2016/03/02
 %
 warning('off','all')
-INPUT.Parfile='./PARAMETER/parameter_REMC.txt';
+INPUT.Parfile='./PARAMETER/parameterREMC.txt';
 INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 % READ PARAMETER FOR MCMC Inversion 
 [PRM]=READ_PARAMETERS(INPUT);
@@ -486,19 +486,19 @@ MiScale=RWDSCALE*1e-10;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
 %% Parallelization 
-RES.OLD=repmat(RES.OLD,NReplica,1);
-Mc.STD =repmat( Mc.STD,NReplica,1);
-Mp.STD =repmat( Mp.STD,NReplica,1);
-Mi.STD =repmat( Mi.STD,NReplica,1);
-La.STD =repmat( La.STD,NReplica,1);
-Mc.OLD =repmat( Mc.OLD,NReplica,1);
-Mp.OLD =repmat( Mp.OLD,NReplica,1);
-Mi.OLD =repmat( Mi.OLD,NReplica,1);
-La.OLD =repmat( La.OLD,NReplica,1);
-CHA.Mc =repmat( CHA.Mc,NReplica,1);
-CHA.Mp =repmat( CHA.Mp,NReplica,1);
-CHA.Mi =repmat( CHA.Mi,NReplica,1);
-CHA.La =repmat( CHA.La,NReplica,1);
+RES.OLD = repmat(RES.OLD,NReplica,1);
+Mc.STD  = repmat( Mc.STD,NReplica,1);
+Mp.STD  = repmat( Mp.STD,NReplica,1);
+Mi.STD  = repmat( Mi.STD,NReplica,1);
+La.STD  = repmat( La.STD,NReplica,1);
+Mc.OLD  = repmat( Mc.OLD,NReplica,1);
+Mp.OLD  = repmat( Mp.OLD,NReplica,1);
+Mi.OLD  = repmat( Mi.OLD,NReplica,1);
+La.OLD  = repmat( La.OLD,NReplica,1);
+CHA.Mc  = repmat( CHA.Mc,NReplica,1);
+CHA.Mp  = repmat( CHA.Mp,NReplica,1);
+CHA.Mi  = repmat( CHA.Mi,NReplica,1);
+CHA.La  = repmat( CHA.La,NReplica,1);
 % 
 MpScale=repmat(MpScale,NReplica,1);
 % 
@@ -506,14 +506,14 @@ nOBS=size(D(1).OBS,1);
 DPT(1).OBS=repmat(D(1).OBS,NReplica,1);
 DPT(1).ERR=repmat(D(1).ERR,NReplica,1);
 PID=repmat(zeros(size(DPT(1).OBS)),1,NReplica);
-nGTB=size(G(1).TB);
-nGC =size(G(1).C );
-nGP =size(G(1).P );
-nGI =size(G(1).I );
-GPT.TB=repmat(zeros(nGTB),NReplica,NReplica);
-GPT.C =repmat(zeros(nGC ),NReplica,NReplica);
-GPT.P =repmat(zeros(nGP ),NReplica,NReplica);
-GPT.I =repmat(zeros(nGI ),NReplica,NReplica);
+nGTB = size(G(1).TB);
+nGC  = size(G(1).C );
+nGP  = size(G(1).P );
+nGI  = size(G(1).I );
+GPT.TB = repmat(zeros(nGTB),NReplica,NReplica);
+GPT.C  = repmat(zeros(nGC ),NReplica,NReplica);
+GPT.P  = repmat(zeros(nGP ),NReplica,NReplica);
+GPT.I  = repmat(zeros(nGI ),NReplica,NReplica);
 for PT=1:NReplica
   PID(nOBS*(PT-1)+1:nOBS*PT,NReplica)=1;
   GPT.TB(nGTB(1)*(PT-1)+1:nGTB(1)*PT,nGTB(2)*(PT-1)+1:nGTB(2)*PT)=G(1).TB;
@@ -521,8 +521,12 @@ for PT=1:NReplica
   GPT.P(  nGP(1)*(PT-1)+1: nGP(1)*PT, nGP(2)*(PT-1)+1: nGP(2)*PT)=G(1).P;
   GPT.I(  nGI(1)*(PT-1)+1: nGI(1)*PT, nGI(2)*(PT-1)+1: nGI(2)*PT)=G(1).I;
 end
-DPT.MID=repmat(D(1).MID,1,NReplica);
-DPT.CFINV=repmat(D(1).CFINV,NReplica,1);
+GPT.TB = sparse(GPT.TB);
+GPT.C  = sparse(GPT.C);
+GPT.P  = sparse(GPT.P);
+GPT.I  = sparse(GPT.I);
+DPT.MID   = repmat(D(1).MID,1,NReplica);
+DPT.CFINV = repmat(D(1).CFINV,NReplica,1);
 %% 
 LO_Mc=0;
 UP_Mc=1;
@@ -754,9 +758,9 @@ while not(COUNT==PRM.THR)
   La.STD=std(CHA.La,1,2);
 %
   fprintf('T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
-           RT,1-RES.OLD./RR,100*CHA.AJR,RWD,toc)
+           RT,1-RES.OLD(1)./RR,100*CHA.AJR,RWD,toc)
   fprintf(logFID,'T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
-           RT,1-RES.OLD./RR,100*CHA.AJR,RWD,toc);
+           RT,1-RES.OLD(1)./RR,100*CHA.AJR,RWD,toc);
 %
   for BK=1:BLK(1).NBlock
     [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
