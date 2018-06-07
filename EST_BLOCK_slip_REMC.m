@@ -515,7 +515,7 @@ GPT.C  = repmat(zeros(nGC ),NReplica,NReplica);
 GPT.P  = repmat(zeros(nGP ),NReplica,NReplica);
 GPT.I  = repmat(zeros(nGI ),NReplica,NReplica);
 for PT=1:NReplica
-  PID(nOBS*(PT-1)+1:nOBS*PT,NReplica)=1;
+  PID(nOBS*(PT-1)+1:nOBS*PT,PT)=1;
   GPT.TB(nGTB(1)*(PT-1)+1:nGTB(1)*PT,nGTB(2)*(PT-1)+1:nGTB(2)*PT)=G(1).TB;
   GPT.C(  nGC(1)*(PT-1)+1: nGC(1)*PT, nGC(2)*(PT-1)+1: nGC(2)*PT)=G(1).C;
   GPT.P(  nGP(1)*(PT-1)+1: nGP(1)*PT, nGP(2)*(PT-1)+1: nGP(2)*PT)=G(1).P;
@@ -703,6 +703,7 @@ while not(COUNT==PRM.THR)
              +RES.SMP(  rEx(EXN)+1)+La.SMP(  rEx(EXN)+1)+exp(-La.SMP(  rEx(EXN)+1))));
       ACEX=EXPdf > logEX(EXN);
       if ACEX
+        fprintf('Replica exchanged in %6d iteration\n',iT);
         Mc.SMP=McEX.SMP;
         Mp.SMP=MpEX.SMP;
         Mi.SMP=MiEX.SMP;
@@ -938,7 +939,12 @@ else
   cmap=rw;
 end
 % Number of subplot
-NRAW=floor(sqrt(NReplica));
+NRAW=0;
+SQNRAW=0;
+while SQNRAW<NReplica
+  NRAW=NRAW+1;
+  SQNRAW=NRAW^2;
+end
 NCLM=ceil(NReplica/NRAW);
 NMc=size(CHA.Mc,1)/NReplica;
 NMp=size(CHA.Mp,1)/NReplica;
