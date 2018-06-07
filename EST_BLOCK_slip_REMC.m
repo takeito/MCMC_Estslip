@@ -527,6 +527,7 @@ GPT.P  = sparse(GPT.P);
 GPT.I  = sparse(GPT.I);
 DPT.MID   = repmat(D(1).MID,1,NReplica);
 DPT.CFINV = repmat(D(1).CFINV,NReplica,1);
+DPT.CFINV = sparse(DPT.CFINV);
 %% 
 LO_Mc=0;
 UP_Mc=1;
@@ -703,7 +704,7 @@ while not(COUNT==PRM.THR)
              +RES.SMP(  rEx(EXN)+1)+La.SMP(  rEx(EXN)+1)+exp(-La.SMP(  rEx(EXN)+1))));
       ACEX=EXPdf > logEX(EXN);
       if ACEX
-        fprintf('Replica exchanged in %6d iteration\n',iT);
+%         fprintf('Replica exchanged in %6d iteration\n',iT);
         Mc.SMP=McEX.SMP;
         Mp.SMP=MpEX.SMP;
         Mi.SMP=MiEX.SMP;
