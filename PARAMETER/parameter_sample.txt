@@ -1,0 +1,13 @@
+OBSDATA/GEONET-GPSA_MORVEL_weight_height0_4.txt    : FileOBS GNSS_ITRF2008_Colombia_matlab.txt
+MODEL_OGnew/BLOCK_sw_japan                    : DIRBlock
+MODEL_OGnew/BLOCK_Int_sw_japan                : DIRBlock_Interface
+MODEL_OGnew/euler_poles_fix.txt           : FilePole
+MODEL_OGnew/rigid_boundary.txt            : FileRigidBound
+MODEL_OGnew/internal_deformation.txt          : FileInternalDeformation
+Result_dell                                   : DIRResult
+99                                : GPUdev (CPU:99)
+500                              : ITR(Max_Nitr)
+400                               : COUNT(Threshold_Nitr)
+300000                            : CHA(Chain)
+300000                            : KEEP
+1                                 : Walk_dis
