@@ -470,7 +470,6 @@ CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
 CHA.Mi= zeros(Mi.N,PRM.KEP,precision);
 CHA.La= zeros(La.N,PRM.KEP,precision);
 % Set FIX POLES if POL.FIXflag=1
-% MpScale=Mp.INT.*ones(Mp.N,1,precision);
 Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
 Mp.STD(POL.ID)=0;
 %
@@ -478,10 +477,9 @@ Mi.OLD=Mi.OLD.*BLK(1).IDinter;
 Mi.STD=Mi.STD.*BLK(1).IDinter;
 % 
 RES.OLD=inf(1,1,precision);
-% PRI.OLD=inf(1,1,precision);
 RWDSCALE=1000*RWD/(PRM.CHA);
 McScale=RWDSCALE*0.13;
-MpScale=RWDSCALE*(1.3E-9).*ones(Mp.N,1,precision).*~POL.ID;
+MpScale=RWDSCALE*(1.3E-9);
 MiScale=RWDSCALE*1e-10;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
@@ -495,39 +493,14 @@ Mc.OLD  = repmat( Mc.OLD,1,NReplica);
 Mp.OLD  = repmat( Mp.OLD,1,NReplica);
 Mi.OLD  = repmat( Mi.OLD,1,NReplica);
 La.OLD  = repmat( La.OLD,1,NReplica);
-CHA.Mc  = repmat( CHA.Mc,1,NReplica);
-CHA.Mp  = repmat( CHA.Mp,1,NReplica);
-CHA.Mi  = repmat( CHA.Mi,1,NReplica);
-CHA.La  = repmat( CHA.La,1,NReplica);
-% 
-MpScale=repmat(MpScale,1,NReplica);
-% 
-nOBS=size(D(1).OBS,1);
+CHA.Mc  = repmat( CHA.Mc,NReplica,1);
+CHA.Mp  = repmat( CHA.Mp,NReplica,1);
+CHA.Mi  = repmat( CHA.Mi,NReplica,1);
+CHA.La  = repmat( CHA.La,NReplica,1);
 DPT(1).OBS=repmat(D(1).OBS,1,NReplica);
 DPT(1).ERR=repmat(D(1).ERR,1,NReplica);
-PID=repmat(zeros(size(DPT(1).OBS)),1,NReplica);
-nGTB = size(G(1).TB);
-nGC  = size(G(1).C );
-nGP  = size(G(1).P );
-nGI  = size(G(1).I );
-GPT.TB = repmat(zeros(nGTB),NReplica,NReplica);
-GPT.C  = repmat(zeros(nGC ),NReplica,NReplica);
-GPT.P  = repmat(zeros(nGP ),NReplica,NReplica);
-GPT.I  = repmat(zeros(nGI ),NReplica,NReplica);
-for PT=1:NReplica
-  PID(nOBS*(PT-1)+1:nOBS*PT,PT)=1;
-  GPT.TB(nGTB(1)*(PT-1)+1:nGTB(1)*PT,nGTB(2)*(PT-1)+1:nGTB(2)*PT)=G(1).TB;
-  GPT.C(  nGC(1)*(PT-1)+1: nGC(1)*PT, nGC(2)*(PT-1)+1: nGC(2)*PT)=G(1).C;
-  GPT.P(  nGP(1)*(PT-1)+1: nGP(1)*PT, nGP(2)*(PT-1)+1: nGP(2)*PT)=G(1).P;
-  GPT.I(  nGI(1)*(PT-1)+1: nGI(1)*PT, nGI(2)*(PT-1)+1: nGI(2)*PT)=G(1).I;
-end
-GPT.TB = sparse(GPT.TB);
-GPT.C  = sparse(GPT.C);
-GPT.P  = sparse(GPT.P);
-GPT.I  = sparse(GPT.I);
 DPT.MID   = repmat(D(1).MID,1,NReplica);
 DPT.CFINV = repmat(D(1).CFINV,1,NReplica);
-DPT.CFINV = sparse(DPT.CFINV);
 %% 
 LO_Mc=0;
 UP_Mc=1;
@@ -555,10 +528,6 @@ if PRM.GPU~=99
   La.OLD=gpuArray(La.OLD);
   DPT(1).OBS=gpuArray(DPT(1).OBS);
   DPT(1).ERR=gpuArray(DPT(1).ERR);
-  GPT.TB=gpuArray(GPT.TB);
-  GPT.C=gpuArray(GPT.C);
-  GPT.P=gpuArray(GPT.P);
-  GPT.I=gpuArray(GPT.I);
   DPT(1).CFINV=gpuArray(DPT(1).CFINV);
   McScale=gpuArray(McScale);
   MpScale=gpuArray(MpScale);
@@ -604,28 +573,28 @@ while not(COUNT==PRM.THR)
   rEx=ceil(4*rand(Ex.N,1));
   EXN=0;
   for iT=1:PRM.CHA
+    RMc=reshape(rMc(:,iT),Mc.N,NReplica);
+    RMp=reshape(rMp(:,iT),Mp.N,NReplica);
+    RMi=reshape(rMi(:,iT),Mi.N,NReplica);
+    RLa=reshape(rLa(:,iT),La.N,NReplica);
 % SAMPLE SECTION
 %     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
 %     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
 %     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
-    McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMc(:,iT);
+    McTMP=Mc.OLD+0.5.*RWD.*McScale.*RMc;
     McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
     McTMP(McREJID)=Mc.OLD(McREJID);
     Mc.SMP=McTMP;
 %     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
 %     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
-    Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
-    Mi.SMP=Mi.OLD+RWD.*MiScale.*rMi(:,iT);
-    La.SMP=La.OLD+RWD.*La.STD .*rLa(:,iT);
+    Mp.SMP=Mp.OLD+RWD.*MpScale.*RMp;
+    Mi.SMP=Mi.OLD+RWD.*MiScale.*RMi;
+    La.SMP=La.OLD+RWD.*La.STD .*RLa;
 % MAKE Mc.SMPMAT
-%     Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
-%     Mc.SMPMAT=Mc.SMPMAT(D.MID);
     Mc.SMPMAT=reshape(...
-               repmat(...
-              reshape(Mc.SMP,Mc.N,NReplica)...
-                                ,3*D.CNT,1)...
-                    ,3*Mc.N,D.CNT*NReplica);
-    Mc.SMPMAT=Mc.SMPMAT(DPT.MID);
+               repmat(Mc.SMP,3*D.CNT,1)...
+                   ,3*Mc.N,NReplica*D.CNT);  
+    Mc.SMPMAT=reshape(Mc.SMPMAT(DPT.MID),3*Mc.N,NReplica);
 % Calc GPU memory free capacity
     if PRM.GPU~=99
       Byte1=whos('G');
@@ -633,9 +602,9 @@ while not(COUNT==PRM.THR)
       b=waitGPU(Byte1.bytes+Byte2.bytes);
     end
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.RIG=GPT.P*Mp.SMP;
-    CAL.ELA=GPT.C*((GPT.TB*Mp.SMP).*DPT(1).CFINV.*Mc.SMPMAT);
-    CAL.INE=GPT.I*Mi.SMP;
+    CAL.RIG=G.P*Mp.SMP;
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*DPT(1).CFINV.*Mc.SMPMAT);
+    CAL.INE=G.I*Mi.SMP;
 %     CAL.SMP=CAL.RIG+CAL.ELA;
     CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
     if PRM.GPU~=99
@@ -644,59 +613,37 @@ while not(COUNT==PRM.THR)
 %   CAL.SMP=G.C*((G.TB*Mp.SMP).*Mc.SMPMAT)+G.P*Mp.SMP;       
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
-    RES.SMP=sum((((DPT(1).OBS-CAL.SMP)./DPT(1).ERR).^2).*PID,1)';
-%     RES.SMP=sum(((D(1).OBS-CAL.SMP)./D(1).ERR).^2,1);
+    RES.SMP=sum((((DPT(1).OBS-CAL.SMP)./DPT(1).ERR).^2),1);
 % Replica exchange section
     EXCID=mod(iT,exFREQ);
     if EXCID==0
       EXN=EXN+1;
-      rMcEX1=rMc(Mc.N*(rEx(EXN)-1)+1:Mc.N* rEx(EXN)   );
-      rMcEX2=rMc(Mc.N*(rEx(EXN)  )+1:Mc.N*(rEx(EXN)+1));
-      rMpEX1=rMp(Mp.N*(rEx(EXN)-1)+1:Mp.N* rEx(EXN)   );
-      rMpEX2=rMp(Mp.N*(rEx(EXN)  )+1:Mp.N*(rEx(EXN)+1));
-      rMiEX1=rMi(Mi.N*(rEx(EXN)-1)+1:Mi.N* rEx(EXN)   );
-      rMiEX2=rMi(Mi.N*(rEx(EXN)  )+1:Mi.N*(rEx(EXN)+1));
-      rLaEX1=rLa(La.N*(rEx(EXN)-1)+1:La.N* rEx(EXN)   );
-      rLaEX2=rLa(La.N*(rEx(EXN)  )+1:La.N*(rEx(EXN)+1));
-      LaSTDEX1=La.STD(rEx(EXN)  );
-      LaSTDEX2=La.STD(rEx(EXN)+1);
-      rMcEX=rMc(:,iT);
-      rMpEX=rMp(:,iT);
-      rMiEX=rMi(:,iT);
-      rLaEX=rLa(:,iT);
+      RMc(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMc(:,[rEx(EXN),rEx(EXN)+1]));
+      RMp(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMp(:,[rEx(EXN),rEx(EXN)+1]));
+      RMi(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMi(:,[rEx(EXN),rEx(EXN)+1]));
+      RLa(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RLa(:,[rEx(EXN),rEx(EXN)+1]));
       LaEX.STD=La.STD;
-      rMcEX(Mc.N*(rEx(EXN)-1)+1:Mc.N* rEx(EXN)   )=rMcEX1;
-      rMcEX(Mc.N*(rEx(EXN)  )+1:Mc.N*(rEx(EXN)+1))=rMcEX2;
-      rMpEX(Mp.N*(rEx(EXN)-1)+1:Mp.N* rEx(EXN)   )=rMpEX1;
-      rMpEX(Mp.N*(rEx(EXN)  )+1:Mp.N*(rEx(EXN)+1))=rMpEX2;
-      rMiEX(Mi.N*(rEx(EXN)-1)+1:Mi.N* rEx(EXN)   )=rMiEX1;
-      rMiEX(Mi.N*(rEx(EXN)  )+1:Mi.N*(rEx(EXN)+1))=rMiEX2;
-      rLaEX(La.N*(rEx(EXN)-1)+1:La.N* rEx(EXN)   )=rLaEX1;
-      rLaEX(La.N*(rEx(EXN)  )+1:La.N*(rEx(EXN)+1))=rLaEX2;
-      LaEX.STD(rEx(EXN)  )=LaSTDEX1;
-      LaEX.STD(rEx(EXN)+1)=LaSTDEX2;
+      LaEX.STD([rEx(EXN),rEx(EXN)+1])=flip(LaEX.STD([rEx(EXN),rEx(EXN)+1]));
       % Exchanged sample
-      McTMP=Mc.OLD+0.5.*RWD.*McScale.*rMcEX;
+      McTMP=Mc.OLD+0.5.*RWD.*McScale.*RMc;
       McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
       McTMP(McREJID)=Mc.OLD(McREJID);
       McEX.SMP=McTMP;
-      MpEX.SMP=Mp.OLD+RWD.*MpScale.*rMpEX;
-      MiEX.SMP=Mi.OLD+RWD.*MiScale.*rMiEX;
-      LaEX.SMP=La.OLD+RWD.*LaEX.STD.*rLaEX;
+      MpEX.SMP=Mp.OLD+RWD.*MpScale.*RMp;
+      MiEX.SMP=Mi.OLD+RWD.*MiScale.*RMi;
+      LaEX.SMP=La.OLD+RWD.*LaEX.STD.*RLa;
       McEX.SMPMAT=reshape(...
-                   repmat(...
-                  reshape(Mc.SMP,Mc.N,NReplica)...
-                                    ,3*D.CNT,1)...
-                        ,3*Mc.N,D.CNT*NReplica);
-      McEX.SMPMAT=McEX.SMPMAT(DPT.MID);
-      CALEX.RIG=GPT.P*MpEX.SMP;
-      CALEX.ELA=GPT.C*((GPT.TB*MpEX.SMP).*DPT(1).CFINV.*McEX.SMPMAT);
-      CALEX.INE=GPT.I*MiEX.SMP;
+                 repmat(McEX.SMP,3*D.CNT,1)...
+                     ,3*Mc.N,NReplica*D.CNT);  
+      McEX.SMPMAT=reshape(McEX.SMPMAT(DPT.MID),3*Mc.N,NReplica);
+      CALEX.RIG=G.P*MpEX.SMP;
+      CALEX.ELA=G.C*((G.TB*MpEX.SMP).*DPT(1).CFINV.*McEX.SMPMAT);
+      CALEX.INE=G.I*MiEX.SMP;
       CALEX.SMP=CALEX.RIG+CALEX.ELA+CALEX.INE;
       if PRM.GPU~=99
           clear('CALEX.RIG','CALEX,ELA','CALEX.INE');
       end
-      RES.EXSMP=sum((((DPT(1).OBS-CALEX.SMP)./DPT(1).ERR).^2).*PID,1)';
+      RES.EXSMP=sum((((DPT(1).OBS-CALEX.SMP)./DPT(1).ERR).^2),1);
       EXPdf = -0.5.*...
             ((RES.EXSMP(rEx(EXN)  )+LaEX.SMP(rEx(EXN)  )+exp(-LaEX.SMP(rEx(EXN)  ))...
              +RES.EXSMP(rEx(EXN)+1)+LaEX.SMP(rEx(EXN)+1)+exp(-LaEX.SMP(rEx(EXN)+1)))...
@@ -726,27 +673,23 @@ while not(COUNT==PRM.THR)
          -(RES.OLD+La.OLD+exp(-La.OLD)));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
-    McAC  = reshape(repmat(ACC',Mc.N,1),Mc.N*NReplica,1);
-    MpAC  = reshape(repmat(ACC',Mp.N,1),Mp.N*NReplica,1);
-    MiAC  = reshape(repmat(ACC',Mi.N,1),Mi.N*NReplica,1);
-    LaAC  = reshape(repmat(ACC',La.N,1),La.N*NReplica,1);
-    Mc.OLD  = Mc.SMP  .* McAC;
-    Mp.OLD  = Mp.SMP  .* MpAC;
-    Mi.OLD  = Mi.SMP  .* MiAC;
-    La.OLD  = La.SMP  .* LaAC;
-    RES.OLD = RES.SMP .* ACC ;
+    Mc.OLD(:,ACC) = Mc.SMP(:,ACC);
+    Mp.OLD(:,ACC) = Mp.SMP(:,ACC);
+    Mi.OLD(:,ACC) = Mi.SMP(:,ACC);
+    La.OLD(:,ACC) = La.SMP(:,ACC);
+    RES.OLD(ACC)  = RES.SMP(ACC);
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
       if PRM.GPU~=99
-        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=gather(Mc.SMP);
-        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=gather(Mp.SMP);
-        CHA.Mi(:,iT-(PRM.CHA-PRM.KEP))=gather(Mi.SMP);
-        CHA.La(:,iT-(PRM.CHA-PRM.KEP))=gather(La.SMP);
+        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=gather(reshape(Mc.SMP,Mc.N*NReplica,1));
+        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=gather(reshape(Mp.SMP,Mp.N*NReplica,1));
+        CHA.Mi(:,iT-(PRM.CHA-PRM.KEP))=gather(reshape(Mi.SMP,Mi.N*NReplica,1));
+        CHA.La(:,iT-(PRM.CHA-PRM.KEP))=gather(reshape(La.SMP,La.N*NReplica,1));
       else
-        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=Mc.SMP;
-        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=Mp.SMP;
-        CHA.Mi(:,iT-(PRM.CHA-PRM.KEP))=Mi.SMP;
-        CHA.La(:,iT-(PRM.CHA-PRM.KEP))=La.SMP;
+        CHA.Mc(:,iT-(PRM.CHA-PRM.KEP))=reshape(Mc.SMP,Mc.N*NReplica,1);
+        CHA.Mp(:,iT-(PRM.CHA-PRM.KEP))=reshape(Mp.SMP,Mp.N*NReplica,1);
+        CHA.Mi(:,iT-(PRM.CHA-PRM.KEP))=reshape(Mi.SMP,Mi.N*NReplica,1);
+        CHA.La(:,iT-(PRM.CHA-PRM.KEP))=reshape(La.SMP,La.N*NReplica,1);
       end
       if ACC(1); NACC=NACC+1; end
     end
@@ -793,25 +736,25 @@ while not(COUNT==PRM.THR)
       Burn=0;
     end
   end
-  CHA.SMP=CAL.SMP;
+  CHA.SMP=reshape(CAL.SMP,3*size(DPT(1).OBS,1),1);
   % debug-----------
-  Mpmean=mean(CHA.Mp,2);
-  Mcmean=mean(CHA.Mc,2);
-  Mimean=mean(CHA.Mi,2);
-%   Mcmeanrep=repmat(Mcmean,3,D.CNT);
-%   Mcmeanrep=Mcmeanrep(D.MID);  
+  Mpmean=reshape(mean(CHA.Mp,2),Mp.N,NReplica);
+  Mcmean=reshape(mean(CHA.Mp,2),Mc.N,NReplica);
+  Mimean=reshape(mean(CHA.Mi,2),Mi.N,NReplica);
   Mcmeanrep=reshape(...
-      repmat(...
-      reshape(Mcmean,Mc.N,NReplica)...
-      ,3*D.CNT,1)...
-      ,3*Mc.N,D.CNT*NReplica);
-  Mcmeanrep=Mcmeanrep(DPT.MID);
-  VEC.RIG=GPT.P*Mpmean;
-  VEC.ELA=GPT.C*((GPT.TB*Mpmean).*DPT(1).CFINV.*Mcmeanrep);
-  VEC.INE=GPT.I*Mimean;
+             repmat(Mcmean,3*D.CNT,1)...
+                 ,3*Mc.N,NReplica*D.CNT);  
+  Mcmeanrep=reshape(Mcmeanrep(DPT.MID),3*Mc.N,NReplica);
+  VEC.RIG=G.P*Mpmean;
+  VEC.ELA=G.C*((G.TB*Mpmean).*DPT(1).CFINV.*Mcmeanrep);
+  VEC.INE=G.I*Mimean;
 %   VEC.SUM=VEC.RIG+VEC.ELA;
   VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
+  VEC.RIG=reshape(VEC.RIG,3*size(DPT(1).OBS,1),1);
+  VEC.ELA=reshape(VEC.ELA,3*size(DPT(1).OBS,1),1);
+  VEC.INE=reshape(VEC.INE,3*size(DPT(1).OBS,1),1);
+  VEC.SUM=reshape(VEC.SUM,3*size(DPT(1).OBS,1),1);
   % debug-----------
   if PRM.GPU~=99
     cCHA.Mc=gather(CHA.Mc);
