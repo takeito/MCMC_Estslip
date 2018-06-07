@@ -726,14 +726,15 @@ while not(COUNT==PRM.THR)
          -(RES.OLD+La.OLD+exp(-La.OLD)));
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
-    ACCID=find( ACC);
-    for AC=1:size(ACCID,1)
-      Mc.OLD(Mc.N*(AC-1)+1:Mc.N*AC)=Mc.SMP(Mc.N*(AC-1)+1:Mc.N*AC);
-      Mp.OLD(Mp.N*(AC-1)+1:Mp.N*AC)=Mp.SMP(Mp.N*(AC-1)+1:Mp.N*AC);
-      Mi.OLD(Mi.N*(AC-1)+1:Mi.N*AC)=Mi.SMP(Mi.N*(AC-1)+1:Mi.N*AC);
-      La.OLD(La.N*(AC-1)+1:La.N*AC)=La.SMP(La.N*(AC-1)+1:La.N*AC);
-      RES.OLD(AC)=RES.SMP(AC);
-    end
+    McAC  = reshape(repmat(ACC',Mc.N,1),Mc.N*NReplica,1);
+    MpAC  = reshape(repmat(ACC',Mp.N,1),Mp.N*NReplica,1);
+    MiAC  = reshape(repmat(ACC',Mi.N,1),Mi.N*NReplica,1);
+    LaAC  = reshape(repmat(ACC',La.N,1),La.N*NReplica,1);
+    Mc.OLD  = Mc.SMP  .* McAC;
+    Mp.OLD  = Mp.SMP  .* MpAC;
+    Mi.OLD  = Mi.SMP  .* MiAC;
+    La.OLD  = La.SMP  .* LaAC;
+    RES.OLD = RES.SMP .* ACC ;
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
       if PRM.GPU~=99
