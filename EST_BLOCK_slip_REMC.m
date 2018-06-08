@@ -698,10 +698,10 @@ while not(COUNT==PRM.THR)
 %
   CHA.AJR=NACC./PRM.CHA;
 %
-  Mc.STD=std(CHA.Mc,1,2);
-  Mp.STD=std(CHA.Mp,1,2); 
-  Mi.STD=std(CHA.Mi,1,2); 
-  La.STD=std(CHA.La,1,2);
+  Mc.STD=reshape(std(CHA.Mc,1,2),Mc.N,NReplica);
+  Mp.STD=reshape(std(CHA.Mp,1,2),Mp.N,NReplica); 
+  Mi.STD=reshape(std(CHA.Mi,1,2),Mi.N,NReplica); 
+  La.STD=reshape(std(CHA.La,1,2),La.N,NReplica);
 %
   fprintf('T=%3d Res=%6.3f Accept=%5.1f RWD=%5.2f Time=%5.1fsec\n',...
            RT,1-RES.OLD(1)./RR,100*CHA.AJR,RWD,toc)
@@ -736,10 +736,10 @@ while not(COUNT==PRM.THR)
       Burn=0;
     end
   end
-  CHA.SMP=reshape(CAL.SMP,3*size(DPT(1).OBS,1),1);
+  CHA.SMP=reshape(CAL.SMP,NReplica*size(DPT(1).OBS,1),1);
   % debug-----------
   Mpmean=reshape(mean(CHA.Mp,2),Mp.N,NReplica);
-  Mcmean=reshape(mean(CHA.Mp,2),Mc.N,NReplica);
+  Mcmean=reshape(mean(CHA.Mc,2),Mc.N,NReplica);
   Mimean=reshape(mean(CHA.Mi,2),Mi.N,NReplica);
   Mcmeanrep=reshape(...
              repmat(Mcmean,3*D.CNT,1)...
@@ -751,10 +751,10 @@ while not(COUNT==PRM.THR)
 %   VEC.SUM=VEC.RIG+VEC.ELA;
   VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
-  VEC.RIG=reshape(VEC.RIG,3*size(DPT(1).OBS,1),1);
-  VEC.ELA=reshape(VEC.ELA,3*size(DPT(1).OBS,1),1);
-  VEC.INE=reshape(VEC.INE,3*size(DPT(1).OBS,1),1);
-  VEC.SUM=reshape(VEC.SUM,3*size(DPT(1).OBS,1),1);
+  VEC.RIG=reshape(VEC.RIG,NReplica*size(DPT(1).OBS,1),1);
+  VEC.ELA=reshape(VEC.ELA,NReplica*size(DPT(1).OBS,1),1);
+  VEC.INE=reshape(VEC.INE,NReplica*size(DPT(1).OBS,1),1);
+  VEC.SUM=reshape(VEC.SUM,NReplica*size(DPT(1).OBS,1),1);
   % debug-----------
   if PRM.GPU~=99
     cCHA.Mc=gather(CHA.Mc);
