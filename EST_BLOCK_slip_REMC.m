@@ -454,54 +454,38 @@ Mp.N=3.*BLK(1).NBlock;
 Mi.N=3.*BLK(1).NBlock;
 La.N=1;
 Ex.N=floor(PRM.CHA/exFREQ);
-Mc.STD=Mc.INT.*ones(Mc.N,1,precision);
-Mp.STD=Mp.INT.*ones(Mp.N,1,precision);
-Mi.STD=Mi.INT.*ones(Mi.N,1,precision);
-La.STD=La.INT.*ones(La.N,1,precision);
-% Mc.OLD=       randn(Mc.N,1,precision);                % Normal distribution
-% Mc.OLD=(Mc.OLD-min(Mc.OLD))./max(Mc.OLD-min(Mc.OLD)); % Normal distribution
-% Mc.OLD=   -0.5+rand(Mc.N,1,precision);                % Uniform distribution(-1 to 1)
-Mc.OLD=  rand(Mc.N,1,precision);                % Uniform distribution( 0 to 1)
-Mp.OLD= double(BLK(1).POLE);
-Mi.OLD= 1e-10.*(-0.5+rand(Mi.N,1,precision));
-La.OLD= zeros(La.N,1,precision);
-CHA.Mc= zeros(Mc.N,PRM.KEP,precision);
-CHA.Mp= zeros(Mp.N,PRM.KEP,precision);
-CHA.Mi= zeros(Mi.N,PRM.KEP,precision);
-CHA.La= zeros(La.N,PRM.KEP,precision);
+Mc.STD=Mc.INT.*ones(Mc.N,NReplica,precision);
+Mp.STD=Mp.INT.*ones(Mp.N,NReplica,precision);
+Mi.STD=Mi.INT.*ones(Mi.N,NReplica,precision)...
+             .*repmat(BLK(1).IDinter,1,NReplica);
+La.STD=La.INT.*ones(La.N,NReplica,precision);
+Mc.OLD = rand(Mc.N,NReplica,precision);                % Uniform distribution( 0 to 1)
+Mp.OLD = double(BLK(1).POLE);
+Mi.OLD = 1e-10...
+         .*(-0.5+rand(Mi.N,NReplica,precision))...
+         .*repmat(BLK(1).IDinter,1,NReplica);
+La.OLD= zeros(La.N,NReplica,precision);
+CHA.Mc= zeros(Mc.N*NReplica,PRM.KEP,precision);
+CHA.Mp= zeros(Mp.N*NReplica,PRM.KEP,precision);
+CHA.Mi= zeros(Mi.N*NReplica,PRM.KEP,precision);
+CHA.La= zeros(La.N*NReplica,PRM.KEP,precision);
 % Set FIX POLES if POL.FIXflag=1
 Mp.OLD(POL.ID)=0; Mp.OLD=Mp.OLD+POL.FIXw;
 Mp.STD(POL.ID)=0;
+Mp.OLD = repmat( Mp.OLD,1,NReplica);
+Mp.STD = repmat( Mp.STD,1,NReplica);
 %
-Mi.OLD=Mi.OLD.*BLK(1).IDinter;
-Mi.STD=Mi.STD.*BLK(1).IDinter;
-% 
-RES.OLD=inf(1,1,precision);
+RES.OLD=inf(1,NReplica,precision);
 RWDSCALE=1000*RWD/(PRM.CHA);
 McScale=RWDSCALE*0.13;
 MpScale=RWDSCALE*(1.3E-9);
 MiScale=RWDSCALE*1e-10;
 % McScale=0.05;
 % MpScale=3E-10.*ones(Mp.N,1,precision).*~POL.ID;
-%% Parallelization 
-RES.OLD = repmat(RES.OLD,1,NReplica);
-Mc.STD  = repmat( Mc.STD,1,NReplica);
-Mp.STD  = repmat( Mp.STD,1,NReplica);
-Mi.STD  = repmat( Mi.STD,1,NReplica);
-La.STD  = repmat( La.STD,1,NReplica);
-Mc.OLD  = repmat( Mc.OLD,1,NReplica);
-Mp.OLD  = repmat( Mp.OLD,1,NReplica);
-Mi.OLD  = repmat( Mi.OLD,1,NReplica);
-La.OLD  = repmat( La.OLD,1,NReplica);
-CHA.Mc  = repmat( CHA.Mc,NReplica,1);
-CHA.Mp  = repmat( CHA.Mp,NReplica,1);
-CHA.Mi  = repmat( CHA.Mi,NReplica,1);
-CHA.La  = repmat( CHA.La,NReplica,1);
 DPT(1).OBS=repmat(D(1).OBS,1,NReplica);
 DPT(1).ERR=repmat(D(1).ERR,1,NReplica);
 DPT.MID   = repmat(D(1).MID,1,NReplica);
 DPT.CFINV = repmat(D(1).CFINV,1,NReplica);
-%% 
 LO_Mc=0;
 UP_Mc=1;
 % GPU Initialize 
@@ -582,10 +566,10 @@ while not(COUNT==PRM.THR)
 %     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
 %     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
     McTMP=Mc.OLD+0.5.*RWD.*McScale.*RMc;
-    McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
-    McTMP(McREJID)=Mc.OLD(McREJID);
-    Mc.SMP=McTMP;
-%     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
+%     McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
+%     McTMP(McREJID)=Mc.OLD(McREJID);
+%     Mc.SMP=McTMP;
+    Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
 %     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     Mp.SMP=Mp.OLD+RWD.*MpScale.*RMp;
     Mi.SMP=Mi.OLD+RWD.*MiScale.*RMi;
@@ -614,6 +598,25 @@ while not(COUNT==PRM.THR)
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
     RES.SMP=sum((((DPT(1).OBS-CAL.SMP)./DPT(1).ERR).^2),1);
+% Mc is better Zero 
+%     PRI.SMP=sum(abs(Mc.SMP),1);   
+%% MAKE Probably Density Function
+% $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$%%
+%  log(x(x>0));
+%   q1 = logproppdf(x0,y);
+%   q2 = logproppdf(y,x0);
+% this is a generic formula.
+%   rho = (q1+logpdf(y))-(q2+logpdf(x0));
+    Pdf = -0.5.*...
+         ((RES.SMP+La.SMP+exp(-La.SMP))...
+         -(RES.OLD+La.OLD+exp(-La.OLD)));
+%   Pdf = -0.5.*(RES.SMP-RES.OLD);
+    ACC=Pdf > logU(iT);
+    Mc.OLD(:,ACC) = Mc.SMP(:,ACC);
+    Mp.OLD(:,ACC) = Mp.SMP(:,ACC);
+    Mi.OLD(:,ACC) = Mi.SMP(:,ACC);
+    La.OLD(:,ACC) = La.SMP(:,ACC);
+    RES.OLD(ACC)  = RES.SMP(ACC);
 % Replica exchange section
     EXCID=mod(iT,exFREQ);
     if EXCID==0
@@ -652,32 +655,13 @@ while not(COUNT==PRM.THR)
       ACEX=EXPdf > logEX(EXN);
       if ACEX
 %         fprintf('Replica exchanged in %6d iteration\n',iT);
-        Mc.SMP=McEX.SMP;
-        Mp.SMP=MpEX.SMP;
-        Mi.SMP=MiEX.SMP;
-        La.SMP=LaEX.SMP;
-        RES.SMP=RES.EXSMP;
+        Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+        Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+        Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+        La.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(La.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+        RES.OLD([rEx(EXN),rEx(EXN)+1])  = fliplr(RES.OLD([rEx(EXN),rEx(EXN)+1])) ;
       end
     end
-% Mc is better Zero 
-%     PRI.SMP=sum(abs(Mc.SMP),1);   
-%% MAKE Probably Density Function
-% $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$%%
-%  log(x(x>0));
-%   q1 = logproppdf(x0,y);
-%   q2 = logproppdf(y,x0);
-% this is a generic formula.
-%   rho = (q1+logpdf(y))-(q2+logpdf(x0));
-    Pdf = -0.5.*...
-         ((RES.SMP+La.SMP+exp(-La.SMP))...
-         -(RES.OLD+La.OLD+exp(-La.OLD)));
-%   Pdf = -0.5.*(RES.SMP-RES.OLD);
-    ACC=Pdf > logU(iT);
-    Mc.OLD(:,ACC) = Mc.SMP(:,ACC);
-    Mp.OLD(:,ACC) = Mp.SMP(:,ACC);
-    Mi.OLD(:,ACC) = Mi.SMP(:,ACC);
-    La.OLD(:,ACC) = La.SMP(:,ACC);
-    RES.OLD(ACC)  = RES.SMP(ACC);
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
       if PRM.GPU~=99
@@ -751,10 +735,6 @@ while not(COUNT==PRM.THR)
 %   VEC.SUM=VEC.RIG+VEC.ELA;
   VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
 %   vec.rel=G.C*((G.TB*poltmp).*CF);
-  VEC.RIG=reshape(VEC.RIG,NReplica*size(DPT(1).OBS,1),1);
-  VEC.ELA=reshape(VEC.ELA,NReplica*size(DPT(1).OBS,1),1);
-  VEC.INE=reshape(VEC.INE,NReplica*size(DPT(1).OBS,1),1);
-  VEC.SUM=reshape(VEC.SUM,NReplica*size(DPT(1).OBS,1),1);
   % debug-----------
   if PRM.GPU~=99
     cCHA.Mc=gather(CHA.Mc);
@@ -762,9 +742,9 @@ while not(COUNT==PRM.THR)
     cCHA.Mi=gather(CHA.Mi);
     cCHA.La=gather(CHA.La);
     cCHA.SMP=gather(CHA.SMP);
-    MAKE_FIG(cCHA,BLK,OBS,RT,gather(LO_Mc),gather(UP_Mc),VEC,Mimean,NReplica)
+    MAKE_FIG(cCHA,BLK,OBS,RT,gather(LO_Mc),gather(UP_Mc),VEC,Mcmean,Mimean,NReplica)
   else
-    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mimean,NReplica)
+    MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mcmean,Mimean,NReplica)
   end
   if RT > PRM.ITR; break; end
 end
@@ -871,7 +851,136 @@ save(fullfile(PRM.DirResult,['CHA_test',num2str(ITR,'%03i')]),'cha','-v7.3');
 % 
 end
 %% Show results for makeing FIGURES
-function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mimean,NReplica)
+function MAKE_FIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mcmean,Mimean,NReplica)
+% Color palette(POLAR)
+red=[0:1/32:1 ones(1,32)]';
+green=[0:1/32:1 1-1/32:-1/32:0]';
+blue=[ones(1,32) 1:-1/32:0]';
+rwb=[red green blue];
+rw =rwb(33:end,:);
+if LO_Mc==-1
+  cmap=rwb;
+else
+  cmap=rw;
+end
+NOBS=size(OBS(1).ALON,2);
+NMc=size(CHA.Mc,1)/NReplica;
+%---------Show estimated coupling ratio------------------
+figure(100);clf(100)
+% BUG to wait zero
+NN=1;
+for NB1=1:BLK(1).NBlock
+  for NB2=NB1+1:BLK(1).NBlock
+    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+    if NF~=0
+      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',Mcmean(NN:NN+NF-1,1));
+      NN=NN+NF;
+      hold on
+    end
+  end
+end
+ax=gca;
+ax.CLim=[LO_Mc UP_Mc];
+colormap(cmap)
+colorbar
+
+%---------Show standard deviation for subfaults----------
+figure(110);clf(110)
+% BUG to wait zero
+Mcstd=std(CHA.Mc(1:NMc,1),0,2);
+NN=1;
+for NB1=1:BLK(1).NBlock
+  for NB2=NB1+1:BLK(1).NBlock
+    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+    if NF~=0
+      patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',Mcstd(NN:NN+NF-1));
+      NN=NN+NF;
+      hold on
+    end
+  end
+end
+colormap(parula)
+colorbar
+
+%---------Show 2-D histogram of sampled Euler pole-------------
+figure(120);clf(120)
+for NB=1:BLK(1).NBlock
+  plot(BLK(NB).LON,BLK(NB).LAT,'red')
+  hold on
+  text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB))
+  hold on
+  [latp,lonp,~]=xyzp2lla(CHA.Mp(3.*NB-2,:),CHA.Mp(3.*NB-1,:),CHA.Mp(3.*NB,:));
+  minlon=min(lonp); maxlon=max(lonp); 
+  minlat=min(latp); maxlat=max(latp); 
+  if maxlon-minlon < 0.5; binlon=[minlon maxlon]; else binlon=minlon:0.5:maxlon; end  
+  if maxlat-minlat < 0.5; binlat=[minlat maxlat]; else binlat=minlat:0.5:maxlat; end  
+  histogram2(lonp,latp,binlon,binlat,'Normalization','probability','FaceColor','flat')
+  hold on
+  text(double(mean(lonp)),double(mean(latp)),int2str(NB))
+  hold on
+end
+% quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
+% quiver(OBS(1).ALON,OBS(1).ALAT,CHA.SMP(1:3:end)',CHA.SMP(2:3:end)','blue')
+colorbar
+hold on
+
+%---------Show Obs and Cal vector at sites -------------
+% Color of arrows
+% Green : Observed deformation
+% Blue  : Calculated deformation
+figure(130);clf(130)
+quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
+hold on
+quiver(OBS(1).ALON,OBS(1).ALAT,VEC.SUM(1:3:NOBS*3,1)',VEC.SUM(2:3:NOBS*3,1)','blue')
+hold on
+axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
+title(['Obs and Cal motion (Iteration Number: ',num2str(RT),')']);
+ 
+%-------------------- Show Rig and Ela vectors ----------------------------
+% Color of arrows
+% Black   : Rigid rotation
+% Red     : Elastic deformation due to slip deficit
+figure(140);clf(140)
+quiver(OBS(1).ALON,OBS(1).ALAT,VEC.RIG(1:3:NOBS*3,1)',VEC.RIG(2:3:NOBS*3,1)','k')
+hold on
+quiver(OBS(1).ALON,OBS(1).ALAT,VEC.ELA(1:3:NOBS*3,1)',VEC.ELA(2:3:NOBS*3,1)','r')
+% hold on
+% quiver(OBS(1).ALON,OBS(1).ALAT,vec.rel(1:3:end)',vec.rel(2:3:end)','m')
+axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
+title(['Rigid and Elastic motion (Iteration Number: ',num2str(RT),')']);
+
+%------------------------Show Principal Strain-----------------------------
+% Color of arrows
+% cyan    : Extension of principal strain
+% Magenta : Compression of principal strain
+figure(150);clf(150)
+efactor=1e8;
+for NB=1:BLK(1).NBlock
+  hold on; plot(BLK(NB).LON,BLK(NB).LAT,'red')
+  hold on; text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB),'Color','r')
+  E=[Mimean(3*NB-2,1) Mimean(3*NB-1,1);...
+     Mimean(3*NB-1,1) Mimean(3*NB  ,1)];
+  [eigV,eigD]=eig(E);
+  e1=eigD(1,1); e2=eigD(2,2);
+  v1=eigV(:,1); v2=eigV(:,2);
+  if e1>=0; c1='c'; else; c1='m'; end
+  if e2>=0; c2='c'; else; c2='m'; end
+  figure(150)
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor* e1*v1(1),efactor* e1*v1(2),c1,'ShowArrowHead','off','LineWidth',1);
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor*-e1*v1(1),efactor*-e1*v1(2),c1,'ShowArrowHead','off','LineWidth',1);
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor* e2*v2(1),efactor* e2*v2(2),c2,'ShowArrowHead','off','LineWidth',1);
+  hold on; quiver(BLK(NB).LONinter,BLK(NB).LATinter,efactor*-e2*v2(1),efactor*-e2*v2(2),c2,'ShowArrowHead','off','LineWidth',1);
+  hold on; plot(BLK(NB).LONinter,BLK(NB).LATinter,'.k','MarkerSize',5)
+  hold on; text(BLK(NB).LONinter,BLK(NB).LATinter,int2str(NB),'Color','k')
+end
+axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
+title(['Principle Strain (Iteration Number: ',num2str(RT),')']);
+
+% debug----------
+drawnow
+end
+%% Show results for makeing Multi FIGURES
+function MAKE_MULTIFIG(CHA,BLK,OBS,RT,LO_Mc,UP_Mc,VEC,Mcmean,Mimean,NReplica)
 % Color palette(POLAR)
 red=[0:1/32:1 ones(1,32)]';
 green=[0:1/32:1 1-1/32:-1/32:0]';
@@ -894,26 +1003,22 @@ NCLM=ceil(NReplica/NRAW);
 NMc=size(CHA.Mc,1)/NReplica;
 NMp=size(CHA.Mp,1)/NReplica;
 NMi=size(CHA.Mi,1)/NReplica;
-NOBS=size(OBS(1).ALON,2);
 %---------Show estimated coupling ratio------------------
 figure(100);clf(100)
 % BUG to wait zero
-MF=0;
 for PN=1:NReplica
   NN=1;
-  PCHA.Mc=CHA.Mc(MF+1:MF+NMc,:);
   subplot(NRAW,NCLM,PN)
   for NB1=1:BLK(1).NBlock
     for NB2=NB1+1:BLK(1).NBlock
       NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
       if NF~=0
-        patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',mean(PCHA.Mc(NN:NN+NF-1,:),2));
+        patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',Mcmean(NN:NN+NF-1,PN));
         NN=NN+NF;
         hold on
       end
     end
   end
-  MF=MF+NMc;
 end
 HP0=get(subplot(NRAW,NCLM,PN),'Position');
 ax=gca;
@@ -924,22 +1029,20 @@ colorbar('Position',[HP0(1)+HP0(3)+0.01 HP0(2) 0.02 HP0(3)])
 %---------Show standard deviation for subfaults----------
 figure(110);clf(110)
 % BUG to wait zero
-MF=0;
+Mcstd=reshape(std(CHA.Mc,0,2),NMc,NReplica);
 for PN=1:NReplica
   NN=1;
-  PCHA.Mc=CHA.Mc(MF+1:MF+NMc,:);
   subplot(NRAW,NCLM,PN)
   for NB1=1:BLK(1).NBlock
     for NB2=NB1+1:BLK(1).NBlock
       NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
       if NF~=0
-        patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',std(PCHA.Mc(NN:NN+NF-1,:),0,2));
+        patch(BLK(1).BOUND(NB1,NB2).blon',BLK(1).BOUND(NB1,NB2).blat',BLK(1).BOUND(NB1,NB2).bdep',Mcstd(NN:NN+NF-1,PN));
         NN=NN+NF;
         hold on
       end
     end
   end
-  MF=MF+NMc;
 end
 HP0=get(subplot(NRAW,NCLM,PN),'Position');
 colormap(parula)
@@ -981,16 +1084,13 @@ f=figure(130);clf(f)
 p=uipanel('Parent',f,'BorderType','none');
 p.Title=['Obs and Cal motion (Iteration Number: ',num2str(RT),')'];
 p.TitlePosition='centertop';
-MF=0;
 for PN=1:NReplica
-  calvec=VEC.SUM(MF+1:MF+3*NOBS);
   subplot(NRAW,NCLM,PN,'Parent',p)
   quiver(OBS(1).ALON,OBS(1).ALAT,OBS(1).EVEC,OBS(1).NVEC,'green')
   hold on
-  quiver(OBS(1).ALON,OBS(1).ALAT,calvec(1:3:end)',calvec(2:3:end)','blue')
+  quiver(OBS(1).ALON,OBS(1).ALAT,VEC.SUM(1:3:end,PN)',VEC.SUM(2:3:end,PN)','blue')
   hold on
   axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
-  MF=MF+3*NOBS;
 end 
 %-------------------- Show Rig and Ela vectors ----------------------------
 % Color of arrows
@@ -1000,18 +1100,14 @@ f=figure(140);clf(f)
 p=uipanel('Parent',f,'BorderType','none');
 p.Title=['Rigid and Elastic motion (Iteration Number: ',num2str(RT),')'];
 p.TitlePosition='centertop';
-MF=0;
 for PN=1:NReplica
-  calvR=VEC.RIG(MF+1:MF+3*NOBS);
-  calvE=VEC.ELA(MF+1:MF+3*NOBS);
   subplot(NRAW,NCLM,PN,'Parent',p)
-  quiver(OBS(1).ALON,OBS(1).ALAT,calvR(1:3:end)',calvR(2:3:end)','k')
+  quiver(OBS(1).ALON,OBS(1).ALAT,VEC.RIG(1:3:end,PN)',VEC.RIG(2:3:end,PN)','k')
   hold on
-  quiver(OBS(1).ALON,OBS(1).ALAT,calvE(1:3:end)',calvE(2:3:end)','r')
+  quiver(OBS(1).ALON,OBS(1).ALAT,VEC.ELA(1:3:end,PN)',VEC.ELA(2:3:end,PN)','r')
   % hold on
   % quiver(OBS(1).ALON,OBS(1).ALAT,vec.rel(1:3:end)',vec.rel(2:3:end)','m')
   axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
-  MF=MF+3*NOBS;
 end
 
 %------------------------Show Principal Strain-----------------------------
@@ -1032,6 +1128,7 @@ for PN=1:NReplica
     hold on; text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB),'Color','r')
     E=[PMimean(3*NB-2) PMimean(3*NB-1);...
         PMimean(3*NB-1) PMimean(3*NB  )];
+%     E=[Mimean()
     [eigV,eigD]=eig(E);
     e1=eigD(1,1); e2=eigD(2,2);
     v1=eigV(:,1); v2=eigV(:,2);
