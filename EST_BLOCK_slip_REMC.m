@@ -1119,16 +1119,13 @@ p=uipanel('Parent',f,'BorderType','none');
 p.Title=['Principle Strain (Iteration Number: ',num2str(RT),')'];
 p.TitlePosition='centertop';
 efactor=1e8;
-MF=0;
 for PN=1:NReplica
   subplot(NRAW,NCLM,PN,'Parent',p)
-  PMimean=Mimean(MF+1:MF+NMi);
   for NB=1:BLK(1).NBlock
     hold on; plot(BLK(NB).LON,BLK(NB).LAT,'red')
     hold on; text(mean(BLK(NB).LON),mean(BLK(NB).LAT),int2str(NB),'Color','r')
-    E=[PMimean(3*NB-2) PMimean(3*NB-1);...
-        PMimean(3*NB-1) PMimean(3*NB  )];
-%     E=[Mimean()
+    E=[Mimean(3*NB-2,PN) Mimean(3*NB-1,PN);...
+       Mimean(3*NB-1,PN) Mimean(3*NB  ,PN)];
     [eigV,eigD]=eig(E);
     e1=eigD(1,1); e2=eigD(2,2);
     v1=eigV(:,1); v2=eigV(:,2);
@@ -1143,7 +1140,6 @@ for PN=1:NReplica
     hold on; text(BLK(NB).LONinter,BLK(NB).LATinter,int2str(NB),'Color','k')
   end
   axis([OBS(1).LONMIN-1,OBS(1).LONMAX+1,OBS(1).LATMIN-1,OBS(1).LATMAX+1]);
-  MF=MF+NMi;
 end
 
 % debug----------
