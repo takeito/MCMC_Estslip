@@ -759,10 +759,10 @@ if PRM.GPU~=99
   CHA.La=gather(CHA.La);
   CHA.SMP=gather(CHA.SMP);
 end
-CHA.Res=RES.SMP;
-fprintf('RMS=: %8.3f\n',CHA.Res)
+CHA.Res=RES.SMP(1);
+fprintf('RMS=: %8.3f\n',CHA.Res(1))
 fprintf('=== FINISHED MH_MCMC ===\n')
-fprintf(logFID,'RMS=: %8.3f\n',CHA.Res);
+fprintf(logFID,'RMS=: %8.3f\n',CHA.Res(1));
 fprintf(logFID,'=== FINISHED MH_MCMC ===\n');
 fclose(logFID);
 end
