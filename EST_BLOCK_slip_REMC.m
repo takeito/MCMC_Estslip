@@ -554,7 +554,7 @@ while not(COUNT==PRM.THR)
     rMi=gpuArray(rMi);
     rLa=gpuArray(rLa);
   end
-  rEx=ceil(4*rand(Ex.N,1));
+  rEx=randi(NReplica-1,Ex.N,1);
   EXN=0;
   for iT=1:PRM.CHA
     RMc=reshape(rMc(:,iT),Mc.N,NReplica);
