@@ -625,16 +625,11 @@ while not(COUNT==PRM.THR)
     EXCID=mod(iT,exFREQ);
     if EXCID==0
       EXN=EXN+1;
-%       RMc(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMc(:,[rEx(EXN),rEx(EXN)+1]));
-%       RMp(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMp(:,[rEx(EXN),rEx(EXN)+1]));
-%       RMi(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMi(:,[rEx(EXN),rEx(EXN)+1]));
-%       RLa(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RLa(:,[rEx(EXN),rEx(EXN)+1]));
       RMc(:,[rEx(EXN),rEx(EXN)+1])=RMc(:,[rEx(EXN)+1,rEx(EXN)]);
       RMp(:,[rEx(EXN),rEx(EXN)+1])=RMp(:,[rEx(EXN)+1,rEx(EXN)]);
       RMi(:,[rEx(EXN),rEx(EXN)+1])=RMi(:,[rEx(EXN)+1,rEx(EXN)]);
       RLa(:,[rEx(EXN),rEx(EXN)+1])=RLa(:,[rEx(EXN)+1,rEx(EXN)]);
       LaEX.STD=La.STD;
-%       LaEX.STD([rEx(EXN),rEx(EXN)+1])=flip(LaEX.STD([rEx(EXN),rEx(EXN)+1]));
       LaEX.STD([rEx(EXN),rEx(EXN)+1])=LaEX.STD([rEx(EXN)+1,rEx(EXN)]);
       % Exchanged sample
       McTMP=Mc.OLD+0.5.*RWD.*McScale.*RMc;
@@ -664,11 +659,6 @@ while not(COUNT==PRM.THR)
       ACEX=EXPdf > logEX(EXN);
       if ACEX
 %         fprintf('Replica exchanged in %6d iteration\n',iT);
-%         Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-%         Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-%         Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-%         La.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(La.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-%         RES.OLD([rEx(EXN),rEx(EXN)+1])  = fliplr(RES.OLD([rEx(EXN),rEx(EXN)+1])) ;
         Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mc.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
         Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mp.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
         Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mi.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
