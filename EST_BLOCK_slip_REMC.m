@@ -455,7 +455,7 @@ Mi.N=3.*BLK(1).NBlock;
 La.N=1;
 Ex.N=floor(PRM.CHA/exFREQ);
 Mc.STD=Mc.INT.*ones(Mc.N,NReplica,precision);
-Mp.STD=Mp.INT.*ones(Mp.N,NReplica,precision);
+Mp.STD=Mp.INT.*ones(Mp.N,       1,precision);
 Mi.STD=Mi.INT.*ones(Mi.N,NReplica,precision)...
              .*repmat(BLK(1).IDinter,1,NReplica);
 La.STD=La.INT.*ones(La.N,NReplica,precision);
@@ -539,12 +539,16 @@ while not(COUNT==PRM.THR)
   logU =log(rand(PRM.CHA,1,precision));
   logEX=log(rand(   Ex.N,1,precision));
   for PT=1:NReplica
-    rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA);
-    rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA);
-    rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA);
-    rLa(La.N*(PT-1)+1:La.N*PT,:)=random('Normal',0,(2^(PT-1))^0.5,La.N,PRM.CHA);
-    rMp(         find(POL.ID).*PT,:)=0;
-    rMi(find(~BLK(1).IDinter).*PT,:)=0;
+    rMctmp=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA);
+    rMptmp=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA);
+    rMitmp=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA);
+    rLatmp=random('Normal',0,(2^(PT-1))^0.5,La.N,PRM.CHA);
+    rMptmp(POL.ID,:)=0;
+    rMitmp(~BLK(1).IDinter,:)=0;
+    rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=rMctmp;
+    rMp(Mp.N*(PT-1)+1:Mp.N*PT,:)=rMptmp;
+    rMi(Mi.N*(PT-1)+1:Mi.N*PT,:)=rMitmp;
+    rLa(La.N*(PT-1)+1:La.N*PT,:)=rLatmp;
   end
   if PRM.GPU~=99
     logU=gpuArray(logU);
@@ -621,12 +625,17 @@ while not(COUNT==PRM.THR)
     EXCID=mod(iT,exFREQ);
     if EXCID==0
       EXN=EXN+1;
-      RMc(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMc(:,[rEx(EXN),rEx(EXN)+1]));
-      RMp(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMp(:,[rEx(EXN),rEx(EXN)+1]));
-      RMi(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMi(:,[rEx(EXN),rEx(EXN)+1]));
-      RLa(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RLa(:,[rEx(EXN),rEx(EXN)+1]));
+%       RMc(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMc(:,[rEx(EXN),rEx(EXN)+1]));
+%       RMp(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMp(:,[rEx(EXN),rEx(EXN)+1]));
+%       RMi(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RMi(:,[rEx(EXN),rEx(EXN)+1]));
+%       RLa(:,[rEx(EXN),rEx(EXN)+1])=fliplr(RLa(:,[rEx(EXN),rEx(EXN)+1]));
+      RMc(:,[rEx(EXN),rEx(EXN)+1])=RMc(:,[rEx(EXN)+1,rEx(EXN)]);
+      RMp(:,[rEx(EXN),rEx(EXN)+1])=RMp(:,[rEx(EXN)+1,rEx(EXN)]);
+      RMi(:,[rEx(EXN),rEx(EXN)+1])=RMi(:,[rEx(EXN)+1,rEx(EXN)]);
+      RLa(:,[rEx(EXN),rEx(EXN)+1])=RLa(:,[rEx(EXN)+1,rEx(EXN)]);
       LaEX.STD=La.STD;
-      LaEX.STD([rEx(EXN),rEx(EXN)+1])=flip(LaEX.STD([rEx(EXN),rEx(EXN)+1]));
+%       LaEX.STD([rEx(EXN),rEx(EXN)+1])=flip(LaEX.STD([rEx(EXN),rEx(EXN)+1]));
+      LaEX.STD([rEx(EXN),rEx(EXN)+1])=LaEX.STD([rEx(EXN)+1,rEx(EXN)]);
       % Exchanged sample
       McTMP=Mc.OLD+0.5.*RWD.*McScale.*RMc;
       McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
@@ -655,11 +664,16 @@ while not(COUNT==PRM.THR)
       ACEX=EXPdf > logEX(EXN);
       if ACEX
 %         fprintf('Replica exchanged in %6d iteration\n',iT);
-        Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-        Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-        Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-        La.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(La.OLD(:,[rEx(EXN),rEx(EXN)+1]));
-        RES.OLD([rEx(EXN),rEx(EXN)+1])  = fliplr(RES.OLD([rEx(EXN),rEx(EXN)+1])) ;
+%         Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+%         Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+%         Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+%         La.OLD(:,[rEx(EXN),rEx(EXN)+1]) = fliplr(La.OLD(:,[rEx(EXN),rEx(EXN)+1]));
+%         RES.OLD([rEx(EXN),rEx(EXN)+1])  = fliplr(RES.OLD([rEx(EXN),rEx(EXN)+1])) ;
+        Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mc.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
+        Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mp.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
+        Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mi.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
+        La.OLD(:,[rEx(EXN),rEx(EXN)+1]) = La.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
+        RES.OLD([rEx(EXN),rEx(EXN)+1])  = RES.OLD([rEx(EXN)+1,rEx(EXN)]) ;
       end
     end
 % KEEP SECTION
@@ -764,7 +778,9 @@ fclose(logFID);
 end
 %% Compress CHA sampling
 function COMPRESS_DATA(CHA,PRM,ITR,NACC,NREP)
-% Compressing CHA sampled parameter to int8
+% Compressing CHA sampled parameter to int8 (or int16)
+% sfactor = 2^8 ;  % int8
+sfactor = 2^16;  % int16
 % 
 CHA.Mc=single(CHA.Mc);
 CHA.Mp=single(CHA.Mp);
@@ -802,43 +818,47 @@ MpMIN=min(CHA.Mp,[],2);
 MiMAX=max(CHA.Mi,[],2);
 MiMIN=min(CHA.Mi,[],2);
 % 
-Mcscale=100./(McMAX-McMIN);
-McBASE=bsxfun(@times,bsxfun(@minus,CHA.Mc,McMIN),Mcscale.*2.55-128);
-Mcint8=int8(McBASE);
-Mpscale=100./(MpMAX-MpMIN);
-MpBASE=bsxfun(@times,bsxfun(@minus,CHA.Mp,MpMIN),Mpscale.*2.55-128);
-Mpint8=int8(MpBASE);
-Miscale=100./(MiMAX-MiMIN);
-MiBASE=bsxfun(@times,bsxfun(@minus,CHA.Mi,MiMIN),Miscale.*2.55-128);
-Miint8=int8(MiBASE);
+Mcscale=1./(McMAX-McMIN);
+McBASE=bsxfun(@times,bsxfun(@minus,CHA.Mc,McMIN),Mcscale.*(sfactor-1)-sfactor/2);
+% Mcint=int8(McBASE);
+Mcint=int16(McBASE);
+Mpscale=1./(MpMAX-MpMIN);
+MpBASE=bsxfun(@times,bsxfun(@minus,CHA.Mp,MpMIN),Mpscale.*(sfactor-1)-sfactor/2);
+% Mpint=int8(MpBASE);
+Mpint=int16(MpBASE);
+Miscale=1./(MiMAX-MiMIN);
+MiBASE=bsxfun(@times,bsxfun(@minus,CHA.Mi,MiMIN),Miscale.*(sfactor-1)-sfactor/2);
+% Miint=int8(MiBASE);
+Miint=int16(MiBASE);
 % 
-binedge=int8(-128:127);
+% binedge=int8(-1*sfactor/2:sfactor/2-1);
+binedge=int16(-1*sfactor/2:sfactor/2-1);
 % 
-for ii=1:size(Mcint8,1)
+for ii=1:size(Mcint,1)
   cha.McCOMPRESS.NFLT(ii).Mcscale=Mcscale(ii);
   cha.McCOMPRESS.NFLT(ii).McMAX=McMAX(ii);
   cha.McCOMPRESS.NFLT(ii).McMIN=McMIN(ii);
-  cha.McCOMPRESS.NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
+  cha.McCOMPRESS.NFLT(ii).McHIST=histcounts(Mcint(ii,:),binedge);
 end
 cha.McCOMPRESS.COVMc=COVMc;
 cha.McCOMPRESS.MEANMc=MEANMc;
 cha.McCOMPRESS.SMPMc=int8(McBASE);
 % 
-for ii=1:size(Mpint8,1)
+for ii=1:size(Mpint,1)
   cha.MpCOMPRESS.NPOL(ii).Mpscale=Mpscale(ii);
   cha.MpCOMPRESS.NPOL(ii).MpMAX=MpMAX(ii);
   cha.MpCOMPRESS.NPOL(ii).MpMIN=MpMIN(ii);
-  cha.MpCOMPRESS.NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
+  cha.MpCOMPRESS.NPOL(ii).MpHIST=histcounts(Mpint(ii,:),binedge);
 end
 cha.MpCOMPRESS.COVMp=COVMp;
 cha.MpCOMPRESS.MEANMp=MEANMp;
 cha.MpCOMPRESS.SMPMp=int8(MpBASE);
 % 
-for ii=1:size(Miint8,1)
+for ii=1:size(Miint,1)
   cha.MiCOMPRESS.NINE(ii).Miscale=Miscale(ii);
   cha.MiCOMPRESS.NINE(ii).MiMAX=MiMAX(ii);
   cha.MiCOMPRESS.NINE(ii).MiMIN=MiMIN(ii);
-  cha.MiCOMPRESS.NINE(ii).MiHIST=histcounts(Miint8(ii,:),binedge);
+  cha.MiCOMPRESS.NINE(ii).MiHIST=histcounts(Miint(ii,:),binedge);
 end
 cha.MiCOMPRESS.COVMi=COVMi;
 cha.MiCOMPRESS.MEANMi=MEANMi;
