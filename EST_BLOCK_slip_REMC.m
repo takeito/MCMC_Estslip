@@ -809,15 +809,15 @@ MiMAX=max(CHA.Mi,[],2);
 MiMIN=min(CHA.Mi,[],2);
 % 
 Mcscale=1./(McMAX-McMIN);
-McBASE=bsxfun(@times,bsxfun(@minus,CHA.Mc,McMIN),Mcscale.*(sfactor-1)-sfactor/2);
+McBASE=bsxfun(@minus,bsxfun(@times,bsxfun(@minus,CHA.Mc,McMIN),Mcscale.*(sfactor-1)),sfactor/2);
 % Mcint=int8(McBASE);
 Mcint=int16(McBASE);
 Mpscale=1./(MpMAX-MpMIN);
-MpBASE=bsxfun(@times,bsxfun(@minus,CHA.Mp,MpMIN),Mpscale.*(sfactor-1)-sfactor/2);
+MpBASE=bsxfun(@minus,bsxfun(@times,bsxfun(@minus,CHA.Mp,MpMIN),Mpscale.*(sfactor-1)),sfactor/2);
 % Mpint=int8(MpBASE);
 Mpint=int16(MpBASE);
 Miscale=1./(MiMAX-MiMIN);
-MiBASE=bsxfun(@times,bsxfun(@minus,CHA.Mi,MiMIN),Miscale.*(sfactor-1)-sfactor/2);
+MiBASE=bsxfun(@minus,bsxfun(@times,bsxfun(@minus,CHA.Mi,MiMIN),Miscale.*(sfactor-1)),sfactor/2);
 % Miint=int8(MiBASE);
 Miint=int16(MiBASE);
 % 
