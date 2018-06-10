@@ -566,15 +566,8 @@ while not(COUNT==PRM.THR)
     RMi=reshape(rMi(:,iT),Mi.N,NReplica);
     RLa=reshape(rLa(:,iT),La.N,NReplica);
 % SAMPLE SECTION
-%     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
-%     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
-%     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
     McTMP=Mc.OLD+0.5.*RWD.*RMc;
-%     McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
-%     McTMP(McREJID)=Mc.OLD(McREJID);
-%     Mc.SMP=McTMP;
     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
-%     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
     Mp.SMP=Mp.OLD+RWD.*RMp;
     Mi.SMP=Mi.OLD+RWD.*RMi;
     La.SMP=La.OLD+RWD.*RLa;
@@ -593,7 +586,6 @@ while not(COUNT==PRM.THR)
     CAL.RIG=G.P*Mp.SMP;
     CAL.ELA=G.C*((G.TB*Mp.SMP).*DPT(1).CFINV.*Mc.SMPMAT);
     CAL.INE=G.I*Mi.SMP;
-%     CAL.SMP=CAL.RIG+CAL.ELA;
     CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
     if PRM.GPU~=99
       clear('CAL.RIG','CAL,ELA','CAL.INE');
@@ -602,8 +594,6 @@ while not(COUNT==PRM.THR)
 %   CAL.SMP=G.P*Mp.SMP;
 % CALC RESIDUAL SECTION
     RES.SMP=sum((((DPT(1).OBS-CAL.SMP)./DPT(1).ERR).^2),1);
-% Mc is better Zero 
-%     PRI.SMP=sum(abs(Mc.SMP),1);   
 %% MAKE Probably Density Function
 % $$ PDF_{post}=\frac{\frac{1}{\sqrt{2\pi\exp(L)}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}}{2}}\exp{\frac{-M^{2}}{2\times\exp{L}}}{\frac{1}{\sqrt{2\pi\exp(L_{old})}\times\frac{1}{\sqrt{2\pi}\times\exp{\frac{-Re^{2}_{old}}{2}}\exp{\frac{-M^{2}_{old}}{2\times\exp{L_{old}}}} $$%%
 %  log(x(x>0));
@@ -632,13 +622,11 @@ while not(COUNT==PRM.THR)
       LaEX.STD=La.STD;
       LaEX.STD([rEx(EXN),rEx(EXN)+1])=LaEX.STD([rEx(EXN)+1,rEx(EXN)]);
       % Exchanged sample
-      McTMP=Mc.OLD+0.5.*RWD.*McScale.*RMc;
-      McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
-      McTMP(McREJID)=Mc.OLD(McREJID);
-      McEX.SMP=McTMP;
-      MpEX.SMP=Mp.OLD+RWD.*MpScale.*RMp;
-      MiEX.SMP=Mi.OLD+RWD.*MiScale.*RMi;
-      LaEX.SMP=La.OLD+RWD.*LaEX.STD.*RLa;
+      McEXTMP=Mc.OLD+0.5.*RWD.*RMc;
+      McEX.SMP=max(min(McEXTMP,UP_Mc),LO_Mc);
+      MpEX.SMP=Mp.OLD+RWD.*RMp;
+      MiEX.SMP=Mi.OLD+RWD.*RMi;
+      LaEX.SMP=La.OLD+RWD.*RLa;
       McEX.SMPMAT=reshape(...
                  repmat(McEX.SMP,3*D.CNT,1)...
                      ,3*Mc.N,NReplica*D.CNT);  
@@ -736,9 +724,7 @@ while not(COUNT==PRM.THR)
   VEC.RIG=G.P*Mpmean;
   VEC.ELA=G.C*((G.TB*Mpmean).*DPT(1).CFINV.*Mcmeanrep);
   VEC.INE=G.I*Mimean;
-%   VEC.SUM=VEC.RIG+VEC.ELA;
   VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
-%   vec.rel=G.C*((G.TB*poltmp).*CF);
   % debug-----------
   if PRM.GPU~=99
     cCHA.Mc=gather(CHA.Mc);
@@ -821,43 +807,39 @@ MiBASE=bsxfun(@minus,bsxfun(@times,bsxfun(@minus,CHA.Mi,MiMIN),Miscale.*(sfactor
 % Miint=int8(MiBASE);
 Miint=int16(MiBASE);
 % 
-% binedge=int8(-1*sfactor/2:sfactor/2-1);
-binedge=int16(-1*sfactor/2:sfactor/2-1);
-% 
 for ii=1:size(Mcint,1)
   cha.McCOMPRESS.NFLT(ii).Mcscale=Mcscale(ii);
   cha.McCOMPRESS.NFLT(ii).McMAX=McMAX(ii);
   cha.McCOMPRESS.NFLT(ii).McMIN=McMIN(ii);
-  cha.McCOMPRESS.NFLT(ii).McHIST=histcounts(Mcint(ii,:),binedge);
 end
 cha.McCOMPRESS.COVMc=COVMc;
 cha.McCOMPRESS.MEANMc=MEANMc;
-cha.McCOMPRESS.SMPMc=int8(McBASE);
+% cha.McCOMPRESS.SMPMc=int8(McBASE);
+cha.McCOMPRESS.SMPMc=int16(McBASE);
 % 
 for ii=1:size(Mpint,1)
   cha.MpCOMPRESS.NPOL(ii).Mpscale=Mpscale(ii);
   cha.MpCOMPRESS.NPOL(ii).MpMAX=MpMAX(ii);
   cha.MpCOMPRESS.NPOL(ii).MpMIN=MpMIN(ii);
-  cha.MpCOMPRESS.NPOL(ii).MpHIST=histcounts(Mpint(ii,:),binedge);
 end
 cha.MpCOMPRESS.COVMp=COVMp;
 cha.MpCOMPRESS.MEANMp=MEANMp;
-cha.MpCOMPRESS.SMPMp=int8(MpBASE);
+% cha.MpCOMPRESS.SMPMp=int8(MpBASE);
+cha.MpCOMPRESS.SMPMp=int16(MpBASE);
 % 
 for ii=1:size(Miint,1)
   cha.MiCOMPRESS.NINE(ii).Miscale=Miscale(ii);
   cha.MiCOMPRESS.NINE(ii).MiMAX=MiMAX(ii);
   cha.MiCOMPRESS.NINE(ii).MiMIN=MiMIN(ii);
-  cha.MiCOMPRESS.NINE(ii).MiHIST=histcounts(Miint(ii,:),binedge);
 end
 cha.MiCOMPRESS.COVMi=COVMi;
 cha.MiCOMPRESS.MEANMi=MEANMi;
-cha.MiCOMPRESS.SMPMi=int8(MiBASE);
+% cha.MiCOMPRESS.SMPMi=int8(MiBASE);
+cha.MiCOMPRESS.SMPMi=int16(MiBASE);
 % 
 cha.AJR=NACC./PRM.CHA;
 cha.NREP=NREP;
 save(fullfile(PRM.DirResult,['CHA_test',num2str(ITR,'%03i')]),'cha','-v7.3');
-% save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
 % 
 end
 %% Show results for makeing FIGURES
