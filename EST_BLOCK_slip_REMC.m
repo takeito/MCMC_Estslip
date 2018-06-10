@@ -539,10 +539,10 @@ while not(COUNT==PRM.THR)
   logU =log(rand(PRM.CHA,1,precision));
   logEX=log(rand(   Ex.N,1,precision));
   for PT=1:NReplica
-    rMctmp=random('Normal',0,(2^(PT-1))^0.5,Mc.N,PRM.CHA);
-    rMptmp=random('Normal',0,(2^(PT-1))^0.5,Mp.N,PRM.CHA);
-    rMitmp=random('Normal',0,(2^(PT-1))^0.5,Mi.N,PRM.CHA);
-    rLatmp=random('Normal',0,(2^(PT-1))^0.5,La.N,PRM.CHA);
+    rMctmp=random('Normal',0,McScale*(2^(PT-1))^0.5,Mc.N,PRM.CHA);
+    rMptmp=random('Normal',0,MpScale*(2^(PT-1))^0.5,Mp.N,PRM.CHA);
+    rMitmp=random('Normal',0,MiScale*(2^(PT-1))^0.5,Mi.N,PRM.CHA);
+    rLatmp=random('Normal',0,La.STD(PT)*(2^(PT-1))^0.5,La.N,PRM.CHA);
     rMptmp(POL.ID,:)=0;
     rMitmp(~BLK(1).IDinter,:)=0;
     rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=rMctmp;
@@ -569,15 +569,15 @@ while not(COUNT==PRM.THR)
 %     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
 %     McLo=max(LO_Mc,Mc.OLD-0.5.*RWD.*Mc.STD);
 %     Mc.SMP=McLo+(McUp-McLo).*rMc(:,iT);
-    McTMP=Mc.OLD+0.5.*RWD.*McScale.*RMc;
+    McTMP=Mc.OLD+0.5.*RWD.*RMc;
 %     McREJID=McTMP>UP_Mc | McTMP<LO_Mc;
 %     McTMP(McREJID)=Mc.OLD(McREJID);
 %     Mc.SMP=McTMP;
     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
 %     Mp.SMP=Mp.OLD+RWD.*Mp.STD.*rMp(:,iT);
-    Mp.SMP=Mp.OLD+RWD.*MpScale.*RMp;
-    Mi.SMP=Mi.OLD+RWD.*MiScale.*RMi;
-    La.SMP=La.OLD+RWD.*La.STD .*RLa;
+    Mp.SMP=Mp.OLD+RWD.*RMp;
+    Mi.SMP=Mi.OLD+RWD.*RMi;
+    La.SMP=La.OLD+RWD.*RLa;
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=reshape(...
                repmat(Mc.SMP,3*D.CNT,1)...
