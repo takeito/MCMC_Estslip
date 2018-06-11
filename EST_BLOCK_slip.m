@@ -60,17 +60,6 @@ else
 end
 FDIR=fullfile(ADIR,'figure');
 mkdir(ADIR);mkdir(FDIR);
-
-% for DN=1:Inf
-%   DDIR=['Test_',num2str(DN,'%02i')];
-%   ADIR=fullfile(PRM.DirResult,DDIR);
-%   EXID=exist(ADIR);
-%   if EXID~=7
-%     FDIR=fullfile(ADIR,'figure');
-%     mkdir(ADIR);mkdir(FDIR);
-%     break
-%   end
-% end
 % 
 fprintf('Write OUTPUT FILE: %s \n',PRM.DirResult)
 dlmwrite(fullfile(ADIR,'Mp.txt'),single(CHA.Mp));
@@ -354,7 +343,6 @@ TMP.I=zeros(3*NOBS,3.*BLK(1).NBlock);
 % 
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
-[OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 %
 MC=1;
 MT=1;
@@ -539,8 +527,8 @@ while not(COUNT==PRM.THR)
     rMi =randn(Mi.N,PRM.CHA,precision);
     rLa =randn(La.N,PRM.CHA,precision);
   end
-  rMp(find(POL.ID),:)=0;
-  rMi(find(~BLK(1).IDinter),:)=0;
+  rMp(POL.ID,:)=0;
+  rMi(~BLK(1).IDinter,:)=0;
   for iT=1:PRM.CHA
 % SAMPLE SECTION
 %     McUp=min(UP_Mc,Mc.OLD+0.5.*RWD.*Mc.STD);
@@ -706,7 +694,9 @@ fclose(logFID);
 end
 %% Compress CHA sampling
 function COMPRESS_DATA(CHA,PRM,ITR,NACC)
-% Compressing CHA sampled parameter to int8
+% Compressing CHA sampled parameter to int
+% sfactor = 2^8 ;  % int8
+sfactor = 2^16;  % int16
 % 
 CHA.Mc=single(CHA.Mc);
 CHA.Mp=single(CHA.Mp);
@@ -744,51 +734,51 @@ MpMIN=min(CHA.Mp,[],2);
 MiMAX=max(CHA.Mi,[],2);
 MiMIN=min(CHA.Mi,[],2);
 % 
-Mcscale=100./(McMAX-McMIN);
-McBASE=bsxfun(@times,bsxfun(@minus,CHA.Mc,McMIN),Mcscale.*2.55-128);
-Mcint8=int8(McBASE);
-Mpscale=100./(MpMAX-MpMIN);
-MpBASE=bsxfun(@times,bsxfun(@minus,CHA.Mp,MpMIN),Mpscale.*2.55-128);
-Mpint8=int8(MpBASE);
-Miscale=100./(MiMAX-MiMIN);
-MiBASE=bsxfun(@times,bsxfun(@minus,CHA.Mi,MiMIN),Miscale.*2.55-128);
-Miint8=int8(MiBASE);
+Mcscale=1./(McMAX-McMIN);
+McBASE=bsxfun(@minus,bsxfun(@times,bsxfun(@minus,CHA.Mc,McMIN),Mcscale.*(sfactor-1)),sfactor/2);
+% Mcint=int8(McBASE);
+Mcint=int16(McBASE);
+Mpscale=1./(MpMAX-MpMIN);
+MpBASE=bsxfun(@minus,bsxfun(@times,bsxfun(@minus,CHA.Mp,MpMIN),Mpscale.*(sfactor-1)),sfactor/2);
+% Mpint=int8(MpBASE);
+Mpint=int16(MpBASE);
+Miscale=1./(MiMAX-MiMIN);
+MiBASE=bsxfun(@minus,bsxfun(@times,bsxfun(@minus,CHA.Mi,MiMIN),Miscale.*(sfactor-1)),sfactor/2);
+% Miint=int8(MiBASE);
+Miint=int16(MiBASE);
 % 
-binedge=int8(-128:127);
-% 
-for ii=1:size(Mcint8,1)
+for ii=1:size(Mcint,1)
   cha.McCOMPRESS.NFLT(ii).Mcscale=Mcscale(ii);
   cha.McCOMPRESS.NFLT(ii).McMAX=McMAX(ii);
   cha.McCOMPRESS.NFLT(ii).McMIN=McMIN(ii);
-  cha.McCOMPRESS.NFLT(ii).McHIST=histcounts(Mcint8(ii,:),binedge);
 end
 cha.McCOMPRESS.COVMc=COVMc;
 cha.McCOMPRESS.MEANMc=MEANMc;
-cha.McCOMPRESS.SMPMc=int8(McBASE);
+% cha.McCOMPRESS.SMPMc=int8(McBASE);
+cha.McCOMPRESS.SMPMc=int16(McBASE);
 % 
-for ii=1:size(Mpint8,1)
+for ii=1:size(Mpint,1)
   cha.MpCOMPRESS.NPOL(ii).Mpscale=Mpscale(ii);
   cha.MpCOMPRESS.NPOL(ii).MpMAX=MpMAX(ii);
   cha.MpCOMPRESS.NPOL(ii).MpMIN=MpMIN(ii);
-  cha.MpCOMPRESS.NPOL(ii).MpHIST=histcounts(Mpint8(ii,:),binedge);
 end
 cha.MpCOMPRESS.COVMp=COVMp;
 cha.MpCOMPRESS.MEANMp=MEANMp;
-cha.MpCOMPRESS.SMPMp=int8(MpBASE);
+% cha.MpCOMPRESS.SMPMp=int8(MpBASE);
+cha.MpCOMPRESS.SMPMp=int16(MpBASE);
 % 
-for ii=1:size(Miint8,1)
+for ii=1:size(Miint,1)
   cha.MiCOMPRESS.NINE(ii).Miscale=Miscale(ii);
   cha.MiCOMPRESS.NINE(ii).MiMAX=MiMAX(ii);
   cha.MiCOMPRESS.NINE(ii).MiMIN=MiMIN(ii);
-  cha.MiCOMPRESS.NINE(ii).MiHIST=histcounts(Miint8(ii,:),binedge);
 end
 cha.MiCOMPRESS.COVMi=COVMi;
 cha.MiCOMPRESS.MEANMi=MEANMi;
-cha.MiCOMPRESS.SMPMi=int8(MiBASE);
+% cha.MiCOMPRESS.SMPMi=int8(MiBASE);
+cha.MiCOMPRESS.SMPMi=int16(MiBASE);
 % 
 cha.AJR=NACC./PRM.CHA;
 save(fullfile(PRM.DirResult,['CHA_test',num2str(ITR,'%03i')]),'cha','-v7.3');
-% save(['./Result/CHA_test',num2str(ITR,'%03i'),'.mat'],'cha','-v7.3'); % test
 % 
 end
 %% Show results for makeing FIGURES
@@ -1114,23 +1104,13 @@ ND=size(OBS(1).ALAT,2);
 %
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
-% OBSMTR=[OBS(1).AXYZ(:,1:3) ones(OBS(1).NOBS,1)];
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 OBSz=-1e-3.*OBS(1).AHIG;
 %
 TRI(1).OBSDIS=[];
-% TRI(1).AXYZ=[];
-% TRI(1).NORMXYZ=[];
-% TRI(1).PLANED=[];
 TRI(1).NB=0;
 TRI(1).CF=ones(3*BLK(1).NB,1);
 TRI(1).INV=zeros(3*BLK(1).NB,1);
-% TRI(1).INVSTR=zeros(3*BLK(1).NB,1);
-% TRI(1).INVDIP=zeros(3*BLK(1).NB,1);
-% TRI(1).INVTNS=zeros(3*BLK(1).NB,1);
-% TRI(1).INVSTID=zeros(3*BLK(1).NB,1);
-% TRI(1).INVDPID=zeros(3*BLK(1).NB,1);
-% TRI(1).INVTSID=zeros(3*BLK(1).NB,1);
 for NB1=1:BLK(1).NBlock
   [BLK(NB1).LOCALX,BLK(NB1).LOCALY]=PLTXY(BLK(NB1).LAT,BLK(NB1).LON,ALAT,ALON);
   for NB2=NB1+1:BLK(1).NBlock
@@ -1160,13 +1140,6 @@ for NB1=1:BLK(1).NBlock
       end
 
       for N=1:NF
-        TRIEDGE=zeros(3,7);
-        for Nn=1:3
-          TRIEDGE(Nn,:)=conv2ell(BLK(1).BOUND(NB1,NB2).blat(N,Nn),BLK(1).BOUND(NB1,NB2).blon(N,Nn),BLK(1).BOUND(NB1,NB2).bdep(N,Nn));
-        end
-%         TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:)=cross(TRIEDGE(1,1:3),TRIEDGE(2,1:3));
-%         TRI(1).BOUND(NB1,NB2).PLANED(N,1)=-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)*TRIEDGE(1,1)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)*TRIEDGE(1,2)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)*TRIEDGE(1,3);
-%         TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)=abs(OBSMTR*[TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:) TRI(1).BOUND(NB1,NB2).PLANED(N,1)]')./sqrt(TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)^2);
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
@@ -1199,8 +1172,6 @@ for NB1=1:BLK(1).NBlock
         [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF);
       end
       TRI(1).NB=TRI(1).NB+NF;
-%       TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
-%       OBS(1).Gw=min(TRI(1).OBSDIS,[],2)./max(min(TRI(1).OBSDIS,[],2));
     end
   end
 end
