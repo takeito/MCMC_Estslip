@@ -165,7 +165,7 @@ if ACCFLAG
 end
 TCHA.Burnin=burnin;
 TCHA.Smpint=SMPINT;
-TCHA.NReplica=cha.NREP;
+TCHA.NReplica=NREP;
 TCHA.Mpbin=Mpbin;
 TCHA.Mcbin=Mcbin;
 TCHA.Mibin=Mibin;
