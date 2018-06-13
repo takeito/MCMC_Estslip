@@ -35,6 +35,7 @@ for ii=1:NIT
   load(INPUT(ii).fname);
   ACCFLAG=isfield(cha,'AJR');
   if ii==1
+    NREP=cha.NREP;
     NCH=size(cha.MpCOMPRESS.SMPMp,2);
     NPOL=length(cha.MpCOMPRESS.NPOL);
     NFLT=length(cha.McCOMPRESS.NFLT);
