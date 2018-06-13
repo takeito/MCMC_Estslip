@@ -23,9 +23,11 @@ end
 function [TCHA]=cal_avestdbin(INPUT,burnin)
 % load('./Result/Test_06/CHA_test.mat'); % test
 NIT=size(INPUT,2);
-Mpbin=[-1E-7:1E-9:1E-7];
-Mcbin=[-1:0.01:1];
-Mibin=[-1E-7:1E-9:1E-7];
+% sfactor=2E8;
+sfactor=2E16;
+Mpbin=[-1E-7:1E-10:1E-7];
+Mcbin=[-1:1E-3:1];
+Mibin=[-1E-7:1E-10:1E-7];
 SMPINT=50; % sampling interval
 BURNIN=floor(burnin*NIT/100)+1;
 ACCTOTAL=0;
@@ -64,7 +66,7 @@ for ii=1:NIT
     for jj=1:NPOL
       infid=cha.MpCOMPRESS.NPOL(jj).Mpscale==Inf;
       if ~infid
-        smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
+        smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+(sfactor/2))./((sfactor-1).*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
       else
         smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX;
       end
@@ -74,7 +76,7 @@ for ii=1:NIT
     for kk=1:NFLT
       infid=cha.McCOMPRESS.NFLT(kk).Mcscale==Inf;
       if ~infid
-        smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+128)./(2.55.*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
+        smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+(sfactor/2))./((sfactor-1).*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
       else
         smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX;
       end
@@ -84,7 +86,7 @@ for ii=1:NIT
     for ll=1:NINE
       infid=cha.MiCOMPRESS.NINE(ll).Miscale==Inf;
       if ~infid
-        smpine(ll,:)=(double(cha.MiCOMPRESS.SMPMi(ll,:))+128)./(2.55.*cha.MiCOMPRESS.NINE(ll).Miscale)+cha.MiCOMPRESS.NINE(ll).MiMIN;
+        smpine(ll,:)=(double(cha.MiCOMPRESS.SMPMi(ll,:))+(sfactor/2))./((sfactor-1).*cha.MiCOMPRESS.NINE(ll).Miscale)+cha.MiCOMPRESS.NINE(ll).MiMIN;
       else
         smpine(ll,:)=ones(1,NCH).*cha.MiCOMPRESS.NINE(ll).MiMAX;
       end
@@ -101,7 +103,7 @@ for ii=1:NIT
     for jj=1:NPOL
       infid=cha.MpCOMPRESS.NPOL(jj).Mpscale==Inf;
       if ~infid
-        smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+128)./(2.55.*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
+        smppol(jj,:)=(double(cha.MpCOMPRESS.SMPMp(jj,:))+(sfactor/2))./((sfactor-1).*cha.MpCOMPRESS.NPOL(jj).Mpscale)+cha.MpCOMPRESS.NPOL(jj).MpMIN;
       else
         smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX;
       end
@@ -109,7 +111,7 @@ for ii=1:NIT
     for kk=1:NFLT
       infid=cha.McCOMPRESS.NFLT(kk).Mcscale==Inf;
       if ~infid
-        smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+128)./(2.55.*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
+        smpflt(kk,:)=(double(cha.McCOMPRESS.SMPMc(kk,:))+(sfactor/2))./((sfactor-1).*cha.McCOMPRESS.NFLT(kk).Mcscale)+cha.McCOMPRESS.NFLT(kk).McMIN;
       else
         smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX;
       end
@@ -117,7 +119,7 @@ for ii=1:NIT
     for ll=1:NINE
       infid=cha.MiCOMPRESS.NINE(ll).Miscale==Inf;
       if ~infid
-        smpine(ll,:)=(double(cha.MiCOMPRESS.SMPMi(ll,:))+128)./(2.55.*cha.MiCOMPRESS.NINE(ll).Miscale)+cha.MiCOMPRESS.NINE(ll).MiMIN;
+        smpine(ll,:)=(double(cha.MiCOMPRESS.SMPMi(ll,:))+(sfactor/2))./((sfactor-1).*cha.MiCOMPRESS.NINE(ll).Miscale)+cha.MiCOMPRESS.NINE(ll).MiMIN;
       else
         smpine(ll,:)=ones(1,NCH).*cha.MiCOMPRESS.NINE(ll).MiMAX;
       end
