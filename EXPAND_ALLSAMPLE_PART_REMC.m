@@ -23,8 +23,8 @@ end
 function [TCHA]=cal_avestdbin(INPUT,burnin)
 % load('./Result/Test_06/CHA_test.mat'); % test
 NIT=size(INPUT,2);
-% sfactor=2E8;
-sfactor=2E16;
+% sfactor=2^8;
+sfactor=2^16;
 Mpbin=[-1E-7:1E-10:1E-7];
 Mcbin=[-1:1E-3:1];
 Mibin=[-1E-7:1E-10:1E-7];
