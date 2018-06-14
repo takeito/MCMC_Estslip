@@ -60,17 +60,6 @@ else
 end
 FDIR=fullfile(ADIR,'figure');
 mkdir(ADIR);mkdir(FDIR);
-
-% for DN=1:Inf
-%   DDIR=['Test_',num2str(DN,'%02i')];
-%   ADIR=fullfile(PRM.DirResult,DDIR);
-%   EXID=exist(ADIR);
-%   if EXID~=7
-%     FDIR=fullfile(ADIR,'figure');
-%     mkdir(ADIR);mkdir(FDIR);
-%     break
-%   end
-% end
 % 
 fprintf('Write OUTPUT FILE: %s \n',PRM.DirResult)
 dlmwrite(fullfile(ADIR,'Mp.txt'),single(CHA.Mp));
@@ -358,10 +347,6 @@ G(1).B =zeros(2*BLK(1).NB,3.*BLK(1).NBlock);
 TMP.P=zeros(3*NOBS,3.*BLK(1).NBlock);
 TMP.I=zeros(3*NOBS,3.*BLK(1).NBlock);
 % 
-ALAT=mean(OBS(1).ALAT(:));
-ALON=mean(OBS(1).ALON(:));
-[OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
-%
 MC=1;
 MT=1;
 MR=1;
@@ -1336,23 +1321,13 @@ ND=size(OBS(1).ALAT,2);
 %
 ALAT=mean(OBS(1).ALAT(:));
 ALON=mean(OBS(1).ALON(:));
-% OBSMTR=[OBS(1).AXYZ(:,1:3) ones(OBS(1).NOBS,1)];
 [OBSx,OBSy]=PLTXY(OBS(1).ALAT,OBS(1).ALON,ALAT,ALON);
 OBSz=-1e-3.*OBS(1).AHIG;
 %
 TRI(1).OBSDIS=[];
-% TRI(1).AXYZ=[];
-% TRI(1).NORMXYZ=[];
-% TRI(1).PLANED=[];
 TRI(1).NB=0;
 TRI(1).CF=ones(3*BLK(1).NB,1);
 TRI(1).INV=zeros(3*BLK(1).NB,1);
-% TRI(1).INVSTR=zeros(3*BLK(1).NB,1);
-% TRI(1).INVDIP=zeros(3*BLK(1).NB,1);
-% TRI(1).INVTNS=zeros(3*BLK(1).NB,1);
-% TRI(1).INVSTID=zeros(3*BLK(1).NB,1);
-% TRI(1).INVDPID=zeros(3*BLK(1).NB,1);
-% TRI(1).INVTSID=zeros(3*BLK(1).NB,1);
 for NB1=1:BLK(1).NBlock
   [BLK(NB1).LOCALX,BLK(NB1).LOCALY]=PLTXY(BLK(NB1).LAT,BLK(NB1).LON,ALAT,ALON);
   for NB2=NB1+1:BLK(1).NBlock
@@ -1386,9 +1361,6 @@ for NB1=1:BLK(1).NBlock
         for Nn=1:3
           TRIEDGE(Nn,:)=conv2ell(BLK(1).BOUND(NB1,NB2).blat(N,Nn),BLK(1).BOUND(NB1,NB2).blon(N,Nn),BLK(1).BOUND(NB1,NB2).bdep(N,Nn));
         end
-%         TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:)=cross(TRIEDGE(1,1:3),TRIEDGE(2,1:3));
-%         TRI(1).BOUND(NB1,NB2).PLANED(N,1)=-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)*TRIEDGE(1,1)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)*TRIEDGE(1,2)-TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)*TRIEDGE(1,3);
-%         TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)=abs(OBSMTR*[TRI(1).BOUND(NB1,NB2).NORMXYZ(N,:) TRI(1).BOUND(NB1,NB2).PLANED(N,1)]')./sqrt(TRI(1).BOUND(NB1,NB2).NORMXYZ(N,1)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,2)^2+TRI(1).BOUND(NB1,NB2).NORMXYZ(N,3)^2);
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
         F_LOC=[TRIx;TRIy;TRIz];
@@ -1421,8 +1393,6 @@ for NB1=1:BLK(1).NBlock
         [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF);
       end
       TRI(1).NB=TRI(1).NB+NF;
-%       TRI(1).OBSDIS=[TRI(1).OBSDIS TRI(1).BOUND(NB1,NB2).OBSDIS(:,N)];
-%       OBS(1).Gw=min(TRI(1).OBSDIS,[],2)./max(min(TRI(1).OBSDIS,[],2));
     end
   end
 end
@@ -1597,9 +1567,6 @@ for N=1:BLK(1).NBlock
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     elseif OBS(N).NBLK>=1
       NumB=NumB+1;
-%       OBS(N).GRweight=OBS(1).Gw(OBS(1).ABLK==N);
-%       OBS(N).GRweight=reshape(repmat(OBS(1).Gw(OBS(1).ABLK==N),1,2)',2*size(OBS(N).GRweight,1),1);
-%       [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).GRweight./(OBS(N).Vww.^2));
       [POLE,EVne,Sig]=est_pole_w(OBS(N).OXYZ,OBS(N).Vne,OBS(N).Vww);
       TSig=TSig+Sig.*2.*OBS(N).NBLK;
     end
@@ -1614,13 +1581,6 @@ for N=1:BLK(1).NBlock
   [latp,lonp,ang]=xyzp2lla(POLE(1),POLE(2),POLE(3));
   fprintf('Lat:%7.2f deg. Lon:%8.2f deg. Ang:%9.2e deg./m.y. \n',latp,lonp,ang);    
   fprintf(logFID,'Lat:%7.2f deg. Lon:%8.2f deg. Ang:%9.2e deg./m.y. \n',latp,lonp,ang);    
-%   if OBS(N).NBLK>=2 
-%     fprintf('OBS(E,N) ')
-%     fprintf('%5.2f ',OBS(N).Vne);fprintf('\n')
-%     fprintf('EST(E,N) ')
-%     fprintf('%5.2f ',EVne)      ;fprintf('\n')
-%   fprintf('\n')
-%   end
 end
 AIC=(OBS(1).NOBS.*2).*log(TSig./(OBS(1).NOBS.*2))+2.*NumB.*3;
 cAIC=AIC+2.*NumB.*3.*(NumB.*3+1)./(OBS(1).NOBS.*2-NumB.*3-1);
