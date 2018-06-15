@@ -461,7 +461,8 @@ Mp.OLD = repmat( Mp.OLD,1,NReplica);
 Mp.STD = repmat( Mp.STD,1,NReplica);
 %
 RES.OLD=inf(1,NReplica,precision);
-RWDSCALE=1000*RWD/(PRM.CHA);
+% RWDSCALE=1000*RWD/(PRM.CHA);
+RWDSCALE=1e-2;
 McScale=RWDSCALE*0.13;
 MpScale=RWDSCALE*(1.3E-9);
 MiScale=RWDSCALE*1e-10;
@@ -524,10 +525,10 @@ while not(COUNT==PRM.THR)
   logU =log(rand(PRM.CHA,1,precision));
   logEX=log(rand(   Ex.N,1,precision));
   for PT=1:NReplica
-    rMctmp=RWD*McScale*(2^(PT-1))^0.5.*-0.5+rand(Mc.N,PRM.CHA,precision);
-    rMptmp=RWD*MpScale*(2^(PT-1))^0.5.*-0.5+rand(Mp.N,PRM.CHA,precision);
-    rMitmp=RWD*MiScale*(2^(PT-1))^0.5.*-0.5+rand(Mi.N,PRM.CHA,precision);
-    rLatmp=RWD*La.STD.*(2^(PT-1))^0.5.*-0.5+rand(La.N,PRM.CHA,precision);
+    rMctmp=RWD*    McScale*(2^(PT-1)^0.5).*(-0.5+rand(Mc.N,PRM.CHA,precision));
+    rMptmp=RWD*    MpScale*(2^(PT-1)^0.5).*(-0.5+rand(Mp.N,PRM.CHA,precision));
+    rMitmp=RWD*    MiScale*(2^(PT-1)^0.5).*(-0.5+rand(Mi.N,PRM.CHA,precision));
+    rLatmp=RWD*La.STD(PT).*(2^(PT-1)^0.5).*(-0.5+rand(La.N,PRM.CHA,precision));
     rMptmp(POL.ID,:)=0;
     rMitmp(~BLK(1).IDinter,:)=0;
     rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=rMctmp;
