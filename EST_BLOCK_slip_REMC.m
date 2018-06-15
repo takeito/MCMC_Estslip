@@ -524,10 +524,10 @@ while not(COUNT==PRM.THR)
   logU =log(rand(PRM.CHA,1,precision));
   logEX=log(rand(   Ex.N,1,precision));
   for PT=1:NReplica
-    rMctmp=random('Normal',0,McScale*(2^(PT-1))^0.5,Mc.N,PRM.CHA);
-    rMptmp=random('Normal',0,MpScale*(2^(PT-1))^0.5,Mp.N,PRM.CHA);
-    rMitmp=random('Normal',0,MiScale*(2^(PT-1))^0.5,Mi.N,PRM.CHA);
-    rLatmp=random('Normal',0,La.STD(PT)*(2^(PT-1))^0.5,La.N,PRM.CHA);
+    rMctmp=RWD*McScale*(2^(PT-1))^0.5.*-0.5+rand(Mc.N,PRM.CHA,precision);
+    rMptmp=RWD*MpScale*(2^(PT-1))^0.5.*-0.5+rand(Mp.N,PRM.CHA,precision);
+    rMitmp=RWD*MiScale*(2^(PT-1))^0.5.*-0.5+rand(Mi.N,PRM.CHA,precision);
+    rLatmp=RWD*La.STD.*(2^(PT-1))^0.5.*-0.5+rand(La.N,PRM.CHA,precision);
     rMptmp(POL.ID,:)=0;
     rMitmp(~BLK(1).IDinter,:)=0;
     rMc(Mc.N*(PT-1)+1:Mc.N*PT,:)=rMctmp;
@@ -551,11 +551,11 @@ while not(COUNT==PRM.THR)
     RMi=reshape(rMi(:,iT),Mi.N,NReplica);
     RLa=reshape(rLa(:,iT),La.N,NReplica);
 % SAMPLE SECTION
-    McTMP=Mc.OLD+0.5.*RWD.*RMc;
+    McTMP=Mc.OLD+RMc;
     Mc.SMP=max(min(McTMP,UP_Mc),LO_Mc);
-    Mp.SMP=Mp.OLD+RWD.*RMp;
-    Mi.SMP=Mi.OLD+RWD.*RMi;
-    La.SMP=La.OLD+RWD.*RLa;
+    Mp.SMP=Mp.OLD+RMp;
+    Mi.SMP=Mi.OLD+RMi;
+    La.SMP=La.OLD+RLa;
 % MAKE Mc.SMPMAT
     Mc.SMPMAT=reshape(...
                repmat(Mc.SMP,3*D.CNT,1)...
@@ -607,11 +607,11 @@ while not(COUNT==PRM.THR)
       LaEX.STD=La.STD;
       LaEX.STD([rEx(EXN),rEx(EXN)+1])=LaEX.STD([rEx(EXN)+1,rEx(EXN)]);
       % Exchanged sample
-      McEXTMP=Mc.OLD+0.5.*RWD.*RMc;
+      McEXTMP=Mc.OLD+RMc;
       McEX.SMP=max(min(McEXTMP,UP_Mc),LO_Mc);
-      MpEX.SMP=Mp.OLD+RWD.*RMp;
-      MiEX.SMP=Mi.OLD+RWD.*RMi;
-      LaEX.SMP=La.OLD+RWD.*RLa;
+      MpEX.SMP=Mp.OLD+RMp;
+      MiEX.SMP=Mi.OLD+RMi;
+      LaEX.SMP=La.OLD+RLa;
       McEX.SMPMAT=reshape(...
                  repmat(McEX.SMP,3*D.CNT,1)...
                      ,3*Mc.N,NReplica*D.CNT);  
