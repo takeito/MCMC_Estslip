@@ -61,7 +61,7 @@ end
 FDIR=fullfile(ADIR,'figure');
 mkdir(ADIR);mkdir(FDIR);
 % 
-fprintf('Write OUTPUT FILE: %s \n',PRM.DirResult)
+fprintf('Write OUTPUT FILE: %s \n',fullfile(PRM.DirResult,FDIR))
 dlmwrite(fullfile(ADIR,'Mp.txt'),single(CHA.Mp));
 dlmwrite(fullfile(ADIR,'Mc.txt'),single(CHA.Mc));
 dlmwrite(fullfile(ADIR,'La.txt'),single(CHA.La));
