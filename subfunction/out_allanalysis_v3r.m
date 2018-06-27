@@ -351,8 +351,8 @@ for REP=1:TCHA.NReplica
   subfolder=[folder,'/replica',num2str(REP)'];
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
-  FIDinternal=fopen([folder,'/Internal_Deformation.txt'],'w');
-  fprintf(FIDinternal,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+  FID=fopen([subfolder,'/Internal_Deformation.txt'],'w');
+  fprintf(FID,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
   for NB=1:BLK(1).NBlock
     exx=TCHA.AVEINE(3*NB-2,REP);
     exy=TCHA.AVEINE(3*NB-1,REP);
@@ -384,12 +384,15 @@ for REP=1:TCHA.NReplica
     sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
                      +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
                      +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-    fprintf(FIDinternal,'%2d %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n',...
-            NB,BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
-            shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
+    fprintf(FID,'%2d %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n',...
+            NB,BLK(NB).LATinter,BLK(NB).LONinter,...
+            exx*1e9,exy*1e9,eyy*1e9,...
+            emax*1e9,emin*1e9,thetaP,shearMAX*1e9,...
+            sigexx*1e9,sigexy*1e9,sigeyy*1e9,...
+            sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
   end
 end
-fclose(FIDinternal);
+fclose(FID);
 end
 %% Translate coupling to slip deficit rate.
 function [SDR]=coupling2sdr(TCHA,D,DPT,G)
