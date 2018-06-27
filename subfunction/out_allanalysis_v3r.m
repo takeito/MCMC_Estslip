@@ -15,9 +15,9 @@ fprintf('Now loading %s ...',[DIR,'/GRN.mat'])
 load([DIR,'/GRN.mat']);fprintf('load\n')
 fprintf('Now loading %s ...',[DIR,'/TCHA.mat'])
 load([DIR,'/TCHA.mat']);fprintf('load\n')
-G(1).TB=full(G(1).TB);
+[G,DPT]=expand_parallelization(D,G);
 % 
-[SDR]=coupling2sdr(TCHA,D,G);
+[SDR]=coupling2sdr(TCHA,D,DPT,G);
 ExportCoupling(DIR,TCHA,BLK,SDR);
 ExportInternalDeformation(DIR,TCHA,BLK);
 for CP=1:size(Par.Coupling_Pair,2)
@@ -32,6 +32,14 @@ for EL=1:size(Par.Elastic_Pair,2)
   out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
 end
 %
+end
+%% Expand and Parallelization 
+function [G,DPT]=expand_parallelization(D,G)
+G(1).TB=full(G(1).TB);
+DPT.OBS=repmat(D(1).OBS,1,NReplica);
+DPT.ERR=repmat(D(1).ERR,1,NReplica);
+DPT.MID   = repmat(D(1).MID,1,NReplica);
+DPT.CFINV = repmat(D(1).CFINV,1,NReplica);
 end
 %% Read export parameter file
 function [PAR]=ReadPara(Parfile)
@@ -276,66 +284,45 @@ end
 %% Show results for makeing FIGURES
 function ExportCoupling(DIR,TCHA,BLK,SDR)
 NN=1;
-exid=exist([DIR,'/coupling']);
-if exid~=7; mkdir([DIR,'/coupling']); end
-FIDstdinfo=fopen([DIR,'/coupling/Std_info.txt'],'w');
-fprintf(FIDstdinfo,'NB1 NB2 STDmax STDmin\n');
-for NB1=1:BLK(1).NBlock
-  for NB2=NB1+1:BLK(1).NBlock
-    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
-    if NF~=0
-      FIDavec=fopen([DIR,'/coupling/C_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDmedc=fopen([DIR,'/coupling/medC_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDnumc=fopen([DIR,'/coupling/numC_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDtrin=fopen([DIR,'/coupling/Trinuum_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDsdr=fopen([DIR,'/coupling/SDR_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDnums=fopen([DIR,'/coupling/numS_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDstd=fopen([DIR,'/coupling/Std_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FLTNUM=NN:NN+NF-1;
-      AVECP=TCHA.AVEFLT(FLTNUM,:);
-      MEDCP=TCHA.MEDFLT(FLTNUM,:);
-      SDRs =   SDR.flax(FLTNUM,:);
-      STD=TCHA.STDFLT(FLTNUM,:);
-%       if NB1==6&&NB2==11
-%         keyboard
-%       end
-      fprintf(FIDstdinfo,'%d %d %f %f\n',NB1,NB2,min(STD),max(STD));
-      TRInum=length(AVECP);
-      TRIlon=BLK(1).BOUND(NB1,NB2).blon';
-      TRIlat=BLK(1).BOUND(NB1,NB2).blat';
-%       TRIdep=BLK(1).BOUND(NB1,NB2).bdep';
-      indexs=0;
-      for ii=1:TRInum
-        fprintf(FIDavec,'%s %f\n','> -Z',AVECP(ii));
-        fprintf(FIDmedc,'%s %f\n','> -Z',MEDCP(ii));
-        fprintf(FIDsdr,'%s %f\n','> -Z',SDRs(ii));
-        fprintf(FIDstd,'%s %f\n','> -Z',STD(ii));
-        indexs=indexs+1;indexe=indexs+2;
-        lon(1:3)=TRIlon(:,ii)';
-        lon(4)=TRIlon(1,ii)';
-        lat(1:3)=TRIlat(:,ii)';
-        lat(4)=TRIlat(1,ii)';
-        indexs=indexe+1;
-        for mm=1:4
-          fprintf(FIDavec,'%f %f\n',lon(mm),lat(mm));
-          fprintf(FIDmedc,'%f %f\n',lon(mm),lat(mm));
-          fprintf(FIDsdr,'%f %f\n',lon(mm),lat(mm));
-          fprintf(FIDstd,'%f %f\n',lon(mm),lat(mm));
-        end
-        mlon=mean(lon(1:3));
-        mlat=mean(lat(1:3));
-        fprintf(FIDnumc,'%f %f %5.2f\n',mlon,mlat,AVECP(ii));
-        fprintf(FIDnums,'%f %f %5.2f\n',mlon,mlat,SDRs(ii));
-        fprintf(FIDtrin,'%f %f %d\n',mlon,mlat,FLTNUM(ii));
+folder=[DIR,'/coupling'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+NFLT=size(TCHA.AVEFLT,1)/TCHA.NReplica;
+TCHA.AVEFLT=reshape(TCHA.AVEFLT,NFLT,TCHA.NReplica);
+TCHA.MEDFLT=reshape(TCHA.MEDFLT,NFLT,TCHA.NReplica);
+TCHA.STDFLT=reshape(TCHA.STDFLT,NFLT,TCHA.NReplica);
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  FIDstdinfo=fopen([folder,'/Std_info.txt'],'w');
+  fprintf(FIDstdinfo,'NB1 NB2 STDmax STDmin\n');
+  for NB1=1:BLK(1).NBlock
+    for NB2=NB1+1:BLK(1).NBlock
+      NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+      if NF~=0
+        FIDmain = fopen([subfolder,'/C_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
+        FLTNUM = NN:NN+NF-1;
+        AVECP = TCHA.AVEFLT(FLTNUM,REP);
+        MEDCP = TCHA.MEDFLT(FLTNUM,REP);
+        SDRs  =    SDR.flax(FLTNUM,REP);
+        STD   = TCHA.STDFLT(FLTNUM,REP);
+        clon = mean(BLK(1).BOUND(NB1,NB2).blon,2);
+        clat = mean(BLK(1).BOUND(NB1,NB2).blat,2);
+        cdep = mean(BLK(1).BOUND(NB1,NB2).bdep,2);
+        outdata = [FLTNUM' ...
+                   BLK(1).BOUND(NB1,NB2).blon ...
+                   BLK(1).BOUND(NB1,NB2).blat ...
+                   BLK(1).BOUND(NB1,NB2).bdep ...
+                   clon clat cdep ...
+                   AVECP MEDCP SDRs STD];
+        fprintf(FIDmain,'# Contents\n');
+        fprintf(FIDmain,'# TRI_No. Lon1 Lon2 Lon3 Lat1 Lat2 Lat3 C_Lon C_Lat C_Dep Mean_Coupling Median_Coupling SDR sigma\n');
+        fprintf(FIDmain,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata');
+        fprintf(FIDstdinfo,'%d %d %f %f\n',NB1,NB2,min(STD),max(STD));
+        fclose(FIDmain);
+        NN=NN+NF;
       end
-      fclose(FIDavec);
-      fclose(FIDmedc);
-      fclose(FIDnumc);
-      fclose(FIDtrin);
-      fclose(FIDsdr);
-      fclose(FIDnums);
-      fclose(FIDstd);
-      NN=NN+NF;
     end
   end
 end
@@ -344,65 +331,77 @@ end
 %% Export strain rates of internal deformation.
 function ExportInternalDeformation(DIR,TCHA,BLK)
 NN=1;
-exid=exist([DIR,'/rigid']);
-if exid~=7; mkdir([DIR,'/rigid']); end
-FIDinternal=fopen([DIR,'/rigid/Internal_Deformation.txt'],'w');
-fprintf(FIDinternal,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
-for NB=1:BLK(1).NBlock
-  exx=TCHA.AVEINE(3*NB-2);
-  exy=TCHA.AVEINE(3*NB-1);
-  eyy=TCHA.AVEINE(3*NB  );
-  sigexx=TCHA.STDINE(3*NB-2);
-  sigexy=TCHA.STDINE(3*NB-1);
-  sigeyy=TCHA.STDINE(3*NB  );
-  E=[exx exy;...
-     exy eyy];
-  [eigV,eigD]=eig(E);
-  e1=eigD(1,1); e2=eigD(2,2);
-  v1=eigV(:,1); v2=eigV(:,2);
-  if e1>=e2
-    emax=e1; axmax=v1;
-    emin=e2; axmin=v2;
-  else
-    emax=e2; axmax=v2;
-    emin=e1; axmin=v1;
+folder=[DIR,'/rigid'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+NINE=size(TCHA.AVEINE,1)/TCHA.NReplica;
+TCHA.AVEINE=reshape(TCHA.AVEINE,NINE,TCHA.NReplica);
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)'];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  FIDinternal=fopen([folder,'/Internal_Deformation.txt'],'w');
+  fprintf(FIDinternal,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+  for NB=1:BLK(1).NBlock
+    exx=TCHA.AVEINE(3*NB-2,REP);
+    exy=TCHA.AVEINE(3*NB-1,REP);
+    eyy=TCHA.AVEINE(3*NB  ,REP);
+    sigexx=TCHA.STDINE(3*NB-2,REP);
+    sigexy=TCHA.STDINE(3*NB-1,REP);
+    sigeyy=TCHA.STDINE(3*NB  ,REP);
+    E=[exx exy;...
+        exy eyy];
+    [eigV,eigD]=eig(E);
+    e1=eigD(1,1); e2=eigD(2,2);
+    v1=eigV(:,1); v2=eigV(:,2);
+    if e1>=e2
+      emax=e1; axmax=v1;
+      emin=e2; axmin=v2;
+    else
+      emax=e2; axmax=v2;
+      emin=e1; axmin=v1;
+    end
+    thetaP=rad2deg(atan2(axmax(2),axmax(1)));
+    if thetaP<0; thetaP=thetaP+360; end
+    shearMAX=sqrt((1/4)*(exx-eyy)^2+exy^2);
+    sigemax    =sqrt( ( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
+                     +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
+                     +( 0.5 - 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
+    sigemin    =sqrt( ( 0.5 - 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
+                     +(         -1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
+                     +( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
+    sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
+                     +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
+                     +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
+    fprintf(FIDinternal,'%2d %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n',...
+            NB,BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
+            shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
   end
-  thetaP=rad2deg(atan2(axmax(2),axmax(1)));
-  if thetaP<0; thetaP=thetaP+360; end
-  shearMAX=sqrt((1/4)*(exx-eyy)^2+exy^2);
-  sigemax    =sqrt( ( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
-                   +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
-                   +( 0.5 - 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-  sigemin    =sqrt( ( 0.5 - 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
-                   +(         -1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
-                   +( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-  sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
-                   +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
-                   +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-  fprintf(FIDinternal,'%2d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n',...
-      NB,BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
-      shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
 end
 fclose(FIDinternal);
 end
 %% Translate coupling to slip deficit rate.
-function [SDR]=coupling2sdr(TCHA,D,G)
+function [SDR]=coupling2sdr(TCHA,D,DPT,G)
 
 Mp.SMP=TCHA.AVEPOL;
-Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
-Mc.SMPMAT=Mc.SMPMAT(D.MID);
-SDR.tmp=(G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT;
+Mc.N=size(TCHA.MEDFLT,1)/3;
+Mc.SMPMAT=reshape(...
+    repmat(TCHA.MEDFLT,3*D.CNT,1)...
+    ,3*Mc.N,TCHA.NReplica*D.CNT);
+Mc.SMPMAT=reshape(Mc.SMPMAT(DPT.MID),3*Mc.N,TCHA.NReplica);
+SDR.tmp=(G.TB*Mp.SMP).*DPT.CFINV.*Mc.SMPMAT;
 SFLTNUM=sum(D.MID)./3;
 HH=0;
 H1=0;
 SDR.flax=[];
+TCHA.MEDFLT=reshape(TCHA.MEDFLT,Mc.N,TCHA.NReplica);
 for ii=1:length(SFLTNUM)
-  sdr.all=SDR.tmp(HH+1:HH+3*SFLTNUM(ii));
-  sdr.str=sdr.all(1:SFLTNUM(ii));
-  sdr.dip=sdr.all(SFLTNUM(ii)+1:SFLTNUM(ii)*2);
-  sdr.tns=sdr.all(2*SFLTNUM(ii)+1:SFLTNUM(ii)*3);
+  sdr.all=SDR.tmp(HH+1:HH+3*SFLTNUM(ii),:);
+  sdr.str=sdr.all(1:SFLTNUM(ii),:);
+  sdr.dip=sdr.all(SFLTNUM(ii)+1:SFLTNUM(ii)*2,:);
+  sdr.tns=sdr.all(2*SFLTNUM(ii)+1:SFLTNUM(ii)*3,:);
   sdr.scaler=sqrt(sdr.str.^2+sdr.dip.^2+sdr.tns.^2);
-  sdr.cp=TCHA.AVEFLT(H1+1:H1+SFLTNUM(ii));
+  sdr.cp=TCHA.MEDFLT(H1+1:H1+SFLTNUM(ii),:);
   minus=sign(sdr.cp);
   sdr.scaler=minus.*sdr.scaler;
   SDR.flax=[SDR.flax; sdr.scaler];
