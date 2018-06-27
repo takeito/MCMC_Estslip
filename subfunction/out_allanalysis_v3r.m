@@ -15,7 +15,7 @@ fprintf('Now loading %s ...',[DIR,'/GRN.mat'])
 load([DIR,'/GRN.mat']);fprintf('load\n')
 fprintf('Now loading %s ...',[DIR,'/TCHA.mat'])
 load([DIR,'/TCHA.mat']);fprintf('load\n')
-[G,DPT]=expand_parallelization(D,G);
+[G,DPT]=expand_parallelization(TCHA,D,G);
 % 
 [SDR]=coupling2sdr(TCHA,D,DPT,G);
 ExportCoupling(DIR,TCHA,BLK,SDR);
@@ -25,21 +25,21 @@ for CP=1:size(Par.Coupling_Pair,2)
 end
 out_epole_allchain(DIR,TCHA,BLK,Par.BLKNAME);
 [TRIg,BLKg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
-out_vector_allchain_v2(DIR,BLK,TCHA,G,D,DPT,GRD,TRIg,OBS);
+out_vector_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,DPT,GRD,TRIg,OBS);
 RelativeMotion_allchain(DIR,BLK,TCHA);
 % % 
 for EL=1:size(Par.Elastic_Pair,2)
-  out_elastic_pair_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
+  out_elastic_pair_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,DPT,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
 end
 %
 end
 %% Expand and Parallelization 
-function [G,DPT]=expand_parallelization(D,G)
+function [G,DPT]=expand_parallelization(TCHA,D,G)
 G(1).TB=full(G(1).TB);
-DPT.OBS=repmat(D(1).OBS,1,NReplica);
-DPT.ERR=repmat(D(1).ERR,1,NReplica);
-DPT.MID   = repmat(D(1).MID,1,NReplica);
-DPT.CFINV = repmat(D(1).CFINV,1,NReplica);
+DPT.OBS=repmat(D(1).OBS,1,TCHA.NReplica);
+DPT.ERR=repmat(D(1).ERR,1,TCHA.NReplica);
+DPT.MID   = repmat(D(1).MID,1,TCHA.NReplica);
+DPT.CFINV = repmat(D(1).CFINV,1,TCHA.NReplica);
 end
 %% Read export parameter file
 function [PAR]=ReadPara(Parfile)
@@ -194,11 +194,11 @@ end
 % 
 end
 %% Export vectors of calculation, observation, residual vector
-function out_vector_allchain_v2(DIR,BLK,TCHA,G,D,DPT,GRD,TRIg,OBS)
+function out_vector_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,DPT,GRD,TRIg,OBS)
 % 
 calvec=calc_sampling_vector(OBS,BLK,TCHA,D,DPT,G);
 resvec=calc_residual_vector(OBS,BLK,TCHA,calvec);
-[grdvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,G,GRD,TRIg);
+[grdvec,GRD]=calc_vector_atmesh(BLKg,TCHA,D,DPT,G,GRD,TRIg);
 % 
 WRITE_VECTOR(TCHA,DIR,OBS,BLK,calvec,resvec,grdvec,GRD);
 end
@@ -209,7 +209,7 @@ Est_Motion_BLOCKS(DIR,TCHA,BLK)
 % 
 end
 %% Export elastic vectors resulting from coupling at block boundaries
-function out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,Elastic_Pair)
+function out_elastic_pair_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,DPT,OBS,GRD,TRI,TRIg,Elastic_Pair)
 NAME=Elastic_Pair.NAME{1};
 PAIR=Elastic_Pair.pair;
 % 
@@ -237,7 +237,6 @@ end
 end
 %% Show results for makeing FIGURES
 function ExportCoupling(DIR,TCHA,BLK,SDR)
-NN=1;
 folder=[DIR,'/coupling'];
 exid=exist(folder);
 if exid~=7; mkdir(folder); end
@@ -246,6 +245,7 @@ TCHA.AVEFLT=reshape(TCHA.AVEFLT,NFLT,TCHA.NReplica);
 TCHA.MEDFLT=reshape(TCHA.MEDFLT,NFLT,TCHA.NReplica);
 TCHA.STDFLT=reshape(TCHA.STDFLT,NFLT,TCHA.NReplica);
 for REP=1:TCHA.NReplica
+  NN=1;
   subfolder=[folder,'/replica',num2str(REP)];
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
@@ -286,7 +286,6 @@ end
 function ExportCouplingPair(DIR,BLK,TCHA,sdr,Coupling_Pair)
 PAIR=Coupling_Pair.pair;
 name=Coupling_Pair.NAME{1};
-NN=1;
 folder=[DIR,'/coupling'];
 exid=exist(folder);
 if exid~=7; mkdir(folder); end
@@ -295,8 +294,9 @@ for REP=1:TCHA.NReplica
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
   FID = fopen([subfolder,'/CouplingTrace_',name,'.txt'],'w');
-  fprintf(FID,'# Contents');
-  fprintf(FID,'# FLT_No. Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat Mean_Coupling Median_Coupling SDR');
+  fprintf(FID,'# Contents\n');
+  fprintf(FID,'# FLT_No. Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat Mean_Coupling Median_Coupling SDR\n');
+  NN=1;
   for NB1=1:BLK(1).NBlock
     for NB2=NB1+1:BLK(1).NBlock
       NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
@@ -326,11 +326,11 @@ for REP=1:TCHA.NReplica
           SDR=sdr.flax(FLTNUM,:);
           SDR=SDR(acID);
           FLTNUM=FLTNUM(acID);
-          outdata=[FLTNUM ...
-                   expLON expLAT ... 
-                   meanLON meanLAT ...
-                   AVECP MEDCP SDR];
-          fprintf(FID,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f \n',outdata');
+          outdata=[FLTNUM;...
+                   expLON; expLAT;... 
+                   meanLON; meanLAT;...
+                   AVECP'; MEDCP'; SDR'];
+          fprintf(FID,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata);
         end
         NN=NN+NF;
       end
@@ -341,12 +341,12 @@ end
 end
 %% Export strain rates of internal deformation.
 function ExportInternalDeformation(DIR,TCHA,BLK)
-NN=1;
 folder=[DIR,'/rigid'];
 exid=exist(folder);
 if exid~=7; mkdir(folder); end
 NINE=size(TCHA.AVEINE,1)/TCHA.NReplica;
 TCHA.AVEINE=reshape(TCHA.AVEINE,NINE,TCHA.NReplica);
+TCHA.STDINE=reshape(TCHA.STDINE,NINE,TCHA.NReplica);
 for REP=1:TCHA.NReplica
   subfolder=[folder,'/replica',num2str(REP)'];
   exid=exist(subfolder);
@@ -617,7 +617,7 @@ for N=1:BLK(1).NBlock
   GRD(N).LON=GRD(1).ALON(IND);
   GRD(N).HIG=GRD(1).AHIG(IND);
   GRD(N).OXYZ=conv2ell_hig(GRD(N).LAT,GRD(N).LON,GRD(N).HIG);
-  [BLKg(N).Xinter,BLKg(N).Yinter]=PLTXY(OBS(N).LAT,OBS(N).LON,BLK(N).LATinter,BLK(N).LONinter);
+  [BLKg(N).Xinter,BLKg(N).Yinter]=PLTXY(GRD(N).LAT,GRD(N).LON,BLK(N).LATinter,BLK(N).LONinter);
 end
 Dg(1).IND=find(GRD(1).ABLK~=0)';
 GRD(1).ALON=GRD(1).ALON(:,Dg(1).IND);
@@ -631,18 +631,19 @@ GRD(1).AXYZ=GRD(1).AXYZ(Dg(1).IND,:);
 % 
 end
 %% MAKE PARTS OF GREEN FUNCTION AT MESH GRID
-function [Dg,Gg,GRD]=ReshapeGreen(BLK,GRD,TRIg)
+function [Dg,Gg,GRD]=ReshapeGreen(BLKg,GRD,TRIg)
 % 
 NGRD=size(GRD(1).ALON,2);
-TMP.P=zeros(3*NGRD,3.*BLK(1).NBlock);
+TMP.P=zeros(3*NGRD,3.*BLKg(1).NBlock);
+TMP.I=zeros(3*NGRD,3.*BLKg(1).NBlock);
 MC=1;
 MT=1;
 MR=1;
-for NB1=1:BLK(1).NBlock
+for NB1=1:BLKg(1).NBlock
   Dg(1).grdid=zeros(1,NGRD);
   Dg(1).grdid(1,GRD(1).ABLK==NB1)=true;
   Dg(1).GRDID(:,NB1)=reshape(repmat(Dg(1).grdid,3,1),3*NGRD,1);
-  for NB2=NB1+1:BLK(1).NBlock
+  for NB2=NB1+1:BLKg(1).NBlock
     NF=size(TRIg(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
       TMP.C(1:3*NGRD,MC     :MC+  NF-1)=TRIg(1).BOUND(NB1,NB2).GSTR;
@@ -663,11 +664,17 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,3)+GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,3)-GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,2)-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,1);
+  TMP.I(EIND,3*NB1-2)= (BLKg(NB1).Xinter).*10^6;
+  TMP.I(EIND,3*NB1-1)= (BLKg(NB1).Yinter).*10^6;
+  TMP.I(EIND,3*NB1  )= 0;
+  TMP.I(NIND,3*NB1-2)= 0;
+  TMP.I(NIND,3*NB1-1)= (BLKg(NB1).Xinter).*10^6;
+  TMP.I(NIND,3*NB1  )= (BLKg(NB1).Yinter).*10^6;
 end
 % 
 Gg(1).C  =TMP.C;
 Gg(1).P  =TMP.P;
-
+Gg(1).I  =TMP.I;
 end
 %% MAKE GREEN FUNCTION
 function [TRI]=GREEN_TRI(BLK,GRD)
@@ -1316,8 +1323,8 @@ BOUND.VELdip=(BOUND.VELx.*BOUND.norXY(:,1)+BOUND.VELy.*BOUND.norXY(:,2)).*BOUND.
 sclSTR=zeros(size(BOUND.VELx));
 sclDIP=zeros(size(BOUND.VELx));
 sclVEL=sqrt(BOUND.VELx.^2+BOUND.VELy.^2);
-fprintf(FID,'# Contents');
-fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel');
+fprintf(FID,'# Contents\n');
+fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
 for ii=1:length(BLK(1).BOUND(NB1,NB2).LAT)-1
   ST=[BOUND.VELstr(ii,:) 0]; sclSTR(ii)=sqrt(ST(1).^2+ST(2).^2);
   DP=[BOUND.VELdip(ii,:) 0]; sclDIP(ii)=sqrt(DP(1).^2+DP(2).^2);
@@ -1431,19 +1438,20 @@ LAT   = PH1-(C2.*X).^2.*V2.*TPHI1./(2.*D);
 LON   = ALON0+C2.*X./CPHI1-(C2.*X).^3.*(1.0+2.*TPHI1.^2)./(6.*D.^2.*CPHI1);
 end
 %% MAKE PARTS OF GREEN FUNCTION AT MESH GRID
-function [Dg,Gg,GRD]=ReshapeGreen_PAIR(BLK,GRD,TRIg,PAIR)
+function [Dg,Gg,GRD]=ReshapeGreen_PAIR(BLKg,GRD,TRIg,PAIR)
 % 
 NGRD=size(GRD(1).ALON,2);
 % 
-TMP.P=zeros(3*NGRD,3.*BLK(1).NBlock);
+TMP.P=zeros(3*NGRD,3.*BLKg(1).NBlock);
+TMP.I=zeros(3*NGRD,3.*BLKg(1).NBlock);
 MC=1;
 MT=1;
 MR=1;
-for NB1=1:BLK(1).NBlock
+for NB1=1:BLKg(1).NBlock
   Dg(1).grdid=zeros(1,NGRD);
   Dg(1).grdid(1,GRD(1).ABLK==NB1)=true;
   Dg(1).GRDID(:,NB1)=reshape(repmat(Dg(1).grdid,3,1),3*NGRD,1);
-  for NB2=NB1+1:BLK(1).NBlock
+  for NB2=NB1+1:BLKg(1).NBlock
     NF=size(TRIg(1).BOUND(NB1,NB2).clon,2);
     if NF~=0
       FLAG=0;
@@ -1476,12 +1484,12 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,3)+GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,3)-GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,2)-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,1);
-  TMP.I(EIND,3*NB1-2)= (BLK(NB1).Xinter).*10^6;
-  TMP.I(EIND,3*NB1-1)= (BLK(NB1).Yinter).*10^6;
+  TMP.I(EIND,3*NB1-2)= (BLKg(NB1).Xinter).*10^6;
+  TMP.I(EIND,3*NB1-1)= (BLKg(NB1).Yinter).*10^6;
   TMP.I(EIND,3*NB1  )= 0;
   TMP.I(NIND,3*NB1-2)= 0;
-  TMP.I(NIND,3*NB1-1)= (BLK(NB1).Xinter).*10^6;
-  TMP.I(NIND,3*NB1  )= (BLK(NB1).Yinter).*10^6;
+  TMP.I(NIND,3*NB1-1)= (BLKg(NB1).Xinter).*10^6;
+  TMP.I(NIND,3*NB1  )= (BLKg(NB1).Yinter).*10^6;
 end
 % 
 Gg(1).C  =TMP.C;
