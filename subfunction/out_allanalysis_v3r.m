@@ -197,10 +197,10 @@ end
 function out_vector_allchain_v2(DIR,BLK,TCHA,G,D,DPT,GRD,TRIg,OBS)
 % 
 calvec=calc_sampling_vector(OBS,BLK,TCHA,D,DPT,G);
-resvec=calc_residual_vector(BLK,OBS,calvec);
+resvec=calc_residual_vector(OBS,BLK,TCHA,calvec);
 [grdvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,G,GRD,TRIg);
 % 
-WRITE_VECTOR(DIR,OBS,BLK,calvec,resvec,grdvec,GRD);
+WRITE_VECTOR(TCHA,DIR,OBS,BLK,calvec,resvec,grdvec,GRD);
 end
 %% Export rigid and relative motion
 function RelativeMotion_allchain(DIR,BLK,TCHA)
@@ -216,7 +216,7 @@ PAIR=Elastic_Pair.pair;
 % calvec=calc_sampling_vector(OBS,BLK,TCHA,D,G);
 [grdvec,GRD]=calc_vector_atmesh_pair(BLK,TCHA,D,G,GRD,TRIg,PAIR);
 CALVECgrd.ela=[GRD(1).ALON;GRD(1).ALAT;grdvec.ELA(1:3:end)';grdvec.ELA(2:3:end)';grdvec.ELA(3:3:end)'];
-[sitevec,OBS]=calc_vector_atmesh_pair(BLK,TCHA,D,G,OBS,TRI,PAIR);
+[sitevec,OBS]=calc_vector_atmesh_pair(BLK,TCHA,D,DPT,G,OBS,TRI,PAIR);
 CALVECsite.ela=[OBS(1).ALON;OBS(1).ALAT;sitevec.ELA(1:3:end)';sitevec.ELA(2:3:end)';sitevec.ELA(3:3:end)'];
 
 oDIR=[DIR,'/vector'];
@@ -438,46 +438,53 @@ e=COVPOL(2,3);
 f=COVPOL(3,3);
 end
 %%
-function WRITE_VECTOR(DIR,OBS,BLK,calvec,resvec,grdvec,GRD)
-oDIR=[DIR,'/vector'];
-exid=exist(oDIR);
-if exid~=7; mkdir(oDIR); end
+function WRITE_VECTOR(TCHA,DIR,OBS,BLK,calvec,resvec,grdvec,GRD)
+folder=[DIR,'/vector'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
 % 
 OBSVEC=[OBS(1).ALON;OBS(1).ALAT;OBS(1).EVEC;OBS(1).NVEC;OBS(1).HVEC];
-CALVEC.RIG=[OBS(1).ALON;OBS(1).ALAT;calvec.RIG(1:3:end)';calvec.RIG(2:3:end)';calvec.RIG(3:3:end)'];
-CALVEC.ELA=[OBS(1).ALON;OBS(1).ALAT;calvec.ELA(1:3:end)';calvec.ELA(2:3:end)';calvec.ELA(3:3:end)'];
-CALVEC.SUM=[OBS(1).ALON;OBS(1).ALAT;calvec.SUM(1:3:end)';calvec.SUM(2:3:end)';calvec.SUM(3:3:end)'];
-RESVEC.SUM=[OBS(1).ALON;OBS(1).ALAT;resvec.SUM];
-CALVECgrid.rig=[GRD(1).ALON;GRD(1).ALAT;grdvec.RIG(1:3:end)';grdvec.RIG(2:3:end)';grdvec.RIG(3:3:end)'];
-CALVECgrid.ela=[GRD(1).ALON;GRD(1).ALAT;grdvec.ELA(1:3:end)';grdvec.ELA(2:3:end)';grdvec.ELA(3:3:end)'];
+NR=0;
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  RESID=[REP,REP+TCHA.NReplica,REP+2*TCHA.NReplica];
+  CALVEC.RIG=[OBS(1).ALON;OBS(1).ALAT;calvec.RIG(1:3:end,REP)';calvec.RIG(2:3:end,REP)';calvec.RIG(3:3:end,REP)'];
+  CALVEC.ELA=[OBS(1).ALON;OBS(1).ALAT;calvec.ELA(1:3:end,REP)';calvec.ELA(2:3:end,REP)';calvec.ELA(3:3:end,REP)'];
+  CALVEC.SUM=[OBS(1).ALON;OBS(1).ALAT;calvec.SUM(1:3:end,REP)';calvec.SUM(2:3:end,REP)';calvec.SUM(3:3:end,REP)'];
+  RESVEC.SUM=[OBS(1).ALON;OBS(1).ALAT;resvec.SUM(RESID,:)];
+  CALVECgrid.rig=[GRD(1).ALON;GRD(1).ALAT;grdvec.RIG(1:3:end,REP)';grdvec.RIG(2:3:end,REP)';grdvec.RIG(3:3:end,REP)'];
+  CALVECgrid.ela=[GRD(1).ALON;GRD(1).ALAT;grdvec.ELA(1:3:end,REP)';grdvec.ELA(2:3:end,REP)';grdvec.ELA(3:3:end,REP)'];
 % 
-FID=fopen([oDIR,'/OBS_vector.txt'],'w');
-fprintf(FID,'%f %f %f %f %f\n',OBSVEC);
+  FID=fopen([subfolder,'/OBS_vector.txt'],'w');
+  fprintf(FID,'%f %f %f %f %f\n',OBSVEC);
+  fclose(FID);
+  FID=fopen([subfolder,'/CAL_vector.txt'],'w');
+  fprintf(FID,'%f %f %f %f %f\n',CALVEC.SUM);
+  fclose(FID);
+  FID=fopen([subfolder,'/CAL_vector_rig_site.txt'],'w');
+  fprintf(FID,'%f %f %f %f %f\n',CALVEC.RIG);
+  fclose(FID);
+  FID=fopen([subfolder,'/CAL_vector_ela_site.txt'],'w');
+  fprintf(FID,'%f %f %f %f %f\n',CALVEC.ELA);
+  fclose(FID);
+  FID=fopen([subfolder,'/CAL_vector_rig_grid.txt'],'w');
+  fprintf(FID,'%f %f %f %f %f\n',CALVECgrid.rig);
+  fclose(FID);
+  FID=fopen([subfolder,'/CAL_vector_ela_grid.txt'],'w');
+  fprintf(FID,'%f %f %f %f %f\n',CALVECgrid.ela);
+  fclose(FID);
+  FID=fopen([subfolder,'/RES_vector.txt'],'w');
+  fprintf(FID,'%f %f %f %f %f\n',RESVEC.SUM);
+  fclose(FID);
+  FID=fopen([subfolder,'/RMS_vector_block.txt'],'w');
+  fprintf(FID,'BLOCK  RMS(mm/yr)\n');
+  for ii=1:BLK(1).NBlock
+    fprintf(FID,'%d %f\n',ii,resvec.RMS(ii));
+  end
 fclose(FID);
-FID=fopen([oDIR,'/CAL_vector.txt'],'w');
-fprintf(FID,'%f %f %f %f %f\n',CALVEC.SUM);
-fclose(FID);
-FID=fopen([oDIR,'/CAL_vector_rig_site.txt'],'w');
-fprintf(FID,'%f %f %f %f %f\n',CALVEC.RIG);
-fclose(FID);
-FID=fopen([oDIR,'/CAL_vector_ela_site.txt'],'w');
-fprintf(FID,'%f %f %f %f %f\n',CALVEC.ELA);
-fclose(FID);
-FID=fopen([oDIR,'/CAL_vector_rig_grid.txt'],'w');
-fprintf(FID,'%f %f %f %f %f\n',CALVECgrid.rig);
-fclose(FID);
-FID=fopen([oDIR,'/CAL_vector_ela_grid.txt'],'w');
-fprintf(FID,'%f %f %f %f %f\n',CALVECgrid.ela);
-fclose(FID);
-FID=fopen([oDIR,'/RES_vector.txt'],'w');
-fprintf(FID,'%f %f %f %f %f\n',RESVEC.SUM);
-fclose(FID);
-FID=fopen([oDIR,'/RMS_vector_block.txt'],'w');
-fprintf(FID,'BLOCK  RMS(mm/yr)\n');
-for ii=1:BLK(1).NBlock
-  fprintf(FID,'%d %f\n',ii,resvec.RMS(ii));
 end
-fclose(FID);
 % 
 end
 %%
@@ -506,18 +513,27 @@ BOID=inpolygon(RESVEC(1,:),RESVEC(2,:),BO.lon,BO.lat);
 reslocal=RESVEC(:,BOID);
 end
 %%
-function RESVEC=calc_residual_vector(BLK,OBS,calvec)
-obsV=[OBS(1).EVEC;OBS(1).NVEC;OBS(1).HVEC];
-calV=[calvec.SUM(1:3:end)';calvec.SUM(2:3:end)';calvec.SUM(3:3:end)'];
+function RESVEC=calc_residual_vector(OBS,BLK,TCHA,calvec)
+obsV=[repmat(OBS(1).EVEC,TCHA.NReplica,1);...
+      repmat(OBS(1).NVEC,TCHA.NReplica,1);...
+      repmat(OBS(1).HVEC,TCHA.NReplica,1)];
+calV=[calvec.SUM(1:3:end,:)';...
+      calvec.SUM(2:3:end,:)';...
+      calvec.SUM(3:3:end,:)'];
 RESVEC.SUM=obsV-calV;
-for ii=1:BLK(1).NBlock
-  ID=inpolygon(OBS(1).ALON,OBS(1).ALAT,BLK(ii).LON,BLK(ii).LAT);
-  RESTMP=RESVEC.SUM(:,ID);
-  RESVEC.RMS(ii)=sqrt(sum(sum(RESTMP.^2))/sum(ID));
+
+RESVEC.RMS=zeros(BLK(1).NBlock,TCHA.NReplica);
+for REP=1:TCHA.NReplica
+  for ii=1:BLK(1).NBlock
+    ID=inpolygon(OBS(1).ALON,OBS(1).ALAT,BLK(ii).LON,BLK(ii).LAT);
+    REPID=[REP,REP+TCHA.NReplica,REP+2*TCHA.NReplica];
+    RESTMP=RESVEC.SUM(REPID,ID);
+    RESVEC.RMS(ii,REP)=sqrt(sum(sum(RESTMP.^2))/sum(ID));
+  end
 end
 end
 %% 
-function [GRDvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,G,GRD,TRIg)
+function [GRDvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,DPT,G,GRD,TRIg)
 % minlon=120; maxlon=150;
 % minlat=20 ; maxlat=50;
 % interval= 0.4;
@@ -530,11 +546,14 @@ function [GRDvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,G,GRD,TRIg)
 [Dg,Gg,GRD]=ReshapeGreen(BLK,GRD,TRIg);
 % 
 Mp.SMP=TCHA.AVEPOL;
-Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
-Mc.SMPMAT=Mc.SMPMAT(D.MID);
+Mc.N=size(TCHA.MEDFLT,1)/3;
+Mc.SMPMAT=reshape(...
+    repmat(TCHA.MEDFLT,3*D.CNT,1)...
+    ,3*Mc.N,TCHA.NReplica*D.CNT);
+Mc.SMPMAT=reshape(Mc.SMPMAT(DPT.MID),3*Mc.N,TCHA.NReplica);
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
 GRDvec.RIG=Gg.P*Mp.SMP;
-GRDvec.ELA=Gg.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
+GRDvec.ELA=Gg.C*((G.TB*Mp.SMP).*DPT.CFINV.*Mc.SMPMAT);
 GRDvec.SUM=GRDvec.RIG+GRDvec.ELA;
 % 
 end
@@ -542,8 +561,11 @@ end
 function CALvec=calc_sampling_vector(OBS,BLK,TCHA,D,DPT,G)
 % 
 Mp.SMP=TCHA.AVEPOL;
-Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
-Mc.SMPMAT=Mc.SMPMAT(D.MID);
+Mc.N=size(TCHA.MEDFLT,1)/3;
+Mc.SMPMAT=reshape(...
+    repmat(TCHA.MEDFLT,3*D.CNT,1)...
+    ,3*Mc.N,TCHA.NReplica*D.CNT);
+Mc.SMPMAT=reshape(Mc.SMPMAT(DPT.MID),3*Mc.N,TCHA.NReplica);
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
 CALvec.RIG=G.P*Mp.SMP;
 CALvec.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
