@@ -1281,11 +1281,14 @@ for REP=1:TCHA.NReplica
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
   FID=fopen([subfolder,'/boundary_vector.txt'],'w');
+  fprintf(FID,'# Contents\n');
+  fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
   for NB1=1:BLK(1).NBlock
     BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,REP);TCHA.AVEPOL(3.*NB1-1,REP);TCHA.AVEPOL(3.*NB1,REP)];
     for NB2=NB1+1:BLK(1).NBlock
       BLK(NB2).POL(:)=[TCHA.AVEPOL(3.*NB2-2,REP);TCHA.AVEPOL(3.*NB2-1,REP);TCHA.AVEPOL(3.*NB2,REP)];
-      if ~isempty(BLK(1).BOUND(NB1,NB2).LAT) 
+      if ~isempty(BLK(1).BOUND(NB1,NB2).LAT)
+        fprintf(FID,'> NB%s - NB%s \n',num2str(NB1),num2str(NB2));
         calc_relvelo(BLK,NB1,NB2,FID)
       end
     end
@@ -1323,8 +1326,6 @@ BOUND.VELdip=(BOUND.VELx.*BOUND.norXY(:,1)+BOUND.VELy.*BOUND.norXY(:,2)).*BOUND.
 sclSTR=zeros(size(BOUND.VELx));
 sclDIP=zeros(size(BOUND.VELx));
 sclVEL=sqrt(BOUND.VELx.^2+BOUND.VELy.^2);
-fprintf(FID,'# Contents\n');
-fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
 for ii=1:length(BLK(1).BOUND(NB1,NB2).LAT)-1
   ST=[BOUND.VELstr(ii,:) 0]; sclSTR(ii)=sqrt(ST(1).^2+ST(2).^2);
   DP=[BOUND.VELdip(ii,:) 0]; sclDIP(ii)=sqrt(DP(1).^2+DP(2).^2);
