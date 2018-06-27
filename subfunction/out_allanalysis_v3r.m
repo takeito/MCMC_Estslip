@@ -24,12 +24,12 @@ for CP=1:size(Par.Coupling_Pair,2)
   ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
 end
 out_epole_allchain(DIR,TCHA,BLK,Par.BLKNAME);
-[TRIg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
+[TRIg,BLKg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
 out_vector_allchain_v2(DIR,BLK,TCHA,G,D,DPT,GRD,TRIg,OBS);
 RelativeMotion_allchain(DIR,BLK,TCHA);
 % % 
 for EL=1:size(Par.Elastic_Pair,2)
-  out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
+  out_elastic_pair_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
 end
 %
 end
@@ -214,20 +214,25 @@ NAME=Elastic_Pair.NAME{1};
 PAIR=Elastic_Pair.pair;
 % 
 % calvec=calc_sampling_vector(OBS,BLK,TCHA,D,G);
-[grdvec,GRD]=calc_vector_atmesh_pair(BLK,TCHA,D,G,GRD,TRIg,PAIR);
-CALVECgrd.ela=[GRD(1).ALON;GRD(1).ALAT;grdvec.ELA(1:3:end)';grdvec.ELA(2:3:end)';grdvec.ELA(3:3:end)'];
+[grdvec ,GRD]=calc_vector_atmesh_pair(BLKg,TCHA,D,DPT,G,GRD,TRIg,PAIR);
 [sitevec,OBS]=calc_vector_atmesh_pair(BLK,TCHA,D,DPT,G,OBS,TRI,PAIR);
-CALVECsite.ela=[OBS(1).ALON;OBS(1).ALAT;sitevec.ELA(1:3:end)';sitevec.ELA(2:3:end)';sitevec.ELA(3:3:end)'];
 
-oDIR=[DIR,'/vector'];
-exid=exist(oDIR);
-if exid~=7; mkdir(oDIR); end
-FIDgrd=fopen([oDIR,'/CAL_vector_ela_',NAME,'_grid.txt'],'w');
-FIDsite=fopen([oDIR,'/CAL_vector_ela_',NAME,'_site.txt'],'w');
-fprintf(FIDgrd,'%f %f %f %f %f\n',CALVECgrd.ela);
-fprintf(FIDsite,'%f %f %f %f %f\n',CALVECsite.ela);
-fclose(FIDgrd);
-fclose(FIDsite);
+folder=[DIR,'/vector'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  FIDgrd=fopen([subfolder,'/CAL_vector_ela_',NAME,'_grid.txt'],'w');
+  FIDsite=fopen([subfolder,'/CAL_vector_ela_',NAME,'_site.txt'],'w');
+  CALVECgrd.ela =[GRD(1).ALON;GRD(1).ALAT;grdvec.ELA(1:3:end,REP)';grdvec.ELA(2:3:end,REP)';grdvec.ELA(3:3:end,REP)'];
+  CALVECsite.ela=[OBS(1).ALON;OBS(1).ALAT;sitevec.ELA(1:3:end,REP)';sitevec.ELA(2:3:end,REP)';sitevec.ELA(3:3:end,REP)'];
+  fprintf(FIDgrd,'%f %f %f %f %f\n',CALVECgrd.ela);
+  fprintf(FIDsite,'%f %f %f %f %f\n',CALVECsite.ela);
+  fclose(FIDgrd);
+  fclose(FIDsite);
+end
 % 
 end
 %% Show results for makeing FIGURES
@@ -388,9 +393,10 @@ fclose(FIDinternal);
 end
 %% Translate coupling to slip deficit rate.
 function [SDR]=coupling2sdr(TCHA,D,DPT,G)
-
-Mp.SMP=TCHA.AVEPOL;
-Mc.N=size(TCHA.MEDFLT,1)/3;
+% 
+Mc.N=size(TCHA.MEDFLT,1)/TCHA.NReplica;
+Mp.N=size(TCHA.AVEPOL,1)/TCHA.NReplica;
+Mp.SMP=reshape(TCHA.AVEPOL,Mp.N,TCHA.NReplica);
 Mc.SMPMAT=reshape(...
     repmat(TCHA.MEDFLT,3*D.CNT,1)...
     ,3*Mc.N,TCHA.NReplica*D.CNT);
@@ -481,7 +487,7 @@ for REP=1:TCHA.NReplica
   FID=fopen([subfolder,'/RMS_vector_block.txt'],'w');
   fprintf(FID,'BLOCK  RMS(mm/yr)\n');
   for ii=1:BLK(1).NBlock
-    fprintf(FID,'%d %f\n',ii,resvec.RMS(ii));
+    fprintf(FID,'%d %f\n',ii,resvec.RMS(ii,REP));
   end
 fclose(FID);
 end
@@ -545,8 +551,11 @@ function [GRDvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,DPT,G,GRD,TRIg)
 % GRD(1).AHIG=zeros(size(GRD(1).ALON));
 [Dg,Gg,GRD]=ReshapeGreen(BLK,GRD,TRIg);
 % 
-Mp.SMP=TCHA.AVEPOL;
-Mc.N=size(TCHA.MEDFLT,1)/3;
+Mc.N=size(TCHA.MEDFLT,1)/TCHA.NReplica;
+Mp.N=size(TCHA.AVEPOL,1)/TCHA.NReplica;
+Mi.N=size(TCHA.AVEINE,1)/TCHA.NReplica;
+Mp.SMP=reshape(TCHA.AVEPOL,Mi.N,TCHA.NReplica);
+Mi.SMP=reshape(TCHA.AVEINE,Mi.N,TCHA.NReplica);
 Mc.SMPMAT=reshape(...
     repmat(TCHA.MEDFLT,3*D.CNT,1)...
     ,3*Mc.N,TCHA.NReplica*D.CNT);
@@ -554,14 +563,18 @@ Mc.SMPMAT=reshape(Mc.SMPMAT(DPT.MID),3*Mc.N,TCHA.NReplica);
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
 GRDvec.RIG=Gg.P*Mp.SMP;
 GRDvec.ELA=Gg.C*((G.TB*Mp.SMP).*DPT.CFINV.*Mc.SMPMAT);
-GRDvec.SUM=GRDvec.RIG+GRDvec.ELA;
+GRDvec.INE=Gg.I*Mi.SMP;
+GRDvec.SUM=GRDvec.RIG+GRDvec.ELA+GRDvec.INE;
 % 
 end
 %% CALCULATE VECTOR BASED ON SAMPLED PARAMETER AND GREEN FUNCTION
 function CALvec=calc_sampling_vector(OBS,BLK,TCHA,D,DPT,G)
 % 
-Mp.SMP=TCHA.AVEPOL;
-Mc.N=size(TCHA.MEDFLT,1)/3;
+Mc.N=size(TCHA.MEDFLT,1)/TCHA.NReplica;
+Mp.N=size(TCHA.AVEPOL,1)/TCHA.NReplica;
+Mi.N=size(TCHA.AVEINE,1)/TCHA.NReplica;
+Mp.SMP=reshape(TCHA.AVEPOL,Mp.N,TCHA.NReplica);
+Mi.SMP=reshape(TCHA.AVEINE,Mi.N,TCHA.NReplica);
 Mc.SMPMAT=reshape(...
     repmat(TCHA.MEDFLT,3*D.CNT,1)...
     ,3*Mc.N,TCHA.NReplica*D.CNT);
@@ -569,12 +582,14 @@ Mc.SMPMAT=reshape(Mc.SMPMAT(DPT.MID),3*Mc.N,TCHA.NReplica);
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
 CALvec.RIG=G.P*Mp.SMP;
 CALvec.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-CALvec.SUM=CALvec.RIG+CALvec.ELA;
+CALvec.INE=G.I*Mi.SMP;
+CALvec.SUM=CALvec.RIG+CALvec.ELA+CALvec.INE;
 
 end
 %% MAKE PART GREEN FUNCTION v2
-function [TRIg,Dg,GRD]=MAKE_PART_GREEN(BLK,Grid_Setting)
+function [TRIg,BLKg,Dg,GRD]=MAKE_PART_GREEN(BLK,Grid_Setting)
 % 
+BLKg=BLK;
 minlon=Grid_Setting(1);
 maxlon=Grid_Setting(2);
 minlat=Grid_Setting(3);
@@ -602,6 +617,7 @@ for N=1:BLK(1).NBlock
   GRD(N).LON=GRD(1).ALON(IND);
   GRD(N).HIG=GRD(1).AHIG(IND);
   GRD(N).OXYZ=conv2ell_hig(GRD(N).LAT,GRD(N).LON,GRD(N).HIG);
+  [BLKg(N).Xinter,BLKg(N).Yinter]=PLTXY(OBS(N).LAT,OBS(N).LON,BLK(N).LATinter,BLK(N).LONinter);
 end
 Dg(1).IND=find(GRD(1).ABLK~=0)';
 GRD(1).ALON=GRD(1).ALON(:,Dg(1).IND);
@@ -1248,33 +1264,30 @@ end
 %% CALC MOTION BLOCKS
 function Est_Motion_BLOCKS(DIR,TCHA,BLK)
 % 
-exid=exist([DIR,'/rigid']);
-if exid~=7; mkdir([DIR,'/rigid']); end
-FIDbound   =fopen([DIR,'/rigid/boundary_vector.txt'],'w');
-FIDboundval=fopen([DIR,'/rigid/boundary_vector_value.txt'],'w');
-FIDlateral   =fopen([DIR,'/rigid/boundary_vector_lateral.txt'],'w');
-FIDlateralval=fopen([DIR,'/rigid/boundary_vector_lateral_value.txt'],'w');
-FIDdip   =fopen([DIR,'/rigid/boundary_vector_dip.txt'],'w');
-FIDdipval=fopen([DIR,'/rigid/boundary_vector_dip_value.txt'],'w');
-for NB1=1:BLK(1).NBlock
-  BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,:);TCHA.AVEPOL(3.*NB1-1,:);TCHA.AVEPOL(3.*NB1,:)];
-  for NB2=NB1+1:BLK(1).NBlock
-    BLK(NB2).POL(:)=[TCHA.AVEPOL(3.*NB2-2,:);TCHA.AVEPOL(3.*NB2-1,:);TCHA.AVEPOL(3.*NB2,:)];
-    if ~isempty(BLK(1).BOUND(NB1,NB2).LAT) 
-      calc_relvelo(BLK,NB1,NB2,FIDbound,FIDboundval,FIDlateral,FIDlateralval,FIDdip,FIDdipval)
+folder=[DIR,'/rigid'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+NPOL=size(TCHA.AVEPOL,1)/TCHA.NReplica;
+TCHA.AVEPOL=reshape(TCHA.AVEPOL,NPOL,TCHA.NReplica);
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  FID=fopen([subfolder,'/boundary_vector.txt'],'w');
+  for NB1=1:BLK(1).NBlock
+    BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,REP);TCHA.AVEPOL(3.*NB1-1,REP);TCHA.AVEPOL(3.*NB1,REP)];
+    for NB2=NB1+1:BLK(1).NBlock
+      BLK(NB2).POL(:)=[TCHA.AVEPOL(3.*NB2-2,REP);TCHA.AVEPOL(3.*NB2-1,REP);TCHA.AVEPOL(3.*NB2,REP)];
+      if ~isempty(BLK(1).BOUND(NB1,NB2).LAT) 
+        calc_relvelo(BLK,NB1,NB2,FID)
+      end
     end
-  end
+ end
 end
-fclose(FIDbound);
-fclose(FIDboundval);
-fclose(FIDlateral);
-fclose(FIDlateralval);
-fclose(FIDdip);
-fclose(FIDdipval);
 % 
 end
 %% 
-function calc_relvelo(BLK,NB1,NB2,FIDbound,FIDboundval,FIDlateral,FIDlateralval,FIDdip,FIDdipval)
+function calc_relvelo(BLK,NB1,NB2,FID)
 % Calculate relative motion with lateral and normal direction at block boundaries
 cBOUNDLON=mean(BLK(1).BOUND(NB1,NB2).LON);
 cBOUNDLAT=mean(BLK(1).BOUND(NB1,NB2).LAT);
@@ -1303,6 +1316,8 @@ BOUND.VELdip=(BOUND.VELx.*BOUND.norXY(:,1)+BOUND.VELy.*BOUND.norXY(:,2)).*BOUND.
 sclSTR=zeros(size(BOUND.VELx));
 sclDIP=zeros(size(BOUND.VELx));
 sclVEL=sqrt(BOUND.VELx.^2+BOUND.VELy.^2);
+fprintf(FID,'# Contents');
+fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel');
 for ii=1:length(BLK(1).BOUND(NB1,NB2).LAT)-1
   ST=[BOUND.VELstr(ii,:) 0]; sclSTR(ii)=sqrt(ST(1).^2+ST(2).^2);
   DP=[BOUND.VELdip(ii,:) 0]; sclDIP(ii)=sqrt(DP(1).^2+DP(2).^2);
@@ -1314,18 +1329,11 @@ for ii=1:length(BLK(1).BOUND(NB1,NB2).LAT)-1
   inIDdp=inpolygon(DISTdipping(1),DISTdipping(2),BLK1.XY(:,1),BLK1.XY(:,2));
   if inIDst==1; sclSTR(ii)=-1*sclSTR(ii); end % Left lateral
   if inIDdp~=1; sclDIP(ii)=-1*sclDIP(ii); end % Open
-  fprintf(FIDbound,'> -Z %f\n',sclVEL(ii));
-  fprintf(FIDbound,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii),  BLK(1).BOUND(NB1,NB2).LAT(ii)  );
-  fprintf(FIDbound,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii+1),BLK(1).BOUND(NB1,NB2).LAT(ii+1));
-  fprintf(FIDboundval,'%f %f %10.2f\n',BOUND.cLON(ii),BOUND.cLAT(ii),sclVEL(ii));
-  fprintf(FIDlateral,'> -Z %f\n',sclSTR(ii));
-  fprintf(FIDlateral,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii),  BLK(1).BOUND(NB1,NB2).LAT(ii)  );
-  fprintf(FIDlateral,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii+1),BLK(1).BOUND(NB1,NB2).LAT(ii+1));
-  fprintf(FIDlateralval,'%f %f %10.2f\n',BOUND.cLON(ii),BOUND.cLAT(ii),sclSTR(ii));
-  fprintf(FIDdip,'> -Z %f\n',sclDIP(ii));
-  fprintf(FIDdip,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii),  BLK(1).BOUND(NB1,NB2).LAT(ii)  );
-  fprintf(FIDdip,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii+1),BLK(1).BOUND(NB1,NB2).LAT(ii+1));
-  fprintf(FIDdipval,'%f %f %10.2f\n',BOUND.cLON(ii),BOUND.cLAT(ii),sclDIP(ii));
+  fprintf(FID,'%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f \n',...
+          BLK(1).BOUND(NB1,NB2).LON(ii),BLK(1).BOUND(NB1,NB2).LON(ii+1),...
+          BLK(1).BOUND(NB1,NB2).LAT(ii),BLK(1).BOUND(NB1,NB2).LAT(ii+1),...
+          BOUND.cLON(ii),BOUND.cLAT(ii),...
+          sclVEL(ii),sclSTR(ii),sclDIP(ii));
 end
 end
 %% PLATE MOTION DUE TO EULER POLE (XYZ)
@@ -1468,20 +1476,34 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,3)+GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,3)-GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,2)-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,1);
+  TMP.I(EIND,3*NB1-2)= (BLK(NB1).Xinter).*10^6;
+  TMP.I(EIND,3*NB1-1)= (BLK(NB1).Yinter).*10^6;
+  TMP.I(EIND,3*NB1  )= 0;
+  TMP.I(NIND,3*NB1-2)= 0;
+  TMP.I(NIND,3*NB1-1)= (BLK(NB1).Xinter).*10^6;
+  TMP.I(NIND,3*NB1  )= (BLK(NB1).Yinter).*10^6;
 end
 % 
 Gg(1).C  =TMP.C;
 Gg(1).P  =TMP.P;
+Gg(1).I  =TMP.I;
 end
 %% MAKE MATRIX
-function [GRDvec,GRD]=calc_vector_atmesh_pair(BLK,TCHA,D,G,GRD,TRIg,PAIR)
-[~,Gg,GRD]=ReshapeGreen_PAIR(BLK,GRD,TRIg,PAIR);
+function [GRDvec,GRD]=calc_vector_atmesh_pair(BLKg,TCHA,D,DPT,G,GRD,TRIg,PAIR)
+[~,Gg,GRD]=ReshapeGreen_PAIR(BLKg,GRD,TRIg,PAIR);
 % 
-Mp.SMP=TCHA.AVEPOL;
-Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
-Mc.SMPMAT=Mc.SMPMAT(D.MID);
+Mp.N=size(TCHA.AVEPOL,1)/TCHA.NReplica;
+Mi.N=size(TCHA.AVEINE,1)/TCHA.NReplica;
+Mc.N=size(TCHA.MEDFLT,1)/TCHA.NReplica;
+Mp.SMP=reshape(TCHA.AVEPOL,Mp.N,TCHA.NReplica);
+Mi.SMP=reshape(TCHA.AVEINE,Mi.N,TCHA.NReplica);
+Mc.SMPMAT=reshape(...
+    repmat(TCHA.MEDFLT,3*D.CNT,1)...
+    ,3*Mc.N,TCHA.NReplica*D.CNT);
+Mc.SMPMAT=reshape(Mc.SMPMAT(DPT.MID),3*Mc.N,TCHA.NReplica);
 GRDvec.RIG=Gg.P*Mp.SMP;
-GRDvec.ELA=Gg.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-GRDvec.SUM=GRDvec.RIG+GRDvec.ELA;
+GRDvec.ELA=Gg.C*((G.TB*Mp.SMP).*DPT.CFINV.*Mc.SMPMAT);
+GRDvec.INE=Gg.I*Mi.SMP;
+GRDvec.SUM=GRDvec.RIG+GRDvec.ELA+GRDvec.INE;
 % 
 end
