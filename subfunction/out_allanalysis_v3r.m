@@ -25,7 +25,7 @@ for CP=1:size(Par.Coupling_Pair,2)
 end
 out_epole_allchain(DIR,TCHA,BLK,Par.BLKNAME);
 [TRIg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
-out_vector_allchain_v2(DIR,BLK,TCHA,G,D,GRD,TRIg,OBS);
+out_vector_allchain_v2(DIR,BLK,TCHA,G,D,DPT,GRD,TRIg,OBS);
 RelativeMotion_allchain(DIR,BLK,TCHA);
 % % 
 for EL=1:size(Par.Elastic_Pair,2)
@@ -159,95 +159,44 @@ if Fid~=0
 end
 
 end
-%% Export coupling and SDR for each boundary
-function ExportCouplingPair(DIR,BLK,TCHA,sdr,Coupling_Pair)
-PAIR=Coupling_Pair.pair;
-name=Coupling_Pair.NAME{1};
-NN=1;
-exid=exist([DIR,'/coupling']);
-if exid~=7; mkdir([DIR,'/coupling']); end
-FIDc   =fopen([DIR,'/coupling/CouplingTrace_',name,'.txt'],'w');
-FIDfnum=fopen([DIR,'/coupling/CouplingTrace_TriNum',name,'.txt'],'w');
-FIDcval=fopen([DIR,'/coupling/CouplingTrace_value',name,'.txt'],'w');
-FIDs   =fopen([DIR,'/coupling/SDRTrace_',name,'.txt'],'w');
-FIDsval=fopen([DIR,'/coupling/SDRTrace_value',name,'.txt'],'w');
-for NB1=1:BLK(1).NBlock
-  for NB2=NB1+1:BLK(1).NBlock
-    NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
-    if NF~=0
-      FLAG=0;
-      for PN=1:size(PAIR,1)
-        PAIRID=ismember([NB1 NB2],PAIR(PN,:));
-        ISPAIR=sum(PAIRID);
-        if ISPAIR==2;FLAG=1;break;end
-      end
-      FLTNUM=NN:NN+NF-1;
-      if FLAG==1
-        ID=BLK(1).BOUND(NB1,NB2).bdep==0;
-        acID=sum(BLK(1).BOUND(NB1,NB2).bdep==0,2)==2;
-        rmID=find(sum(BLK(1).BOUND(NB1,NB2).bdep~=0,2)==2);
-        ID(rmID,:)=false;ID=ID';
-        tmplon=BLK(1).BOUND(NB1,NB2).blon';
-        tmplat=BLK(1).BOUND(NB1,NB2).blat';
-        expLON=tmplon(ID);expLON=reshape(expLON',2,length(expLON)/2);
-        expLAT=tmplat(ID);expLAT=reshape(expLAT',2,length(expLAT)/2);
-        meanLON=mean(expLON,1);
-        meanLAT=mean(expLAT,1);
-        AVECP=TCHA.AVEFLT(FLTNUM,:);
-        AVECP=AVECP(acID);
-        SDR=sdr.flax(FLTNUM,:);
-        SDR=SDR(acID);
-        FLTNUM=FLTNUM(acID);
-        for ii=1:length(AVECP)
-          fprintf(FIDc,'> -Z %f\n',AVECP(ii));
-          fprintf(FIDc,'%f %f\n',expLON(1,ii),expLAT(1,ii));
-          fprintf(FIDc,'%f %f\n',expLON(2,ii),expLAT(2,ii));
-          fprintf(FIDfnum,'%f %f %7i\n',meanLON(ii),meanLAT(ii),FLTNUM(ii));
-          fprintf(FIDcval,'%f %f %10.2f\n',meanLON(ii),meanLAT(ii),AVECP(ii));
-          fprintf(FIDs,'> -Z %f\n',SDR(ii));
-          fprintf(FIDs,'%f %f\n',expLON(1,ii),expLAT(1,ii));
-          fprintf(FIDs,'%f %f\n',expLON(2,ii),expLAT(2,ii));
-          fprintf(FIDsval,'%f %f %10.2f\n',meanLON(ii),meanLAT(ii),SDR(ii));
-        end
-%         NN=NN+NF;
-      end
-      NN=NN+NF;
-    end
-  end
-end
-fclose(FIDc);
-fclose(FIDfnum);
-fclose(FIDcval);
-fclose(FIDs);
-fclose(FIDsval);
-end
 %% Export Euler pole for each block
 function out_epole_allchain(DIR,TCHA,BLK,NAMEMAT)
 % 
-FID=fopen([DIR,'/est_euler_pole.txt'],'w');
-fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
-fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
-if isempty(NAMEMAT)
-  for kk=1:BLK(1).NBlock
-    NAMEMAT{ii}=num2str(kk,'%02i');
+folder=[DIR,'/euler_pole'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+NPOL=size(TCHA.AVEPOL,1)/TCHA.NReplica;
+TCHA.AVEPOL=reshape(TCHA.AVEPOL,NPOL,TCHA.NReplica);
+NR=0;
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  FID=fopen([subfolder,'/est_euler_pole.txt'],'w');
+  fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+  fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+  if isempty(NAMEMAT)
+    for kk=1:BLK(1).NBlock
+      NAMEMAT{ii}=num2str(kk,'%02i');
+    end
   end
+  for BK=1:BLK(1).NBlock
+      [latp,lonp,ang]=xyzp2lla(TCHA.AVEPOL(3.*BK-2,REP),TCHA.AVEPOL(3.*BK-1,REP),TCHA.AVEPOL(3.*BK,REP));
+      [a,b,c,d,e,f]=out_cov(TCHA.COVPOL(NR+3.*BK-2:NR+3.*BK,NR+3.*BK-2:NR+3.*BK));
+      fprintf('%2i %s %7.2f %8.2f %9.2e %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
+          BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+      fprintf(FID,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
+          BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+  end
+  NR=NR+NPOL;
+  fclose(FID);
 end
-for BK=1:BLK(1).NBlock
-%   [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
-  [latp,lonp,ang]=xyzp2lla(TCHA.AVEPOL(3.*BK-2,:),TCHA.AVEPOL(3.*BK-1,:),TCHA.AVEPOL(3.*BK,:));
-  [a,b,c,d,e,f]=out_cov(TCHA.COVPOL(3.*BK-2:3.*BK,3.*BK-2:3.*BK));
-  fprintf('%2i %s %7.2f %8.2f %9.2e %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
-    BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
-  fprintf(FID,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
-    BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
-end
-fclose(FID);
 % 
 end
 %% Export vectors of calculation, observation, residual vector
-function out_vector_allchain_v2(DIR,BLK,TCHA,G,D,GRD,TRIg,OBS)
+function out_vector_allchain_v2(DIR,BLK,TCHA,G,D,DPT,GRD,TRIg,OBS)
 % 
-calvec=calc_sampling_vector(OBS,BLK,TCHA,D,G);
+calvec=calc_sampling_vector(OBS,BLK,TCHA,D,DPT,G);
 resvec=calc_residual_vector(BLK,OBS,calvec);
 [grdvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,G,GRD,TRIg);
 % 
@@ -327,6 +276,63 @@ for REP=1:TCHA.NReplica
   end
 end
 fclose(FIDstdinfo);
+end
+%% Export coupling and SDR for each boundary
+function ExportCouplingPair(DIR,BLK,TCHA,sdr,Coupling_Pair)
+PAIR=Coupling_Pair.pair;
+name=Coupling_Pair.NAME{1};
+NN=1;
+folder=[DIR,'/coupling'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  FID = fopen([subfolder,'/CouplingTrace_',name,'.txt'],'w');
+  fprintf(FID,'# Contents');
+  fprintf(FID,'# FLT_No. Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat Mean_Coupling Median_Coupling SDR');
+  for NB1=1:BLK(1).NBlock
+    for NB2=NB1+1:BLK(1).NBlock
+      NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
+      if NF~=0
+        FLAG=0;
+        for PN=1:size(PAIR,1)
+          PAIRID=ismember([NB1 NB2],PAIR(PN,:));
+          ISPAIR=sum(PAIRID);
+          if ISPAIR==2;FLAG=1;break;end
+        end
+        FLTNUM=NN:NN+NF-1;
+        if FLAG==1
+          ID=BLK(1).BOUND(NB1,NB2).bdep==0;
+          acID=sum(BLK(1).BOUND(NB1,NB2).bdep==0,2)==2;
+          rmID=find(sum(BLK(1).BOUND(NB1,NB2).bdep~=0,2)==2);
+          ID(rmID,:)=false;ID=ID';
+          tmplon=BLK(1).BOUND(NB1,NB2).blon';
+          tmplat=BLK(1).BOUND(NB1,NB2).blat';
+          expLON=tmplon(ID);expLON=reshape(expLON',2,length(expLON)/2);
+          expLAT=tmplat(ID);expLAT=reshape(expLAT',2,length(expLAT)/2);
+          meanLON=mean(expLON,1);
+          meanLAT=mean(expLAT,1);
+          AVECP=TCHA.AVEFLT(FLTNUM,:);
+          AVECP=AVECP(acID);
+          MEDCP=TCHA.MEDFLT(FLTNUM,:);
+          MEDCP=MEDCP(acID);
+          SDR=sdr.flax(FLTNUM,:);
+          SDR=SDR(acID);
+          FLTNUM=FLTNUM(acID);
+          outdata=[FLTNUM ...
+                   expLON expLAT ... 
+                   meanLON meanLAT ...
+                   AVECP MEDCP SDR];
+          fprintf(FID,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f \n',outdata');
+        end
+        NN=NN+NF;
+      end
+    end
+  end
+  fclose(FID);
+end
 end
 %% Export strain rates of internal deformation.
 function ExportInternalDeformation(DIR,TCHA,BLK)
@@ -533,7 +539,7 @@ GRDvec.SUM=GRDvec.RIG+GRDvec.ELA;
 % 
 end
 %% CALCULATE VECTOR BASED ON SAMPLED PARAMETER AND GREEN FUNCTION
-function CALvec=calc_sampling_vector(OBS,BLK,TCHA,D,G)
+function CALvec=calc_sampling_vector(OBS,BLK,TCHA,D,DPT,G)
 % 
 Mp.SMP=TCHA.AVEPOL;
 Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
