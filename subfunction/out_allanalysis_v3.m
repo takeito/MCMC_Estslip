@@ -348,16 +348,16 @@ exid=exist(folder);
 if exid~=7; mkdir(folder); end
 FIDstrain=fopen([folder,'/Internal_Deformation_strain.txt'],'w');
 FIDvector=fopen([folder,'/Internal_Deformation_vector.txt'],'w');
-fprintf(FIDstrain,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
-fprintf(FIDvector,'Site Latitude Longitude VE VN \n');
+fprintf(FIDstrain,'# Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+fprintf(FIDvector,'# Latitude Longitude VE VN \n');
 Vinterall=G.I*TCHA.AVEINE;
-outdata=[OBS(1).LAT; OBS(1).LON; Vinterall(1:3:end)'; Vinterall(2:3:end)'];
+outdata=[OBS(1).ALAT; OBS(1).ALON; Vinterall(1:3:end)'; Vinterall(2:3:end)'];
 fprintf(FIDvector,'%7.3f %7.3f %10.4f %10.4f \n',outdata);
 for NB=1:BLK(1).NBlock
   Gb.I=zeros(size(G.I));
   Gb.I(:,3*NB-2:3*NB)=G.I(:,3*NB-2:3*NB);
   Vinterblk=Gb.I*TCHA.AVEINE;  % Displacement due to internal deformation
-  outdata=[OBS(1).LAT; OBS(1).LON; Vinterblk(1:3:end)'; Vinterblk(2:3:end)'];
+  outdata=[OBS(1).ALAT; OBS(1).ALON; Vinterblk(1:3:end)'; Vinterblk(2:3:end)'];
   FIDblkvec=fopen([folder,'/Internal_Deformation_vector_blk',num2str(NB),'.txt'],'w');
   fprintf(FIDblkvec,'%7.3f %7.3f %10.4f %10.4f \n',outdata);
   fclose(FIDblkvec);
