@@ -286,6 +286,8 @@ PRM.KEP=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
 PRM.NRP=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
+PRM.TIT=fscanf(Fid,'%d \n',[1,1]);
+[~]=fgetl(Fid);
 PRM.EXF=fscanf(Fid,'%d \n',[1,1]);
 [~]=fgetl(Fid);
 PRM.RWD=fscanf(Fid,'%f \n',[1,1]);
@@ -312,6 +314,7 @@ fprintf('ITR(Threshold_Nitr)      : %i \n',PRM.THR)
 fprintf('CHA(Chain)               : %i \n',PRM.CHA) 
 fprintf('KEP(KEEP)                : %i \n',PRM.KEP) 
 fprintf('NRP(Replica)             : %i \n',PRM.NRP) 
+fprintf('TIT(Temperature interval): %i \n',PRM.NRP) 
 fprintf('EXF(Exchanging frequency): %i \n',PRM.EXF) 
 fprintf('RWD(Walk_dis)            : %4.2f \n',PRM.RWD) 
 fprintf('==================\n') 

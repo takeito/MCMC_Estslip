@@ -11,5 +11,6 @@ Result_dell                                   : DIRResult
 300000                            : CHA(Chain)
 300000                            : KEEP
 5                                 : NRP(Replica)
+2                                 : TIT(Temperature interval: TIT^n)
 50                                : EXF(Exchanging_frequency)
 1                                 : Walk_dis
