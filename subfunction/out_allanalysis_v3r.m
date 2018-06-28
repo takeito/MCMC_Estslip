@@ -19,7 +19,7 @@ load([DIR,'/TCHA.mat']);fprintf('load\n')
 % 
 [SDR]=coupling2sdr(TCHA,D,DPT,G);
 ExportCoupling(DIR,TCHA,BLK,SDR);
-ExportInternalDeformation(DIR,TCHA,BLK);
+ExportInternalDeformation(DIR,TCHA,BLK,OBS,G);
 for CP=1:size(Par.Coupling_Pair,2)
   ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
 end
@@ -340,8 +340,8 @@ for REP=1:TCHA.NReplica
 end
 end
 %% Export strain rates of internal deformation.
-function ExportInternalDeformation(DIR,TCHA,BLK)
-folder=[DIR,'/rigid'];
+function ExportInternalDeformation(DIR,TCHA,BLK,OBS,G)
+folder=[DIR,'/innerdeform'];
 exid=exist(folder);
 if exid~=7; mkdir(folder); end
 NINE=size(TCHA.AVEINE,1)/TCHA.NReplica;
@@ -351,9 +351,21 @@ for REP=1:TCHA.NReplica
   subfolder=[folder,'/replica',num2str(REP)'];
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
-  FID=fopen([subfolder,'/Internal_Deformation.txt'],'w');
-  fprintf(FID,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+  FIDstrain=fopen([subfolder,'/Internal_Deformation_strain.txt'],'w');
+  FIDvector=fopen([folder,'/Internal_Deformation_vector.txt'],'w');
+  fprintf(FIDstrain,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+  fprintf(FIDvector,'Site Latitude Longitude VE VN \n');
+  Vinterall=G.I*TCHA.AVEINE(:,REP);
+  outdata=[OBS(1).LAT; OBS(1).LON; Vinterall(1:3:end)'; Vinterall(2:3:end)'];
+  fprintf(FIDvector,'%7.3f %7.3f %10.4f %10.4f \n',outdata);
   for NB=1:BLK(1).NBlock
+    Gb.I=zeros(size(G.I));
+    Gb.I(:,3*NB-2:3*NB)=G.I(:,3*NB-2:3*NB);
+    Vinterblk=Gb.I*TCHA.AVEINE(:,REP);  % Displacement due to internal deformation
+    outdata=[OBS(1).LAT; OBS(1).LON; Vinterblk(1:3:end)'; Vinterblk(2:3:end)'];
+    FIDblkvec=fopen([folder,'/Internal_Deformation_vector_blk',num2str(NB),'.txt'],'w');
+    fprintf(FIDblkvec,'%7.3f %7.3f %10.4f %10.4f \n',outdata);
+    fclose(FIDblkvec);
     exx=TCHA.AVEINE(3*NB-2,REP);
     exy=TCHA.AVEINE(3*NB-1,REP);
     eyy=TCHA.AVEINE(3*NB  ,REP);
@@ -384,7 +396,7 @@ for REP=1:TCHA.NReplica
     sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
                      +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
                      +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-    fprintf(FID,'%2d %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n',...
+    fprintf(FIDstrain,'%2d %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n',...
             NB,BLK(NB).LATinter,BLK(NB).LONinter,...
             exx*1e9,exy*1e9,eyy*1e9,...
             emax*1e9,emin*1e9,thetaP,shearMAX*1e9,...
@@ -392,7 +404,7 @@ for REP=1:TCHA.NReplica
             sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
   end
 end
-fclose(FID);
+fclose(FIDstrain);
 end
 %% Translate coupling to slip deficit rate.
 function [SDR]=coupling2sdr(TCHA,D,DPT,G)

@@ -18,7 +18,7 @@ G(1).TB=full(G(1).TB);
 % 
 [SDR]=coupling2sdr(TCHA,D,G);
 ExportCoupling(DIR,TCHA,BLK,SDR);
-ExportInternalDeformation(DIR,TCHA,BLK);
+ExportInternalDeformation(DIR,TCHA,BLK,OBS,G);
 for CP=1:size(Par.Coupling_Pair,2)
   ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
 end
@@ -341,13 +341,26 @@ end
 fclose(FIDstdinfo);
 end
 %% Export strain rates of internal deformation.
-function ExportInternalDeformation(DIR,TCHA,BLK)
+function ExportInternalDeformation(DIR,TCHA,BLK,OBS,G)
 NN=1;
-exid=exist([DIR,'/rigid']);
-if exid~=7; mkdir([DIR,'/rigid']); end
-FIDinternal=fopen([DIR,'/rigid/Internal_Deformation.txt'],'w');
-fprintf(FIDinternal,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+folder=[DIR,'/innerdeform'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+FIDstrain=fopen([folder,'/Internal_Deformation_strain.txt'],'w');
+FIDvector=fopen([folder,'/Internal_Deformation_vector.txt'],'w');
+fprintf(FIDstrain,'Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+fprintf(FIDvector,'Site Latitude Longitude VE VN \n');
+Vinterall=G.I*TCHA.AVEINE;
+outdata=[OBS(1).LAT; OBS(1).LON; Vinterall(1:3:end)'; Vinterall(2:3:end)'];
+fprintf(FIDvector,'%7.3f %7.3f %10.4f %10.4f \n',outdata);
 for NB=1:BLK(1).NBlock
+  Gb.I=zeros(size(G.I));
+  Gb.I(:,3*NB-2:3*NB)=G.I(:,3*NB-2:3*NB);
+  Vinterblk=Gb.I*TCHA.AVEINE;  % Displacement due to internal deformation
+  outdata=[OBS(1).LAT; OBS(1).LON; Vinterblk(1:3:end)'; Vinterblk(2:3:end)'];
+  FIDblkvec=fopen([folder,'/Internal_Deformation_vector_blk',num2str(NB),'.txt'],'w');
+  fprintf(FIDblkvec,'%7.3f %7.3f %10.4f %10.4f \n',outdata);
+  fclose(FIDblkvec);
   exx=TCHA.AVEINE(3*NB-2);
   exy=TCHA.AVEINE(3*NB-1);
   eyy=TCHA.AVEINE(3*NB  );
@@ -378,11 +391,12 @@ for NB=1:BLK(1).NBlock
   sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
                    +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
                    +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-  fprintf(FIDinternal,'%2d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n',...
+  fprintf(FIDstrain,'%2d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n',...
       NB,BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
       shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
 end
-fclose(FIDinternal);
+fclose(FIDstrain);
+fclose(FIDvector);
 end
 %% Translate coupling to slip deficit rate.
 function [SDR]=coupling2sdr(TCHA,D,G)
@@ -536,12 +550,14 @@ end
 function CALvec=calc_sampling_vector(OBS,BLK,TCHA,D,G)
 % 
 Mp.SMP=TCHA.AVEPOL;
+Mi.SMP=TCHA.AVEINE;
 Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
 Mc.SMPMAT=Mc.SMPMAT(D.MID);
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
 CALvec.RIG=G.P*Mp.SMP;
 CALvec.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-CALvec.SUM=CALvec.RIG+CALvec.ELA;
+CALvec.INE=G.I*Mi.SMP;
+CALvec.SUM=CALvec.RIG+CALvec.ELA+CALvec.INE;
 
 end
 %% MAKE PART GREEN FUNCTION v2
