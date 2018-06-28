@@ -379,7 +379,7 @@ for NB=1:BLK(1).NBlock
     emax=e2; axmax=v2;
     emin=e1; axmin=v1;
   end
-  thetaP=rad2deg(atan2(axmax(2),axmax(1)));
+  thetaP=90-rad2deg(atan2(axmax(2),axmax(1))); % Azimth from North
   if thetaP<0; thetaP=thetaP+360; end
   shearMAX=sqrt((1/4)*(exx-eyy)^2+exy^2);
   sigemax    =sqrt( ( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...

@@ -330,7 +330,7 @@ for REP=1:TCHA.NReplica
                    expLON; expLAT;... 
                    meanLON; meanLAT;...
                    AVECP'; MEDCP'; SDR'];
-          fprintf(FID,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata);
+          fprintf(FID,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f\n',outdata);
         end
         NN=NN+NF;
       end
@@ -352,7 +352,7 @@ for REP=1:TCHA.NReplica
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
   FIDstrain=fopen([subfolder,'/Internal_Deformation_strain.txt'],'w');
-  FIDvector=fopen([folder,'/Internal_Deformation_vector.txt'],'w');
+  FIDvector=fopen([subfolder,'/Internal_Deformation_vector.txt'],'w');
   fprintf(FIDstrain,'# Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
   fprintf(FIDvector,'# Site Latitude Longitude VE VN \n');
   Vinterall=G.I*TCHA.AVEINE(:,REP);
@@ -363,7 +363,7 @@ for REP=1:TCHA.NReplica
     Gb.I(:,3*NB-2:3*NB)=G.I(:,3*NB-2:3*NB);
     Vinterblk=Gb.I*TCHA.AVEINE(:,REP);  % Displacement due to internal deformation
     outdata=[OBS(1).ALAT; OBS(1).ALON; Vinterblk(1:3:end)'; Vinterblk(2:3:end)'];
-    FIDblkvec=fopen([folder,'/Internal_Deformation_vector_blk',num2str(NB),'.txt'],'w');
+    FIDblkvec=fopen([subfolder,'/Internal_Deformation_vector_blk',num2str(NB),'.txt'],'w');
     fprintf(FIDblkvec,'%7.3f %7.3f %10.4f %10.4f \n',outdata);
     fclose(FIDblkvec);
     exx=TCHA.AVEINE(3*NB-2,REP);
@@ -384,7 +384,7 @@ for REP=1:TCHA.NReplica
       emax=e2; axmax=v2;
       emin=e1; axmin=v1;
     end
-    thetaP=rad2deg(atan2(axmax(2),axmax(1)));
+    thetaP=90-rad2deg(atan2(axmax(2),axmax(1))); % Azimth from North
     if thetaP<0; thetaP=thetaP+360; end
     shearMAX=sqrt((1/4)*(exx-eyy)^2+exy^2);
     sigemax    =sqrt( ( 0.5 + 0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
