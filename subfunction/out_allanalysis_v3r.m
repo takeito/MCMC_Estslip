@@ -270,7 +270,6 @@ for REP=1:TCHA.NReplica
                    BLK(1).BOUND(NB1,NB2).bdep ...
                    clon clat cdep ...
                    AVECP MEDCP SDRs STD];
-        fprintf(FIDmain,'# Contents\n');
         fprintf(FIDmain,'# TRI_No. Lon1 Lon2 Lon3 Lat1 Lat2 Lat3 C_Lon C_Lat C_Dep Mean_Coupling Median_Coupling SDR sigma\n');
         fprintf(FIDmain,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata');
         fprintf(FIDstdinfo,'%d %d %f %f\n',NB1,NB2,min(STD),max(STD));
@@ -294,7 +293,6 @@ for REP=1:TCHA.NReplica
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
   FID = fopen([subfolder,'/CouplingTrace_',name,'.txt'],'w');
-  fprintf(FID,'# Contents\n');
   fprintf(FID,'# FLT_No. Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat Mean_Coupling Median_Coupling SDR\n');
   NN=1;
   for NB1=1:BLK(1).NBlock
@@ -1296,7 +1294,6 @@ for REP=1:TCHA.NReplica
   exid=exist(subfolder);
   if exid~=7; mkdir(subfolder); end
   FID=fopen([subfolder,'/boundary_vector.txt'],'w');
-  fprintf(FID,'# Contents\n');
   fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
   for NB1=1:BLK(1).NBlock
     BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,REP);TCHA.AVEPOL(3.*NB1-1,REP);TCHA.AVEPOL(3.*NB1,REP)];
