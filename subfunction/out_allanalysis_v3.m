@@ -22,7 +22,7 @@ ExportInternalDeformation(DIR,TCHA,BLK,OBS,G);
 for CP=1:size(Par.Coupling_Pair,2)
   ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
 end
-out_epole_allchain(DIR,TCHA,BLK,Par.BLKNAME);
+out_epole_allchain(DIR,TCHA,BLK,Par);
 [TRIg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
 out_vector_allchain_v2(DIR,BLK,TCHA,G,D,GRD,TRIg,OBS);
 RelativeMotion_allchain(DIR,BLK,TCHA);
@@ -71,6 +71,13 @@ if Fid~=0
   tline=fgetl(Fid);
   while 1
     switch tline
+      case '# Reference_Block'
+        tline=fgetl(Fid);
+        if isempty(tline)
+          PAR.FIXBLK=[];
+        else
+          PAR.FIXBLK=strtrim(strsplit(tline));
+        end
       case '# BLKNAME'
         while 1
           tline=fgetl(Fid);
@@ -213,27 +220,49 @@ fclose(FIDs);
 fclose(FIDsval);
 end
 %% Export Euler pole for each block
-function out_epole_allchain(DIR,TCHA,BLK,NAMEMAT)
+function out_epole_allchain(DIR,TCHA,BLK,Par)
 % 
-FID=fopen([DIR,'/est_euler_pole.txt'],'w');
-fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
-fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
-if isempty(NAMEMAT)
+if isempty(Par.BLKNAME)
   for kk=1:BLK(1).NBlock
-    NAMEMAT{ii}=num2str(kk,'%02i');
+    Par.BLKNAME{ii}=num2str(kk);
   end
 end
+if ~isempty(Par.FIXBLK)
+  for blk=1:size(Par.BLKNAME,2)
+    id=strcmpi(Par.FIXBLK,Par.BLKNAME(blk));
+    if id
+      fixblk=blk;
+      break
+    end
+  end
+  FIDt=fopen([DIR,'/est_euler_pole_',Par.FIXBLK{:},'fix.txt'],'w');
+  fprintf(FIDt,'# BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+end
+FID=fopen([DIR,'/est_euler_pole.txt'],'w');
+fprintf(FID,'# BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
 for BK=1:BLK(1).NBlock
-%   [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
   [latp,lonp,ang]=xyzp2lla(TCHA.AVEPOL(3.*BK-2,:),TCHA.AVEPOL(3.*BK-1,:),TCHA.AVEPOL(3.*BK,:));
   [a,b,c,d,e,f]=out_cov(TCHA.COVPOL(3.*BK-2:3.*BK,3.*BK-2:3.*BK));
   fprintf('%2i %s %7.2f %8.2f %9.2e %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
-    BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+    BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
   fprintf(FID,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
-    BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+    BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+  if ~isempty(Par.FIXBLK)
+    [trapole]=traseuler(TCHA.AVEPOL,BK,fixblk);
+    [latp,lonp,ang]=xyzp2lla(trapole.x,trapole.y,trapole.z);
+    fprintf(FIDt,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
+        BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+  end
 end
 fclose(FID);
 % 
+end
+%%
+function [trapole]=traseuler(pole,BK,fixblk)
+trapole.x=pole(3.*BK-2,:)-pole(3.*fixblk-2,:);
+trapole.y=pole(3.*BK-1,:)-pole(3.*fixblk-1,:);
+trapole.z=pole(3.*BK  ,:)-pole(3.*fixblk  ,:);
 end
 %% Export vectors of calculation, observation, residual vector
 function out_vector_allchain_v2(DIR,BLK,TCHA,G,D,GRD,TRIg,OBS)
