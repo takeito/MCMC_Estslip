@@ -80,6 +80,13 @@ if Fid~=0
   tline=fgetl(Fid);
   while 1
     switch tline
+      case '# Reference_Block'
+        tline=fgetl(Fid);
+        if isempty(tline)
+          PAR.FIXBLK=[];
+        else
+          PAR.FIXBLK=strtrim(strsplit(tline));
+        end
       case '# BLKNAME'
         while 1
           tline=fgetl(Fid);
