@@ -26,7 +26,7 @@ end
 out_epole_allchain(DIR,TCHA,BLK,Par.BLKNAME);
 [TRIg,BLKg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
 out_vector_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,DPT,GRD,TRIg,OBS);
-RelativeMotion_allchain(DIR,BLK,TCHA);
+RelativeMotion_allchain(DIR,BLK,TCHA,Par);
 % % 
 for EL=1:size(Par.Elastic_Pair,2)
   out_elastic_pair_allchain_v2(DIR,BLK,BLKg,TCHA,G,D,DPT,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
@@ -95,6 +95,11 @@ if Fid~=0
             PAR.BLKNAME=[PAR.BLKNAME, Tline];
           else
             break
+          end
+        end
+        if isempty(Par.BLKNAME)
+          for kk=1:BLK(1).NBlock
+            Par.BLKNAME{ii}=num2str(kk);
           end
         end
       case '# Coupling_Pair'
@@ -210,9 +215,30 @@ resvec=calc_residual_vector(OBS,BLK,TCHA,calvec);
 WRITE_VECTOR(TCHA,DIR,OBS,BLK,calvec,resvec,grdvec,GRD);
 end
 %% Export rigid and relative motion
-function RelativeMotion_allchain(DIR,BLK,TCHA)
+function RelativeMotion_allchain(DIR,BLK,TCHA,PAR)
 % 
-Est_Motion_BLOCKS(DIR,TCHA,BLK)
+folder=[DIR,'/rigid'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+NPOL=size(TCHA.AVEPOL,1)/TCHA.NReplica;
+TCHA.AVEPOL=reshape(TCHA.AVEPOL,NPOL,TCHA.NReplica);
+for REP=1:TCHA.NReplica
+  subfolder=[folder,'/replica',num2str(REP)];
+  exid=exist(subfolder);
+  if exid~=7; mkdir(subfolder); end
+  FID=fopen([subfolder,'/boundary_vector.txt'],'w');
+  fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
+  for NB1=1:BLK(1).NBlock
+    BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,REP);TCHA.AVEPOL(3.*NB1-1,REP);TCHA.AVEPOL(3.*NB1,REP)];
+    for NB2=NB1+1:BLK(1).NBlock
+      BLK(NB2).POL(:)=[TCHA.AVEPOL(3.*NB2-2,REP);TCHA.AVEPOL(3.*NB2-1,REP);TCHA.AVEPOL(3.*NB2,REP)];
+      if ~isempty(BLK(1).BOUND(NB1,NB2).LAT)
+        fprintf(FID,'> %s - %s \n',PAR.BLKNAME{NB1},PAR.BLKNAME{NB2});
+        calc_relvelo(BLK,NB1,NB2,FID)
+      end
+    end
+  end
+end
 % 
 end
 %% Export elastic vectors resulting from coupling at block boundaries
@@ -1286,34 +1312,6 @@ deg2rad=pi/180;
 [Oxyz(:,1),Oxyz(:,2),Oxyz(:,3)]=ell2xyz(Olat,Olon,0);
 Oxyz = Oxyz*1e3;
 OOxyz=[Oxyz sin(Olat*deg2rad) sin(Olon*deg2rad) cos(Olat*deg2rad) cos(Olon*deg2rad)];
-end
-
-%% CALC MOTION BLOCKS
-function Est_Motion_BLOCKS(DIR,TCHA,BLK)
-% 
-folder=[DIR,'/rigid'];
-exid=exist(folder);
-if exid~=7; mkdir(folder); end
-NPOL=size(TCHA.AVEPOL,1)/TCHA.NReplica;
-TCHA.AVEPOL=reshape(TCHA.AVEPOL,NPOL,TCHA.NReplica);
-for REP=1:TCHA.NReplica
-  subfolder=[folder,'/replica',num2str(REP)];
-  exid=exist(subfolder);
-  if exid~=7; mkdir(subfolder); end
-  FID=fopen([subfolder,'/boundary_vector.txt'],'w');
-  fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
-  for NB1=1:BLK(1).NBlock
-    BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,REP);TCHA.AVEPOL(3.*NB1-1,REP);TCHA.AVEPOL(3.*NB1,REP)];
-    for NB2=NB1+1:BLK(1).NBlock
-      BLK(NB2).POL(:)=[TCHA.AVEPOL(3.*NB2-2,REP);TCHA.AVEPOL(3.*NB2-1,REP);TCHA.AVEPOL(3.*NB2,REP)];
-      if ~isempty(BLK(1).BOUND(NB1,NB2).LAT)
-        fprintf(FID,'> NB%s - NB%s \n',num2str(NB1),num2str(NB2));
-        calc_relvelo(BLK,NB1,NB2,FID)
-      end
-    end
- end
-end
-% 
 end
 %% 
 function calc_relvelo(BLK,NB1,NB2,FID)
