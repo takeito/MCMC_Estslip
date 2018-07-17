@@ -21,10 +21,10 @@ ExportCoupling(DIR,TCHA,BLK,SDR);
 for CP=1:size(Par.Coupling_Pair,2)
   ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
 end
-out_epole_allchain(DIR,TCHA,BLK,Par.BLKNAME);
+out_epole_allchain(DIR,TCHA,BLK,Par);
 [TRIg,~,GRD]=MAKE_PART_GREEN(BLK,Par.Grid_Setting);
 out_vector_allchain_v2(DIR,BLK,TCHA,G,D,GRD,TRIg,OBS);
-RelativeMotion_allchain(DIR,BLK,TCHA);
+RelativeMotion_allchain(DIR,BLK,TCHA,Par);
 % % 
 for EL=1:size(Par.Elastic_Pair,2)
   out_elastic_pair_allchain_v2(DIR,BLK,TCHA,G,D,OBS,GRD,TRI,TRIg,Par.Elastic_Pair(EL))  %OG(revised),OGnew
@@ -70,6 +70,13 @@ if Fid~=0
   tline=fgetl(Fid);
   while 1
     switch tline
+      case '# Reference_Block'
+        tline=fgetl(Fid);
+        if isempty(tline)
+          PAR.FIXBLK=[];
+        else
+          PAR.FIXBLK=strtrim(strsplit(tline));
+        end
       case '# BLKNAME'
         while 1
           tline=fgetl(Fid);
@@ -78,6 +85,11 @@ if Fid~=0
             PAR.BLKNAME=[PAR.BLKNAME, Tline];
           else
             break
+          end
+        end
+        if isempty(PAR.BLKNAME)
+          for kk=1:BLK(1).NBlock
+            PAR.BLKNAME{ii}=num2str(kk);
           end
         end
       case '# Coupling_Pair'
@@ -156,11 +168,7 @@ name=Coupling_Pair.NAME{1};
 NN=1;
 exid=exist([DIR,'/coupling']);
 if exid~=7; mkdir([DIR,'/coupling']); end
-FIDc   =fopen([DIR,'/coupling/CouplingTrace_',name,'.txt'],'w');
-FIDfnum=fopen([DIR,'/coupling/CouplingTrace_TriNum',name,'.txt'],'w');
-FIDcval=fopen([DIR,'/coupling/CouplingTrace_value',name,'.txt'],'w');
-FIDs   =fopen([DIR,'/coupling/SDRTrace_',name,'.txt'],'w');
-FIDsval=fopen([DIR,'/coupling/SDRTrace_value',name,'.txt'],'w');
+FID=fopen([DIR,'/coupling/CouplingTrace_',name,'.txt'],'w');
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
@@ -185,54 +193,62 @@ for NB1=1:BLK(1).NBlock
         meanLAT=mean(expLAT,1);
         AVECP=TCHA.AVEFLT(FLTNUM,:);
         AVECP=AVECP(acID);
+        MEDCP=TCHA.MEDFLT(FLTNUM,:);
+        MEDCP=MEDCP(acID);
         SDR=sdr.flax(FLTNUM,:);
         SDR=SDR(acID);
         FLTNUM=FLTNUM(acID);
-        for ii=1:length(AVECP)
-          fprintf(FIDc,'> -Z %f\n',AVECP(ii));
-          fprintf(FIDc,'%f %f\n',expLON(1,ii),expLAT(1,ii));
-          fprintf(FIDc,'%f %f\n',expLON(2,ii),expLAT(2,ii));
-          fprintf(FIDfnum,'%f %f %7i\n',meanLON(ii),meanLAT(ii),FLTNUM(ii));
-          fprintf(FIDcval,'%f %f %10.2f\n',meanLON(ii),meanLAT(ii),AVECP(ii));
-          fprintf(FIDs,'> -Z %f\n',SDR(ii));
-          fprintf(FIDs,'%f %f\n',expLON(1,ii),expLAT(1,ii));
-          fprintf(FIDs,'%f %f\n',expLON(2,ii),expLAT(2,ii));
-          fprintf(FIDsval,'%f %f %10.2f\n',meanLON(ii),meanLAT(ii),SDR(ii));
-        end
-%         NN=NN+NF;
+        outdata=[FLTNUM;...
+            expLON; expLAT;...
+            meanLON; meanLAT;...
+            AVECP'; MEDCP'; SDR'];
+        fprintf(FID,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f\n',outdata);
       end
       NN=NN+NF;
     end
   end
 end
-fclose(FIDc);
-fclose(FIDfnum);
-fclose(FIDcval);
-fclose(FIDs);
-fclose(FIDsval);
+fclose(FID);
 end
 %% Export Euler pole for each block
-function out_epole_allchain(DIR,TCHA,BLK,NAMEMAT)
+function out_epole_allchain(DIR,TCHA,BLK,Par)
 % 
-FID=fopen([DIR,'/est_euler_pole.txt'],'w');
-fprintf(FID,'BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
-fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
-if isempty(NAMEMAT)
-  for kk=1:BLK(1).NBlock
-    NAMEMAT{ii}=num2str(kk,'%02i');
+if ~isempty(Par.FIXBLK)
+  for blk=1:size(Par.BLKNAME,2)
+    id=strcmpi(Par.FIXBLK,Par.BLKNAME(blk));
+    if id
+      fixblk=blk;
+      break
+    end
   end
+  FIDt=fopen([DIR,'/est_euler_pole_',Par.FIXBLK{:},'fix.txt'],'w');
+  fprintf(FIDt,'# BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
 end
+FID=fopen([DIR,'/est_euler_pole.txt'],'w');
+fprintf(FID,'# BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
 for BK=1:BLK(1).NBlock
-%   [latp,lonp,ang]=xyzp2lla(CHA.Mp(3.*BK-2,:),CHA.Mp(3.*BK-1,:),CHA.Mp(3.*BK,:));
   [latp,lonp,ang]=xyzp2lla(TCHA.AVEPOL(3.*BK-2,:),TCHA.AVEPOL(3.*BK-1,:),TCHA.AVEPOL(3.*BK,:));
   [a,b,c,d,e,f]=out_cov(TCHA.COVPOL(3.*BK-2:3.*BK,3.*BK-2:3.*BK));
   fprintf('%2i %s %7.2f %8.2f %9.2e %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
-    BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+    BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
   fprintf(FID,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
-    BK,NAMEMAT{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+    BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+  if ~isempty(Par.FIXBLK)
+    [trapole]=traseuler(TCHA.AVEPOL,BK,fixblk);
+    [latp,lonp,ang]=xyzp2lla(trapole.x,trapole.y,trapole.z);
+    fprintf(FIDt,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
+        BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
+  end
 end
 fclose(FID);
 % 
+end
+%%
+function [trapole]=traseuler(pole,BK,fixblk)
+trapole.x=pole(3.*BK-2,:)-pole(3.*fixblk-2,:);
+trapole.y=pole(3.*BK-1,:)-pole(3.*fixblk-1,:);
+trapole.z=pole(3.*BK  ,:)-pole(3.*fixblk  ,:);
 end
 %% Export vectors of calculation, observation, residual vector
 function out_vector_allchain_v2(DIR,BLK,TCHA,G,D,GRD,TRIg,OBS)
@@ -244,9 +260,23 @@ resvec=calc_residual_vector(BLK,OBS,calvec);
 WRITE_VECTOR(DIR,OBS,BLK,calvec,resvec,grdvec,GRD);
 end
 %% Export rigid and relative motion
-function RelativeMotion_allchain(DIR,BLK,TCHA)
+function RelativeMotion_allchain(DIR,BLK,TCHA,PAR)
 % 
-Est_Motion_BLOCKS(DIR,TCHA,BLK)
+folder=[DIR,'/rigid'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+FID=fopen([folder,'/boundary_vector.txt'],'w');
+fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
+for NB1=1:BLK(1).NBlock
+  BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,:);TCHA.AVEPOL(3.*NB1-1,:);TCHA.AVEPOL(3.*NB1,:)];
+  for NB2=NB1+1:BLK(1).NBlock
+    BLK(NB2).POL(:)=[TCHA.AVEPOL(3.*NB2-2,:);TCHA.AVEPOL(3.*NB2-1,:);TCHA.AVEPOL(3.*NB2,:)];
+    if ~isempty(BLK(1).BOUND(NB1,NB2).LAT)
+      fprintf(FID,'> %s - %s \n',PAR.BLKNAME{NB1},PAR.BLKNAME{NB2});
+      calc_relvelo(BLK,NB1,NB2,FID)
+    end
+  end
+end
 % 
 end
 %% Export elastic vectors resulting from coupling at block boundaries
@@ -274,65 +304,34 @@ end
 %% Show results for makeing FIGURES
 function ExportCoupling(DIR,TCHA,BLK,SDR)
 NN=1;
-exid=exist([DIR,'/coupling']);
-if exid~=7; mkdir([DIR,'/coupling']); end
-FIDstdinfo=fopen([DIR,'/coupling/Std_info.txt'],'w');
+folder=[DIR,'/coupling'];
+exid=exist(folder);
+if exid~=7; mkdir(folder); end
+FIDstdinfo=fopen([folder,'/Std_info.txt'],'w');
 fprintf(FIDstdinfo,'NB1 NB2 STDmax STDmin\n');
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
     if NF~=0
-      FIDavec=fopen([DIR,'/coupling/C_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDmedc=fopen([DIR,'/coupling/medC_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDnumc=fopen([DIR,'/coupling/numC_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDtrin=fopen([DIR,'/coupling/Trinuum_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDsdr=fopen([DIR,'/coupling/SDR_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDnums=fopen([DIR,'/coupling/numS_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FIDstd=fopen([DIR,'/coupling/Std_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
-      FLTNUM=NN:NN+NF-1;
-      AVECP=TCHA.AVEFLT(FLTNUM,:);
-      MEDCP=TCHA.MEDFLT(FLTNUM,:);
-      SDRs =   SDR.flax(FLTNUM,:);
-      STD=TCHA.STDFLT(FLTNUM,:);
-%       if NB1==6&&NB2==11
-%         keyboard
-%       end
+      FIDmain = fopen([folder,'/C_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
+      FLTNUM = NN:NN+NF-1;
+      AVECP = TCHA.AVEFLT(FLTNUM,:);
+      MEDCP = TCHA.MEDFLT(FLTNUM,:);
+      SDRs  =    SDR.flax(FLTNUM,:);
+      STD   = TCHA.STDFLT(FLTNUM,:);
+      clon = mean(BLK(1).BOUND(NB1,NB2).blon,2);
+      clat = mean(BLK(1).BOUND(NB1,NB2).blat,2);
+      cdep = mean(BLK(1).BOUND(NB1,NB2).bdep,2);
+      outdata = [FLTNUM' ...
+          BLK(1).BOUND(NB1,NB2).blon ...
+          BLK(1).BOUND(NB1,NB2).blat ...
+          BLK(1).BOUND(NB1,NB2).bdep ...
+          clon clat cdep ...
+          AVECP MEDCP SDRs STD];
+      fprintf(FIDmain,'# TRI_No. Lon1 Lon2 Lon3 Lat1 Lat2 Lat3 C_Lon C_Lat C_Dep Mean_Coupling Median_Coupling SDR sigma\n');
+      fprintf(FIDmain,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata');
       fprintf(FIDstdinfo,'%d %d %f %f\n',NB1,NB2,min(STD),max(STD));
-      TRInum=length(AVECP);
-      TRIlon=BLK(1).BOUND(NB1,NB2).blon';
-      TRIlat=BLK(1).BOUND(NB1,NB2).blat';
-%       TRIdep=BLK(1).BOUND(NB1,NB2).bdep';
-      indexs=0;
-      for ii=1:TRInum
-        fprintf(FIDavec,'%s %f\n','> -Z',AVECP(ii));
-        fprintf(FIDmedc,'%s %f\n','> -Z',MEDCP(ii));
-        fprintf(FIDsdr,'%s %f\n','> -Z',SDRs(ii));
-        fprintf(FIDstd,'%s %f\n','> -Z',STD(ii));
-        indexs=indexs+1;indexe=indexs+2;
-        lon(1:3)=TRIlon(:,ii)';
-        lon(4)=TRIlon(1,ii)';
-        lat(1:3)=TRIlat(:,ii)';
-        lat(4)=TRIlat(1,ii)';
-        indexs=indexe+1;
-        for mm=1:4
-          fprintf(FIDavec,'%f %f\n',lon(mm),lat(mm));
-          fprintf(FIDmedc,'%f %f\n',lon(mm),lat(mm));
-          fprintf(FIDsdr,'%f %f\n',lon(mm),lat(mm));
-          fprintf(FIDstd,'%f %f\n',lon(mm),lat(mm));
-        end
-        mlon=mean(lon(1:3));
-        mlat=mean(lat(1:3));
-        fprintf(FIDnumc,'%f %f %5.2f\n',mlon,mlat,AVECP(ii));
-        fprintf(FIDnums,'%f %f %5.2f\n',mlon,mlat,SDRs(ii));
-        fprintf(FIDtrin,'%f %f %d\n',mlon,mlat,FLTNUM(ii));
-      end
-      fclose(FIDavec);
-      fclose(FIDmedc);
-      fclose(FIDnumc);
-      fclose(FIDtrin);
-      fclose(FIDsdr);
-      fclose(FIDnums);
-      fclose(FIDstd);
+      fclose(FIDmain);
       NN=NN+NF;
     end
   end
@@ -1045,9 +1044,9 @@ warning('off','all')
 %	sphere of radius A at depth F, in a homogeneous, semi-infinite elastic
 %	body and approximation for A << F (center of dilatation).
 %
-%	MOGI(R,F,V) and MOGI(R,F,A,??½,P) are also allowed for compatibility 
+%	MOGI(R,F,V) and MOGI(R,F,A,??ï¿½,P) are also allowed for compatibility 
 %	(Mogi's original equation considers an isotropic material with Lam?s 
-%	constants equal, i.e., lambda = ??½, Poisson's ratio = 0.25).
+%	constants equal, i.e., lambda = ??ï¿½, Poisson's ratio = 0.25).
 %
 %	Input variables are:
 %	   F: depth of the center of the sphere from the surface,
@@ -1056,15 +1055,15 @@ warning('off','all')
 %	   P: hydrostatic pressure change in the sphere,
 %	   E: elasticity (Young's modulus),
 %	  nu: Poisson's ratio,
-%	   ??½: rigidity (Lam?s constant in case of isotropic material).
+%	   ??ï¿½: rigidity (Lam?s constant in case of isotropic material).
 %
 %	Notes:
-%		- Equations are all vectorized, so variables R,F,V,A,??½ and P are 
+%		- Equations are all vectorized, so variables R,F,V,A,??ï¿½ and P are 
 %		  scalar but any of them can be vector or matrix, then outputs 
 %		  will be vector or matrix of the same size.
 %		- Convention: Uz > 0 = UP, F is depth so in -Z direction.
 %		- Units should be constistent, e.g.: R, F, A, Ur and Uz in m imply
-%		  V in m3; E, ??½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
+%		  V in m3; E, ??ï¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
 %
 %	Example for a 3-D plot of exagerated deformed surface due to a 1-bar
 %	overpressure in a 10-cm radius sphere at 1-m depth in rock:
@@ -1100,7 +1099,7 @@ switch nargin
 	case 4	% MOGI(R,F,V,nu)
 		v = varargin{3};
 		nu = varargin{4};
-	case 5	% MOGI(R,F,A,??½,P)
+	case 5	% MOGI(R,F,A,??ï¿½,P)
 		a = varargin{3};
 		mu = varargin{4};
 		p = varargin{5};
@@ -1171,37 +1170,8 @@ deg2rad=pi/180;
 Oxyz = Oxyz*1e3;
 OOxyz=[Oxyz sin(Olat*deg2rad) sin(Olon*deg2rad) cos(Olat*deg2rad) cos(Olon*deg2rad)];
 end
-
-%% CALC MOTION BLOCKS
-function Est_Motion_BLOCKS(DIR,TCHA,BLK)
-% 
-exid=exist([DIR,'/rigid']);
-if exid~=7; mkdir([DIR,'/rigid']); end
-FIDbound   =fopen([DIR,'/rigid/boundary_vector.txt'],'w');
-FIDboundval=fopen([DIR,'/rigid/boundary_vector_value.txt'],'w');
-FIDlateral   =fopen([DIR,'/rigid/boundary_vector_lateral.txt'],'w');
-FIDlateralval=fopen([DIR,'/rigid/boundary_vector_lateral_value.txt'],'w');
-FIDdip   =fopen([DIR,'/rigid/boundary_vector_dip.txt'],'w');
-FIDdipval=fopen([DIR,'/rigid/boundary_vector_dip_value.txt'],'w');
-for NB1=1:BLK(1).NBlock
-  BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,:);TCHA.AVEPOL(3.*NB1-1,:);TCHA.AVEPOL(3.*NB1,:)];
-  for NB2=NB1+1:BLK(1).NBlock
-    BLK(NB2).POL(:)=[TCHA.AVEPOL(3.*NB2-2,:);TCHA.AVEPOL(3.*NB2-1,:);TCHA.AVEPOL(3.*NB2,:)];
-    if ~isempty(BLK(1).BOUND(NB1,NB2).LAT) 
-      calc_relvelo(BLK,NB1,NB2,FIDbound,FIDboundval,FIDlateral,FIDlateralval,FIDdip,FIDdipval)
-    end
-  end
-end
-fclose(FIDbound);
-fclose(FIDboundval);
-fclose(FIDlateral);
-fclose(FIDlateralval);
-fclose(FIDdip);
-fclose(FIDdipval);
-% 
-end
 %% 
-function calc_relvelo(BLK,NB1,NB2,FIDbound,FIDboundval,FIDlateral,FIDlateralval,FIDdip,FIDdipval)
+function calc_relvelo(BLK,NB1,NB2,FID)
 % Calculate relative motion with lateral and normal direction at block boundaries
 cBOUNDLON=mean(BLK(1).BOUND(NB1,NB2).LON);
 cBOUNDLAT=mean(BLK(1).BOUND(NB1,NB2).LAT);
@@ -1241,18 +1211,11 @@ for ii=1:length(BLK(1).BOUND(NB1,NB2).LAT)-1
   inIDdp=inpolygon(DISTdipping(1),DISTdipping(2),BLK1.XY(:,1),BLK1.XY(:,2));
   if inIDst==1; sclSTR(ii)=-1*sclSTR(ii); end % Left lateral
   if inIDdp~=1; sclDIP(ii)=-1*sclDIP(ii); end % Open
-  fprintf(FIDbound,'> -Z %f\n',sclVEL(ii));
-  fprintf(FIDbound,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii),  BLK(1).BOUND(NB1,NB2).LAT(ii)  );
-  fprintf(FIDbound,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii+1),BLK(1).BOUND(NB1,NB2).LAT(ii+1));
-  fprintf(FIDboundval,'%f %f %10.2f\n',BOUND.cLON(ii),BOUND.cLAT(ii),sclVEL(ii));
-  fprintf(FIDlateral,'> -Z %f\n',sclSTR(ii));
-  fprintf(FIDlateral,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii),  BLK(1).BOUND(NB1,NB2).LAT(ii)  );
-  fprintf(FIDlateral,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii+1),BLK(1).BOUND(NB1,NB2).LAT(ii+1));
-  fprintf(FIDlateralval,'%f %f %10.2f\n',BOUND.cLON(ii),BOUND.cLAT(ii),sclSTR(ii));
-  fprintf(FIDdip,'> -Z %f\n',sclDIP(ii));
-  fprintf(FIDdip,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii),  BLK(1).BOUND(NB1,NB2).LAT(ii)  );
-  fprintf(FIDdip,'%f %f\n',BLK(1).BOUND(NB1,NB2).LON(ii+1),BLK(1).BOUND(NB1,NB2).LAT(ii+1));
-  fprintf(FIDdipval,'%f %f %10.2f\n',BOUND.cLON(ii),BOUND.cLAT(ii),sclDIP(ii));
+  fprintf(FID,'%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f \n',...
+      BLK(1).BOUND(NB1,NB2).LON(ii),BLK(1).BOUND(NB1,NB2).LON(ii+1),...
+      BLK(1).BOUND(NB1,NB2).LAT(ii),BLK(1).BOUND(NB1,NB2).LAT(ii+1),...
+      BOUND.cLON(ii),BOUND.cLAT(ii),...
+      sclVEL(ii),sclSTR(ii),sclDIP(ii));
 end
 end
 %% PLATE MOTION DUE TO EULER POLE (XYZ)

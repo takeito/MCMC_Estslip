@@ -88,9 +88,9 @@ if Fid~=0
             break
           end
         end
-        if isempty(Par.BLKNAME)
+        if isempty(PAR.BLKNAME)
           for kk=1:BLK(1).NBlock
-            Par.BLKNAME{ii}=num2str(kk);
+            PAR.BLKNAME{ii}=num2str(kk);
           end
         end
       case '# Coupling_Pair'
@@ -314,7 +314,7 @@ for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
     if NF~=0
-      FIDmain = fopen([subfolder,'/C_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
+      FIDmain = fopen([folder,'/C_',num2str(NB1),'_',num2str(NB2),'.txt'],'w');
       FLTNUM = NN:NN+NF-1;
       AVECP = TCHA.AVEFLT(FLTNUM,:);
       MEDCP = TCHA.MEDFLT(FLTNUM,:);
