@@ -400,9 +400,9 @@ for REP=1:TCHA.NReplica
     exx=TCHA.AVEINE(3*NB-2,REP);
     exy=TCHA.AVEINE(3*NB-1,REP);
     eyy=TCHA.AVEINE(3*NB  ,REP);
-    sigexx=TCHA.STDINE(3*NB-2,REP);
-    sigexy=TCHA.STDINE(3*NB-1,REP);
-    sigeyy=TCHA.STDINE(3*NB  ,REP);
+    sigexx=sqrt(TCHA.STDINE(3*NB-2,REP));
+    sigexy=sqrt(TCHA.STDINE(3*NB-1,REP));
+    sigeyy=sqrt(TCHA.STDINE(3*NB  ,REP));
     E=[exx exy;...
         exy eyy];
     [eigV,eigD]=eig(E);

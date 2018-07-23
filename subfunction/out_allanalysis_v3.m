@@ -363,9 +363,9 @@ for NB=1:BLK(1).NBlock
   exx=TCHA.AVEINE(3*NB-2);
   exy=TCHA.AVEINE(3*NB-1);
   eyy=TCHA.AVEINE(3*NB  );
-  sigexx=TCHA.STDINE(3*NB-2);
-  sigexy=TCHA.STDINE(3*NB-1);
-  sigeyy=TCHA.STDINE(3*NB  );
+  sigexx=sqrt(TCHA.STDINE(3*NB-2));
+  sigexy=sqrt(TCHA.STDINE(3*NB-1));
+  sigeyy=sqrt(TCHA.STDINE(3*NB  ));
   E=[exx exy;...
      exy eyy];
   [eigV,eigD]=eig(E);
