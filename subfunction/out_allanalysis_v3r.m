@@ -97,9 +97,9 @@ if Fid~=0
             break
           end
         end
-        if isempty(Par.BLKNAME)
+        if isempty(PAR.BLKNAME)
           for kk=1:BLK(1).NBlock
-            Par.BLKNAME{ii}=num2str(kk);
+            PAR.BLKNAME{ii}=num2str(kk);
           end
         end
       case '# Coupling_Pair'
