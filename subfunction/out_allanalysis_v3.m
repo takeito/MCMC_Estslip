@@ -18,7 +18,7 @@ G(1).TB=full(G(1).TB);
 % 
 [SDR]=coupling2sdr(TCHA,D,G);
 ExportCoupling(DIR,TCHA,BLK,SDR);
-ExportInternalDeformation(DIR,TCHA,BLK,OBS,G);
+ExportInternalDeformation(DIR,TCHA,BLK,Par,OBS,G);
 for CP=1:size(Par.Coupling_Pair,2)
   ExportCouplingPair(DIR,BLK,TCHA,SDR,Par.Coupling_Pair(CP));
 end
@@ -170,6 +170,9 @@ NN=1;
 exid=exist([DIR,'/coupling']);
 if exid~=7; mkdir([DIR,'/coupling']); end
 FID=fopen([DIR,'/coupling/CouplingTrace_',name,'.txt'],'w');
+fprintf(FID,'# %6s %7s %7s %7s %7s %7s %7s %10s %10s %10s\n',...
+            'Flt_No','Lon1','Lon2','Lat1','Lat2',...
+            'C_Lon','C_Lat','MeanCp','MedianCp','SDR[mm/yr]');
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
     NF=size(BLK(1).BOUND(NB1,NB2).blon,1);
@@ -203,7 +206,7 @@ for NB1=1:BLK(1).NBlock
             expLON; expLAT;...
             meanLON; meanLAT;...
             AVECP'; MEDCP'; SDR'];
-        fprintf(FID,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f\n',outdata);
+        fprintf(FID,'%8d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f\n',outdata);
       end
       NN=NN+NF;
     end
@@ -223,22 +226,30 @@ if ~isempty(Par.FIXBLK)
     end
   end
   FIDt=fopen([DIR,'/est_euler_pole_',Par.FIXBLK{:},'fix.txt'],'w');
-  fprintf(FIDt,'# BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+  fprintf(FIDt,'# %6s %8s %7s %8s %11s %9s %9s %9s %9s %9s %9s\n',...
+      'Blk_No','Blk_Name','Lat(deg)','Lon(deg)','ang(deg/My)',...
+      'sigxx','sigxy','sigxz','sigyy','sigyz','sigzz');
+  fprintf(FIDt,'# Unit of covariance is 1e-8(rad/Myr)^2 \n');
 end
 FID=fopen([DIR,'/est_euler_pole.txt'],'w');
-fprintf(FID,'# BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
-fprintf('BLOCK_No. BLOCK_Name lat(deg) lon(deg) ang(deg/my) sigxx sigxy sigxz sigyy sigyz sigzz (1e-8 (rad/Myr)^2) \n');
+fprintf(FID,'# %6s %8s %7s %8s %11s %9s %9s %9s %9s %9s %9s\n',...
+    'Blk_No','Blk_Name','Lat(deg)','Lon(deg)','ang(deg/My)',...
+    'sigxx','sigxy','sigxz','sigyy','sigyz','sigzz');
+fprintf(FID,'# Unit of covariance is 1e-8(rad/Myr)^2 \n');
+fprintf('# %6s %8s %7s %8s %11s %9s %9s %9s %9s %9s %9s\n',...
+    'Blk_No','Blk_Name','Lat(deg)','Lon(deg)','ang(deg/My)',...
+    'sigxx','sigxy','sigxz','sigyy','sigyz','sigzz');
 for BK=1:BLK(1).NBlock
   [latp,lonp,ang]=xyzp2lla(TCHA.AVEPOL(3.*BK-2,:),TCHA.AVEPOL(3.*BK-1,:),TCHA.AVEPOL(3.*BK,:));
   [a,b,c,d,e,f]=out_cov(TCHA.COVPOL(3.*BK-2:3.*BK,3.*BK-2:3.*BK));
-  fprintf('%2i %s %7.2f %8.2f %9.2e %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
+  fprintf('%8i %8s %7.2f %8.2f %11.2e %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
     BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
-  fprintf(FID,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
+  fprintf(FID,'%8i %8s %7.2f %8.2f %11.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
     BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
   if ~isempty(Par.FIXBLK)
     [trapole]=traseuler(TCHA.AVEPOL,BK,fixblk);
     [latp,lonp,ang]=xyzp2lla(trapole.x,trapole.y,trapole.z);
-    fprintf(FIDt,'%2i %s %7.2f %8.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
+    fprintf(FIDt,'%8i %8s %7.2f %8.2f %11.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f \n',...
         BK,Par.BLKNAME{BK},mean(latp),mean(lonp),mean(ang),a,b,c,d,e,f);
   end
 end
@@ -267,7 +278,8 @@ folder=[DIR,'/rigid'];
 exid=exist(folder);
 if exid~=7; mkdir(folder); end
 FID=fopen([folder,'/boundary_vector.txt'],'w');
-fprintf(FID,'# Lon1 Lon2 Lat1 Lat2 C_Lon C_Lat abs_Vel str_Vel dip_Vel\n');
+fprintf(FID,'# %5s %7s %7s %7s %7s %7s %10s %10s %10s \n',...
+    'Lon1','Lon2','Lat1','Lat2','C_Lon','C_Lat','abs_Vel','str_Vel','dip_Vel');
 for NB1=1:BLK(1).NBlock
   BLK(NB1).POL=[TCHA.AVEPOL(3.*NB1-2,:);TCHA.AVEPOL(3.*NB1-1,:);TCHA.AVEPOL(3.*NB1,:)];
   for NB2=NB1+1:BLK(1).NBlock
@@ -329,8 +341,10 @@ for NB1=1:BLK(1).NBlock
           BLK(1).BOUND(NB1,NB2).bdep ...
           clon clat cdep ...
           AVECP MEDCP SDRs STD];
-      fprintf(FIDmain,'# TRI_No. Lon1 Lon2 Lon3 Lat1 Lat2 Lat3 C_Lon C_Lat C_Dep Mean_Coupling Median_Coupling SDR sigma\n');
-      fprintf(FIDmain,'%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata');
+      fprintf(FIDmain,'# %6s %7s %7s %7s %7s %7s %7s %7s %7s %7s %7s %7s %7s %10s %10s %10s %10s\n',...
+                      'Tri_No','Lon1','Lon2','Lon3','Lat1','Lat2','Lat3','Dep1','Dep2','Dep3',...
+                      'C_Lon','C_Lat','C_Dep','Mean_Cp','Median_Cp','SDR[mm/yr]','sigma');
+      fprintf(FIDmain,'%8d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata');
       fprintf(FIDstdinfo,'%d %d %f %f\n',NB1,NB2,min(STD),max(STD));
       fclose(FIDmain);
       NN=NN+NF;
@@ -340,14 +354,17 @@ end
 fclose(FIDstdinfo);
 end
 %% Export strain rates of internal deformation.
-function ExportInternalDeformation(DIR,TCHA,BLK,OBS,G)
+function ExportInternalDeformation(DIR,TCHA,BLK,PAR,OBS,G)
 NN=1;
 folder=[DIR,'/innerdeform'];
 exid=exist(folder);
 if exid~=7; mkdir(folder); end
 FIDstrain=fopen([folder,'/Internal_Deformation_strain.txt'],'w');
 FIDvector=fopen([folder,'/Internal_Deformation_vector.txt'],'w');
-fprintf(FIDstrain,'# Block Latitude Longitude exx exy eyy emax emin thetaP shearMAX sig_exx sig_exy sig_eyy sig_emax sig_emin sig_shearMAX [nanostrain/yr] \n');
+fprintf(FIDstrain,'# %5s %7s %7s %10s %10s %10s %10s %10s %10s %10s %10s %10s %10s %10s %10s %s\n',...
+                  'Block','Lat','Lat','exx','exy','eyy','emax','emin','thetaP','shearMAX',...
+                  'sig_exx','sig_exy','sig_eyy','sig_emax','sig_emin','sig_shearMAX');
+fprintf(FIDstrain,'# Unit of strain is [nanostrain/yr]');
 fprintf(FIDvector,'# Latitude Longitude VE VN \n');
 Vinterall=G.I*TCHA.AVEINE;
 outdata=[OBS(1).ALAT; OBS(1).ALON; Vinterall(1:3:end)'; Vinterall(2:3:end)'];
@@ -390,8 +407,8 @@ for NB=1:BLK(1).NBlock
   sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
                    +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
                    +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-  fprintf(FIDstrain,'%2d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n',...
-      NB,BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
+  fprintf(FIDstrain,'%7s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n',...
+      PAR.BLKNAME{NB},BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
       shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
 end
 fclose(FIDstrain);
