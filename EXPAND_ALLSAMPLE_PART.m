@@ -45,9 +45,9 @@ for ii=1:NIT
     SUMPOLPAIR=zeros(NPOL,NPOL);
     SUMFLTPAIR=zeros(NFLT,NFLT);
     SUMINEPAIR=zeros(NINE,NINE);
-    NDATAPOL=zeros(NPOL,1);
-    NDATAFLT=zeros(NFLT,1);
-    NDATAINE=zeros(NINE,1);
+    NDATAPOL=0;
+    NDATAFLT=0;
+    NDATAINE=0;
     MpHIST=zeros(NPOL,size(Mpbin,2)-1);
     McHIST=zeros(NFLT,size(Mcbin,2)-1);
     MiHIST=zeros(NINE,size(Mibin,2)-1);
@@ -71,7 +71,6 @@ for ii=1:NIT
         smppol(jj,:)=ones(1,NCH).*cha.MpCOMPRESS.NPOL(jj).MpMAX;
       end
       MpHIST(jj,:)=MpHIST(jj,:)+histcounts(smppol(jj,:),Mpbin);
-      NDATAPOL(jj)=NDATAPOL(jj)+NCH;
     end
     for kk=1:NFLT
       infid=cha.McCOMPRESS.NFLT(kk).Mcscale==Inf;
@@ -81,7 +80,6 @@ for ii=1:NIT
         smpflt(kk,:)=ones(1,NCH).*cha.McCOMPRESS.NFLT(kk).McMAX;
       end
       McHIST(kk,:)=McHIST(kk,:)+histcounts(smpflt(kk,:),Mcbin);
-      NDATAFLT(kk)=NDATAFLT(kk)+NCH;
     end
     for ll=1:NINE
       infid=cha.MiCOMPRESS.NINE(ll).Miscale==Inf;
@@ -91,14 +89,16 @@ for ii=1:NIT
         smpine(ll,:)=ones(1,NCH).*cha.MiCOMPRESS.NINE(ll).MiMAX;
       end
       MiHIST(ll,:)=MiHIST(ll,:)+histcounts(smpine(ll,:),Mibin);
-      NDATAINE(ll)=NDATAINE(ll)+NCH;
     end
-    SUMPOL=SUMPOL+NCH.*cha.MpCOMPRESS.MEANMp;
-    SUMFLT=SUMFLT+NCH.*cha.McCOMPRESS.MEANMc;
-    SUMINE=SUMINE+NCH.*cha.MiCOMPRESS.MEANMi;
-    SUMPOLPAIR=SUMPOLPAIR+(NCH-1).*cha.MpCOMPRESS.COVMp+NCH.*cha.MpCOMPRESS.MEANMp*cha.MpCOMPRESS.MEANMp';
-    SUMFLTPAIR=SUMFLTPAIR+(NCH-1).*cha.McCOMPRESS.COVMc+NCH.*cha.McCOMPRESS.MEANMc*cha.McCOMPRESS.MEANMc';    
-    SUMINEPAIR=SUMINEPAIR+(NCH-1).*cha.MiCOMPRESS.COVMi+NCH.*cha.MiCOMPRESS.MEANMi*cha.MiCOMPRESS.MEANMi';    
+    NDATAPOL=NDATAPOL+NCH;
+    NDATAFLT=NDATAFLT+NCH;
+    NDATAINE=NDATAINE+NCH;
+    SUMPOL=SUMPOL+sum(smppol,2);
+    SUMFLT=SUMFLT+sum(smpflt,2);
+    SUMINE=SUMINE+sum(smpine,2);
+    SUMPOLPAIR=SUMPOLPAIR+smppol*smppol';
+    SUMFLTPAIR=SUMFLTPAIR+smpflt*smpflt';
+    SUMINEPAIR=SUMINEPAIR+smpine*smpine';
   else
     for jj=1:NPOL
       infid=cha.MpCOMPRESS.NPOL(jj).Mpscale==Inf;
@@ -149,15 +149,15 @@ end
 for NI=1:NINE
   MEDINE(NI)=0.5*(Mibin(MEDINEID(NI))+Mibin(MEDINEID(NI)+1));
 end
-COVPOL=SUMPOLPAIR./NDATAPOL-(SUMPOL./NDATAPOL)*(SUMPOL./NDATAPOL)';
-COVFLT=SUMFLTPAIR./NDATAFLT-(SUMFLT./NDATAFLT)*(SUMFLT./NDATAFLT)';
-COVINE=SUMINEPAIR./NDATAINE-(SUMINE./NDATAINE)*(SUMINE./NDATAINE)';
+COVPOL=SUMPOLPAIR./NDATAPOL-AVEPOL*AVEPOL';
+COVFLT=SUMFLTPAIR./NDATAFLT-AVEFLT*AVEFLT';
+COVINE=SUMINEPAIR./NDATAINE-AVEINE*AVEINE';
 STDPOL=sqrt(diag(COVPOL));
 STDFLT=sqrt(diag(COVFLT));
 STDINE=sqrt(diag(COVINE));
-CORPOL=COVPOL./(sqrt(STDPOL)*sqrt(STDPOL'));
-CORFLT=COVFLT./(sqrt(STDFLT)*sqrt(STDFLT'));
-CORINE=COVINE./(sqrt(STDINE)*sqrt(STDINE'));
+CORPOL=COVPOL./(STDPOL*STDPOL');
+CORFLT=COVFLT./(STDFLT*STDFLT');
+CORINE=COVINE./(STDINE*STDINE');
 % Output
 if ACCFLAG
   TCHA.ACCTOTAL=ACCTOTAL;
