@@ -42,13 +42,9 @@ for RP=1:div
 end
 avesmp=[sumflt;sumvel]./NS;
 covsmp=sumsmp./NS-avesmp*avesmp';
-stdsmp=sqrt(diag(covsmp));
-corsmp=covsmp./(stdsmp*stdsmp');
 
 TCHA2.covsmp=covsmp;
 clear covsmp
-TCHA2.corsmp=corsmp;
-clear corsmp
 TCHA2.slipvel=slipvel;
 clear slipvel
 polllw=euler_llw(TCHA,BLK);
