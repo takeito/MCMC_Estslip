@@ -29,6 +29,9 @@ distz2=cz*cz';
 dist=sqrt(repmat(diag(distx2),1,BLK(1).NB) - 2.*distx2 + repmat(diag(distx2)',BLK(1).NB,1)...
          +repmat(diag(disty2),1,BLK(1).NB) - 2.*disty2 + repmat(diag(disty2)',BLK(1).NB,1)...
          +repmat(diag(distz2),1,BLK(1).NB) - 2.*distz2 + repmat(diag(distz2)',BLK(1).NB,1));
+dist=dist*1e-3; % m -> km
+
+save(fullfile(DIR,'dist.mat'),'dist','-v7.3')
 end
 %%
 function [x,y,z]=ell2xyz(lat,lon,h)

@@ -42,14 +42,20 @@ for RP=1:div
 end
 avesmp=[sumflt;sumvel]./NS;
 covsmp=sumsmp./NS-avesmp*avesmp';
+varsmp=diag(covsmp);
+varsmp(varsmp<0)=0;
+stdsmp=sqrt(varsmp);
+corsmp=covsmp./(stdsmp*stdsmp');
 
-TCHA2.covsmp=covsmp;
-clear covsmp
 TCHA2.slipvel=slipvel;
 clear slipvel
 polllw=euler_llw(TCHA,BLK);
 TCHA2.polllw=polllw;
 clear polllw
+TCHA2.covsmp=covsmp;
+TCHA2.corsmp=corsmp;
+clear covsmp corsmp
+
 save(fullfile(DIR,'TCHA2.mat'),'TCHA2','-v7.3')
 
 end
