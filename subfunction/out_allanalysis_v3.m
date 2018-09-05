@@ -355,6 +355,9 @@ fclose(FIDstdinfo);
 end
 %% Export strain rates of internal deformation.
 function ExportInternalDeformation(DIR,TCHA,BLK,PAR,OBS,G)
+if isfield(TCHA,'AVEINE')==0  % old type
+  return
+end
 NN=1;
 folder=[DIR,'/innerdeform'];
 exid=exist(folder);
@@ -565,15 +568,27 @@ end
 %% CALCULATE VECTOR BASED ON SAMPLED PARAMETER AND GREEN FUNCTION
 function CALvec=calc_sampling_vector(OBS,BLK,TCHA,D,G)
 % 
-Mp.SMP=TCHA.AVEPOL;
-Mi.SMP=TCHA.AVEINE;
-Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
-Mc.SMPMAT=Mc.SMPMAT(D.MID);
-% CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-CALvec.RIG=G.P*Mp.SMP;
-CALvec.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-CALvec.INE=G.I*Mi.SMP;
-CALvec.SUM=CALvec.RIG+CALvec.ELA+CALvec.INE;
+idstrain=isfield(TCHA,'AVEINE');
+switch idstrain
+  case 1
+    Mp.SMP=TCHA.AVEPOL;
+    Mi.SMP=TCHA.AVEINE;
+    Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
+    Mc.SMPMAT=Mc.SMPMAT(D.MID);
+    % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
+    CALvec.RIG=G.P*Mp.SMP;
+    CALvec.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
+    CALvec.INE=G.I*Mi.SMP;
+    CALvec.SUM=CALvec.RIG+CALvec.ELA+CALvec.INE;
+  case 0
+    Mp.SMP=TCHA.AVEPOL;
+    Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
+    Mc.SMPMAT=Mc.SMPMAT(D.MID);
+    % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
+    CALvec.RIG=G.P*Mp.SMP;
+    CALvec.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
+    CALvec.SUM=CALvec.RIG+CALvec.ELA;
+end        
 
 end
 %% MAKE PART GREEN FUNCTION v2
