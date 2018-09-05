@@ -1,9 +1,9 @@
 function out_slip_coupling_correlation(DIR,TCHA2,BLK,TRI)
 
-% corsmp=SlipCov.corsmp;
+% corsmp=SlipCC.corsmp;
 
 varsmp=diag(TCHA2.covsmp);
-varsmp(find(varsmp<0))=0;
+varsmp(varsmp<0)=0;
 stdsmp=sqrt(varsmp);
 corsmp=TCHA2.covsmp./(stdsmp*stdsmp');
 
