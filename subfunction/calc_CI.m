@@ -1,11 +1,10 @@
 % function [CI] = calc_CI(sortSMPFLT)
 function calc_CI(DIR,burn)
 load([DIR,'/TCHA.mat'])
-sortSMPFLT=sort(TCHA.SMPFLT,2);
-remid=size(sortSMPFLT,2)*burn/100;
-tmp=remid;
-remid=tmp+1;
-sortSMPFLT=sortSMPFLT(:,remid:end);
+smpid=size(TCHA.SMPFLT,2)*(burn/100);
+sortSMPFLT=TCHA.SMPFLT(:,smpid+1:end);
+clear TCHA
+sortSMPFLT=sort(sortSMPFLT,2);
 % Calculate Confidence Interval (CI) for coupling estimates.
 
 % 99% CI
@@ -64,6 +63,6 @@ CI(4).percentile=70;
 CI(5).data=CI68;
 CI(5).percentile=68;
 
-save(fullfile(DIR,'/CI.mat'),'ci','-v7.3');
+save(fullfile(DIR,'/CI.mat'),'CI','-v7.3');
 
 end
