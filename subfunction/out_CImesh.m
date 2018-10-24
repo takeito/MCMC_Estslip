@@ -5,9 +5,9 @@ load(fullfile(DIR,'BLK.mat'))
 load(fullfile(DIR,'CI.mat'))
 pf=pwd;
 folder=fullfile(pf,DIR,'coupling');
-for nci=1:size(ci,2)
-  subfolder=fullfile(folder,['CI',num2str(ci(nci).percentile)]);
-  write_CImeshfile(subfolder,ci(nci),BLK);
+for nci=1:size(CI,2)
+  subfolder=fullfile(folder,['CI',num2str(CI(nci).percentile)]);
+  write_CImeshfile(subfolder,CI(nci),BLK);
 end
 end
 %%
