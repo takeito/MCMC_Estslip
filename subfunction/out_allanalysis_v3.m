@@ -413,9 +413,25 @@ for NB=1:BLK(1).NBlock
   fprintf(FIDstrain,'%7s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f\n',...
       PAR.BLKNAME{NB},BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
       shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,sigshearMAX*1e9);
+  s(NB).exx = exx;
+  s(NB).exy = exy;
+  s(NB).eyy = eyy;
+  s(NB).sig_exx = sigexx;
+  s(NB).sig_exy = sigexy;
+  s(NB).sig_eyy = sigeyy;
+  s(NB).e1 = e1;
+  s(NB).e2 = e2;
+  s(NB).v1 = v1;
+  s(NB).v2 = v2;
+  s(NB).p_theta = thetaP;
+  s(NB).sig_emax = sigemax;
+  s(NB).sig_emin = sigemin;
+  s(NB).sig_shearmax = sigshearMAX;
 end
 fclose(FIDstrain);
 fclose(FIDvector);
+strainfile=[folder,'/strain'];
+save(strainfile,'s','-v7.3')
 end
 %% Translate coupling to slip deficit rate.
 function [SDR]=coupling2sdr(TCHA,D,G)
