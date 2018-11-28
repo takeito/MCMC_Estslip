@@ -347,11 +347,16 @@ for NB1=1:BLK(1).NBlock
       fprintf(FIDmain,'%8d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.4f %10.4f %10.4f %10.4f\n',outdata');
       fprintf(FIDstdinfo,'%d %d %f %f\n',NB1,NB2,min(STD),max(STD));
       fclose(FIDmain);
+      sdr(1).bound(NB1,NB2).str=SDR.str(FLTNUM,:);
+      sdr(1).bound(NB1,NB2).tns=SDR.tns(FLTNUM,:);
+      sdr(1).bound(NB1,NB2).dip=SDR.dip(FLTNUM,:);
       NN=NN+NF;
     end
   end
 end
 fclose(FIDstdinfo);
+sdrfile=[folder,'/sdr'];
+save(sdrfile,'sdr','-v7.3')
 end
 %% Export strain rates of internal deformation.
 function ExportInternalDeformation(DIR,TCHA,BLK,PAR,OBS,G)
