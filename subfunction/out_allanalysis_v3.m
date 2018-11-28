@@ -462,9 +462,9 @@ for ii=1:length(SFLTNUM)
   minus=sign(sdr.cp);
   sdr.scaler=minus.*sdr.scaler;
   SDR.flax=[SDR.flax; sdr.scaler];
-  SDR.str=[SDR.str; sdr.sdt];
-  SDR.dip=[SDR.str; sdr.sdt];
-  SDR.tns=[SDR.str; sdr.sdt];
+  SDR.str=[SDR.str; sdr.str];
+  SDR.dip=[SDR.dip; sdr.dip];
+  SDR.tns=[SDR.tns; sdr.tns];
   HH=HH+3*SFLTNUM(ii);
   H1=H1+SFLTNUM(ii);
 end
