@@ -415,12 +415,18 @@ for NB=1:BLK(1).NBlock
   sigshearMAX=sqrt( (       0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigexx^2 ...
                    +(          1*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *  exy       )^2 *sigexy^2 ...
                    +(      -0.25*( (exx-eyy)^2 /4 + exy^2 )^-0.5 *( exx-eyy ) )^2 *sigeyy^2 );
-  sigthetaP  =sqrt(       -exy  / ( 4*exy^2 - (exx-eyy)^2 )                       *sigexx^2 ...
-                     +(exx-eyy) / ( 4*exy^2 - (exx-eyy)^2 )                       *sigeyy^2 ...
-                          +exy  / ( 4*exy^2 - (exx-eyy)^2 )                       *sigeyy^2 );
-  fprintf(FIDstrain,'%7s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f\n',...
-      PAR.BLKNAME{NB},BLK(NB).LATinter,BLK(NB).LONinter,exx*1e9,exy*1e9,eyy*1e9,emax*1e9,emin*1e9,thetaP,...
-      shearMAX*1e9,sigexx*1e9,sigexy*1e9,sigeyy*1e9,sigemax*1e9,sigemin*1e9,rad2deg(sigthetaP),sigshearMAX*1e9);
+  sigthetaP  =sqrt( (     -exy  / ( 4*exy^2 - (exx-eyy)^2 )                   )^2 *sigexx^2 ...
+                   +( (exx-eyy) / ( 4*exy^2 - (exx-eyy)^2 )                   )^2 *sigexy^2 ...
+                   +(      exy  / ( 4*exy^2 - (exx-eyy)^2 )                   )^2 *sigeyy^2 );
+  fprintf(FIDstrain,'%7s %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f\n',...
+                    PAR.BLKNAME{NB},...
+                    BLK(NB).LATinter,BLK(NB).LONinter,...
+                    exx*1e9,exy*1e9,eyy*1e9,...
+                    emax*1e9,emin*1e9,...
+                    thetaP,shearMAX*1e9,...
+                    sigexx*1e9,sigexy*1e9,sigeyy*1e9,...
+                    sigemax*1e9,sigemin*1e9,...
+                    rad2deg(sigthetaP),sigshearMAX*1e9);
   s(NB).exx = exx;
   s(NB).exy = exy;
   s(NB).eyy = eyy;
@@ -1168,9 +1174,9 @@ warning('off','all')
 %	sphere of radius A at depth F, in a homogeneous, semi-infinite elastic
 %	body and approximation for A << F (center of dilatation).
 %
-%	MOGI(R,F,V) and MOGI(R,F,A,??¿½,P) are also allowed for compatibility 
+%	MOGI(R,F,V) and MOGI(R,F,A,??ï¿½ï¿½,P) are also allowed for compatibility 
 %	(Mogi's original equation considers an isotropic material with Lam?s 
-%	constants equal, i.e., lambda = ??¿½, Poisson's ratio = 0.25).
+%	constants equal, i.e., lambda = ??ï¿½ï¿½, Poisson's ratio = 0.25).
 %
 %	Input variables are:
 %	   F: depth of the center of the sphere from the surface,
@@ -1179,15 +1185,15 @@ warning('off','all')
 %	   P: hydrostatic pressure change in the sphere,
 %	   E: elasticity (Young's modulus),
 %	  nu: Poisson's ratio,
-%	   ??¿½: rigidity (Lam?s constant in case of isotropic material).
+%	   ??ï¿½ï¿½: rigidity (Lam?s constant in case of isotropic material).
 %
 %	Notes:
-%		- Equations are all vectorized, so variables R,F,V,A,??¿½ and P are 
+%		- Equations are all vectorized, so variables R,F,V,A,??ï¿½ï¿½ and P are 
 %		  scalar but any of them can be vector or matrix, then outputs 
 %		  will be vector or matrix of the same size.
 %		- Convention: Uz > 0 = UP, F is depth so in -Z direction.
 %		- Units should be constistent, e.g.: R, F, A, Ur and Uz in m imply
-%		  V in m3; E, ??¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
+%		  V in m3; E, ??ï¿½ï¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
 %
 %	Example for a 3-D plot of exagerated deformed surface due to a 1-bar
 %	overpressure in a 10-cm radius sphere at 1-m depth in rock:
@@ -1223,7 +1229,7 @@ switch nargin
 	case 4	% MOGI(R,F,V,nu)
 		v = varargin{3};
 		nu = varargin{4};
-	case 5	% MOGI(R,F,A,??¿½,P)
+	case 5	% MOGI(R,F,A,??ï¿½ï¿½,P)
 		a = varargin{3};
 		mu = varargin{4};
 		p = varargin{5};
