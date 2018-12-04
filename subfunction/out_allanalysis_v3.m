@@ -369,9 +369,9 @@ exid=exist(folder);
 if exid~=7; mkdir(folder); end
 FIDstrain=fopen([folder,'/Internal_Deformation_strain.txt'],'w');
 FIDvector=fopen([folder,'/Internal_Deformation_vector.txt'],'w');
-fprintf(FIDstrain,'# %5s %7s %7s %7s %7s %7s %7s %7s %10s %10s %10s %10s %10s %10s %10s %s\n',...
+fprintf(FIDstrain,'# %5s %7s %7s %7s %7s %7s %7s %7s %10s %10s %10s %10s %10s %10s %10s %10s %s\n',...
                   'Block','Lat','Lat','exx','exy','eyy','emax','emin','thetaP','shearMAX',...
-                  'sig_exx','sig_exy','sig_eyy','sig_emax','sig_emin','sig_shearMAX');
+                  'sig_exx','sig_exy','sig_eyy','sig_emax','sig_emin','sig_thetaP','sig_shearMAX');
 fprintf(FIDstrain,'# Unit of strain is [nanostrain/yr] \n');
 fprintf(FIDvector,'# Latitude Longitude VE VN \n');
 Vinterall=G.I*TCHA.AVEINE;
@@ -438,6 +438,7 @@ for NB=1:BLK(1).NBlock
   s(NB).v1 = v1;
   s(NB).v2 = v2;
   s(NB).p_theta = thetaP;
+  s(NB).shearMAX = shearMAX;  
   s(NB).sig_emax = sigemax;
   s(NB).sig_emin = sigemin;
   s(NB).sig_thetaP = rad2deg(sigthetaP);
