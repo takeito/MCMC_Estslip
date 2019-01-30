@@ -313,7 +313,7 @@ fprintf('==================\n')
 disp('PASS READ_PARAMETERS')
 end
 %% MAKE MATRIX
-function [D,G]=COMB_GREEN(BLK,OBS,TRI,D)
+function [D,G]=COMB_GREEN(BLK,OBS,TRI)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
 % Coded by Hiroshi Kimura 2018/05/01 (ver 1.2)
 % pole unit is mm
