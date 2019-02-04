@@ -18,7 +18,7 @@ SHOW_BLOCK_BOUND(BLK)
 % READ FIX EULER POLES
 [POL,PRM]=READ_EULER_POLES(BLK,PRM);
 % READ RIGID BLOCK BOUNDARY
-[BLK,PRM]=READ_RIGID_BOUND(BLK,PRM);
+[BLK,PRM]=READ_DIPPING_BOUND(BLK,PRM);
 % READ INTERNAL DEFORMATION PARAMETER
 [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM);
 % CALC. GREEN FUNCTION
@@ -264,8 +264,8 @@ PRM.DIRBlock_Interface=fullfile(PRM.HOME_D,DIRBlock_Interface);
 FilePole=fscanf(Fid,'%s \n',[1,1]);
 PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
 [~]=fgetl(Fid);
-FileRigb=fscanf(Fid,'%s \n',[1,1]);
-PRM.FileRigb=fullfile(PRM.HOME_D,FileRigb);
+FileDipb=fscanf(Fid,'%s \n',[1,1]);
+PRM.FileDipb=fullfile(PRM.HOME_D,FileDipb);
 [~]=fgetl(Fid);
 FileInternal=fscanf(Fid,'%s \n',[1,1]);
 PRM.FileInternal=fullfile(PRM.HOME_D,FileInternal);
@@ -299,7 +299,7 @@ fprintf('FileOBS                  : %s \n',PRM.FileOBS)
 fprintf('DIRBlock                 : %s \n',PRM.DIRBlock)
 fprintf('DIRBlock_Interface       : %s \n',PRM.DIRBlock_Interface) 
 fprintf('File fixed epole         : %s \n',PRM.FilePole) 
-fprintf('File Rigid boundary      : %s \n',PRM.FileRigb) 
+fprintf('File Dipping boundary    : %s \n',PRM.FileDipb) 
 fprintf('File Internal deformation: %s \n',PRM.FileInternal) 
 fprintf('DIRResult                : %s \n',PRM.DirResult) 
 fprintf('GPUdev (CPU:99)          : %i \n',PRM.GPU) 
@@ -313,7 +313,7 @@ fprintf('==================\n')
 disp('PASS READ_PARAMETERS')
 end
 %% MAKE MATRIX
-function [D,G]=COMB_GREEN(BLK,OBS,TRI,D)
+function [D,G]=COMB_GREEN(BLK,OBS,TRI)
 % Coded by Takeo Ito 2017/01/02 (ver 1.1)
 % Coded by Hiroshi Kimura 2018/05/01 (ver 1.2)
 % pole unit is mm
@@ -1057,15 +1057,15 @@ POL.FIXw=reshape(FIXw',3*BLK(1).NBlock,1);
 PRM.APRIORIPOLE=TMP';
 % 
 end
-%% READ RIGID BLOCK BOUNDARY PAIR
-function [BLK,PRM]=READ_RIGID_BOUND(BLK,PRM)
-BLK(1).RGPAIR=zeros(1,3);
-if exist(PRM.FileRigb,'file')~=2; return; end
-FID=fopen(PRM.FileRigb,'r');
+%% READ DIPPING BLOCK BOUNDARY
+function [BLK,PRM]=READ_DIPPING_BOUND(BLK,PRM)
+BLK(1).DIPPING=zeros(1,3);
+if exist(PRM.FileDipb,'file')~=2; return; end
+FID=fopen(PRM.FileDipb,'r');
 TMP=fscanf(FID,'%d %d %d\n',[3 Inf]);
-BLK(1).RGPAIR=TMP';
+BLK(1).DIPPING=TMP';
 end
-%% READ RIGID BLOCK BOUNDARY PAIR
+%% READ FLAG FILE FOR CALCULATION OF INTERNAL STRAIN
 function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM)
 % Coded by Hiroshi Kimura 2018/05/01 (ver 1.0)
 % Revised by Hiroshi Kimura 2018/05/08 (ver 1.1)
@@ -1126,11 +1126,11 @@ for NB1=1:BLK(1).NBlock
       fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
       BLK(1).BOUND(NB1,NB2).FLAG1=0;
-      for ii=1:size(BLK(1).RGPAIR,1)
-        RGPAIRID=ismember([NB1 NB2],BLK(1).RGPAIR(ii,2:3));
-        ISPAIR=sum(RGPAIRID);
+      for ii=1:size(BLK(1).DIPPING,1)
+        DIPPINGID=ismember([NB1 NB2],BLK(1).DIPPING(ii,2:3));
+        ISPAIR=sum(DIPPINGID);
         if ISPAIR==2
-          if max(BLK(1).RGPAIR(ii,2:3))==BLK(1).RGPAIR(ii,1)
+          if max(BLK(1).DIPPING(ii,2:3))==BLK(1).DIPPING(ii,1)
             BLK(1).BOUND(NB1,NB2).FLAG1=1;
           else
             BLK(1).BOUND(NB1,NB2).FLAG1=2;
