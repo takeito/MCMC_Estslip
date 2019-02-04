@@ -1,0 +1,33 @@
+# ignore all
+*
+# ignore folders
+PARAMETER/*
+subfunction/*
+# ignore files
+# add folders or files
+!.gitignore
+!README.md
+!Readme_ESTBlockslip.txt
+!PARAMETER/parameter_export.txt
+!PARAMETER/parameter_sample.txt
+!PARAMETER/parameterREMC_sample.txt
+!subfunction/calc_CI.m
+!subfunction/distance_matrix.m
+!subfunction/out_allanalysis_v2.m
+!subfunction/out_allanalysis_v3.m
+!subfunction/out_allanalysis_v3r.m
+!subfunction/out_coupling_correlation.m
+!subfunction/out_slip_coupling_correlation.m
+!subfunction/relative_covariance.m
+!subfunction/show_histogram_C.m
+!COMBINE_BLOCKs.m
+!edit_BOUND.m
+!EST_BLOCK.m
+!EST_BLOCK_slip.m
+!EST_BLOCK_slip_REMC.m
+!EXPAND_ALLSAMPLE_PART.m
+!EXPAND_ALLSAMPLE_PART_REMC.m
+!make_interface_tri.m
+!make_interface_tri_HP.m
+!make_interface_tri_HP0.m
+!MCMC_SlipBlock.m
