@@ -3,8 +3,8 @@
 # ignore folders
 PARAMETER/*
 subfunction/*
-# ignore files
-# add folders or files
+# Add folders or files to be maintained
+# When adding new scripts, add file names below.
 !.gitignore
 !README.md
 !Readme_ESTBlockslip.txt
