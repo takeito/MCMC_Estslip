@@ -1330,7 +1330,7 @@ function [BLK,OBS]=CALC_AIC(BLK,OBS,POL,PRM)
 TSig=0; NumB=0;
 BLK(1).POLE=[];
 logfile=fullfile(PRM.DirResult,'log.txt');
-logFID=fopen(logfile,'a');
+logFID=fopen(logfile,'wt');
 for N=1:BLK(1).NBlock
   Sig=0;EVne=[];POLE=[0; 0; 0];
   OBS(N).EEV=zeros(OBS(N).NBLK,1);
