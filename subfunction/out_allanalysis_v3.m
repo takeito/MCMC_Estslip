@@ -511,10 +511,12 @@ if exid~=7; mkdir(oDIR); end
 OBSVEC=[OBS(1).ALON;OBS(1).ALAT;OBS(1).EVEC;OBS(1).NVEC;OBS(1).HVEC];
 CALVEC.RIG=[OBS(1).ALON;OBS(1).ALAT;calvec.RIG(1:3:end)';calvec.RIG(2:3:end)';calvec.RIG(3:3:end)'];
 CALVEC.ELA=[OBS(1).ALON;OBS(1).ALAT;calvec.ELA(1:3:end)';calvec.ELA(2:3:end)';calvec.ELA(3:3:end)'];
+CALVEC.INE=[OBS(1).ALON;OBS(1).ALAT;calvec.INE(1:3:end)';calvec.INE(2:3:end)';calvec.INE(3:3:end)'];
 CALVEC.SUM=[OBS(1).ALON;OBS(1).ALAT;calvec.SUM(1:3:end)';calvec.SUM(2:3:end)';calvec.SUM(3:3:end)'];
 RESVEC.SUM=[OBS(1).ALON;OBS(1).ALAT;resvec.SUM];
 CALVECgrid.rig=[GRD(1).ALON;GRD(1).ALAT;grdvec.RIG(1:3:end)';grdvec.RIG(2:3:end)';grdvec.RIG(3:3:end)'];
 CALVECgrid.ela=[GRD(1).ALON;GRD(1).ALAT;grdvec.ELA(1:3:end)';grdvec.ELA(2:3:end)';grdvec.ELA(3:3:end)'];
+CALVECgrid.ine=[GRD(1).ALON;GRD(1).ALAT;grdvec.INE(1:3:end)';grdvec.INE(2:3:end)';grdvec.INE(3:3:end)'];
 % 
 FID=fopen([oDIR,'/OBS_vector.txt'],'w');
 fprintf(FID,'%f %f %f %f %f\n',OBSVEC);
@@ -528,11 +530,17 @@ fclose(FID);
 FID=fopen([oDIR,'/CAL_vector_ela_site.txt'],'w');
 fprintf(FID,'%f %f %f %f %f\n',CALVEC.ELA);
 fclose(FID);
+FID=fopen([oDIR,'/CAL_vector_ine_site.txt'],'w');
+fprintf(FID,'%f %f %f %f %f\n',CALVEC.INE);
+fclose(FID);
 FID=fopen([oDIR,'/CAL_vector_rig_grid.txt'],'w');
 fprintf(FID,'%f %f %f %f %f\n',CALVECgrid.rig);
 fclose(FID);
 FID=fopen([oDIR,'/CAL_vector_ela_grid.txt'],'w');
 fprintf(FID,'%f %f %f %f %f\n',CALVECgrid.ela);
+fclose(FID);
+FID=fopen([oDIR,'/CAL_vector_ine_grid.txt'],'w');
+fprintf(FID,'%f %f %f %f %f\n',CALVECgrid.ine);
 fclose(FID);
 FID=fopen([oDIR,'/RES_vector.txt'],'w');
 fprintf(FID,'%f %f %f %f %f\n',RESVEC.SUM);
@@ -597,10 +605,12 @@ function [GRDvec,GRD]=calc_vector_atmesh(BLK,TCHA,D,G,GRD,TRIg)
 Mp.SMP=TCHA.AVEPOL;
 Mc.SMPMAT=repmat(TCHA.AVEFLT,3,D.CNT);
 Mc.SMPMAT=Mc.SMPMAT(D.MID);
+Mi.SMP=TCHA.AVEINE;
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
 GRDvec.RIG=Gg.P*Mp.SMP;
 GRDvec.ELA=Gg.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-GRDvec.SUM=GRDvec.RIG+GRDvec.ELA;
+GRDvec.INE=Gg.I*Mi.SMP;
+GRDvec.SUM=GRDvec.RIG+GRDvec.ELA+GRDvec.INE;
 % 
 end
 %% CALCULATE VECTOR BASED ON SAMPLED PARAMETER AND GREEN FUNCTION
@@ -644,7 +654,6 @@ GRD(1).ALON=XM';
 GRD(1).ALAT=YM';
 GRD(1).AHIG=zeros(size(GRD(1).ALON));
 % 
-N=0;
 GRD(1).NGRD=length(GRD(1).ALON);
 for N=1:GRD(1).NGRD
   GRD(1).AXYZ(N,:)=conv2ell_hig(GRD(1).ALAT(N),GRD(1).ALON(N),GRD(1).AHIG(N));
@@ -659,6 +668,7 @@ for N=1:BLK(1).NBlock
   GRD(N).LON=GRD(1).ALON(IND);
   GRD(N).HIG=GRD(1).AHIG(IND);
   GRD(N).OXYZ=conv2ell_hig(GRD(N).LAT,GRD(N).LON,GRD(N).HIG);
+  [GRD(N).Xinter,GRD(N).Yinter]=PLTXY(GRD(N).LAT,GRD(N).LON,BLK(N).LATinter,BLK(N).LONinter);
 end
 Dg(1).IND=find(GRD(1).ABLK~=0)';
 GRD(1).ALON=GRD(1).ALON(:,Dg(1).IND);
@@ -676,6 +686,7 @@ function [Dg,Gg,GRD]=ReshapeGreen(BLK,GRD,TRIg)
 % 
 NGRD=size(GRD(1).ALON,2);
 TMP.P=zeros(3*NGRD,3.*BLK(1).NBlock);
+TMP.I=zeros(3*NGRD,3.*BLK(1).NBlock);
 MC=1;
 MT=1;
 MR=1;
@@ -704,11 +715,17 @@ for NB1=1:BLK(1).NBlock
   TMP.P(NIND,3*NB1-2)= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,3)+GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,2);
   TMP.P(NIND,3*NB1-1)=-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,3)-GRD(1).AXYZ(IND,6).*GRD(1).AXYZ(IND,1);
   TMP.P(NIND,3*NB1  )= GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,7).*GRD(1).AXYZ(IND,2)-GRD(1).AXYZ(IND,4).*GRD(1).AXYZ(IND,5).*GRD(1).AXYZ(IND,1);
+  TMP.I(EIND,3*NB1-2)= (GRD(NB1).Xinter).*10^6;
+  TMP.I(EIND,3*NB1-1)= (GRD(NB1).Yinter).*10^6;
+  TMP.I(EIND,3*NB1  )= 0;
+  TMP.I(NIND,3*NB1-2)= 0;
+  TMP.I(NIND,3*NB1-1)= (GRD(NB1).Xinter).*10^6;
+  TMP.I(NIND,3*NB1  )= (GRD(NB1).Yinter).*10^6;
 end
 % 
-Gg(1).C  =TMP.C;
-Gg(1).P  =TMP.P;
-
+Gg(1).C = TMP.C;
+Gg(1).P = TMP.P;
+Gg(1).I = TMP.I;
 end
 %% MAKE GREEN FUNCTION
 function [TRI]=GREEN_TRI(BLK,GRD)
@@ -1175,9 +1192,9 @@ warning('off','all')
 %	sphere of radius A at depth F, in a homogeneous, semi-infinite elastic
 %	body and approximation for A << F (center of dilatation).
 %
-%	MOGI(R,F,V) and MOGI(R,F,A,??ï¿½ï¿½,P) are also allowed for compatibility 
+%	MOGI(R,F,V) and MOGI(R,F,A,???¿½?¿½,P) are also allowed for compatibility 
 %	(Mogi's original equation considers an isotropic material with Lam?s 
-%	constants equal, i.e., lambda = ??ï¿½ï¿½, Poisson's ratio = 0.25).
+%	constants equal, i.e., lambda = ???¿½?¿½, Poisson's ratio = 0.25).
 %
 %	Input variables are:
 %	   F: depth of the center of the sphere from the surface,
@@ -1186,15 +1203,15 @@ warning('off','all')
 %	   P: hydrostatic pressure change in the sphere,
 %	   E: elasticity (Young's modulus),
 %	  nu: Poisson's ratio,
-%	   ??ï¿½ï¿½: rigidity (Lam?s constant in case of isotropic material).
+%	   ???¿½?¿½: rigidity (Lam?s constant in case of isotropic material).
 %
 %	Notes:
-%		- Equations are all vectorized, so variables R,F,V,A,??ï¿½ï¿½ and P are 
+%		- Equations are all vectorized, so variables R,F,V,A,???¿½?¿½ and P are 
 %		  scalar but any of them can be vector or matrix, then outputs 
 %		  will be vector or matrix of the same size.
 %		- Convention: Uz > 0 = UP, F is depth so in -Z direction.
 %		- Units should be constistent, e.g.: R, F, A, Ur and Uz in m imply
-%		  V in m3; E, ??ï¿½ï¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
+%		  V in m3; E, ???¿½?¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
 %
 %	Example for a 3-D plot of exagerated deformed surface due to a 1-bar
 %	overpressure in a 10-cm radius sphere at 1-m depth in rock:
@@ -1230,7 +1247,7 @@ switch nargin
 	case 4	% MOGI(R,F,V,nu)
 		v = varargin{3};
 		nu = varargin{4};
-	case 5	% MOGI(R,F,A,??ï¿½ï¿½,P)
+	case 5	% MOGI(R,F,A,???¿½?¿½,P)
 		a = varargin{3};
 		mu = varargin{4};
 		p = varargin{5};
