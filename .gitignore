@@ -20,6 +20,8 @@ subfunction/*
 !subfunction/out_slip_coupling_correlation.m
 !subfunction/relative_covariance.m
 !subfunction/show_histogram_C.m
+!subfunction/write4gmt.m
+!subfunction/mat2txt_trimesh.m
 !COMBINE_BLOCKs.m
 !edit_BOUND.m
 !EST_BLOCK.m
