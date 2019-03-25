@@ -48,16 +48,18 @@ fprintf(Fid2,'%f\n',sarea);
 fclose(Fid2);
 
 disp(fname)
-disp(['陸域付近の平均面積 = ',num2str(mean(larea)*max(tarea))])
-disp(['海域の平均面積 = ',num2str(mean(sarea)*max(tarea))])
-disp(['陸域付近のメディアン面積 = ',num2str(median(larea)*max(tarea))])
-disp(['海域のメディアン面積 = ',num2str(median(sarea)*max(tarea))])
+disp(['Mean area of onshore    = ',num2str(mean(larea)*max(tarea))])
+disp(['Mean area of offshore   = ',num2str(mean(sarea)*max(tarea))])
+disp(['Median area of onshore  = ',num2str(median(larea)*max(tarea))])
+disp(['Median area of offshore = ',num2str(median(sarea)*max(tarea))])
 
 end
 %%
-function mat2txt_sU(arpha)
+function mat2txt_sU(arpha,folder)
 
 fname=['~/Desktop/initial_',num2str(arpha),'/Meshplate_phs_initial.mat'];
+fname = fullfile(folder,'Meshplate_phs_initial.mat');
+outsUtxt = fullfile();
 outsUtxt=['~/Desktop/initial_',num2str(arpha),'/U',',num2str(arpha),','.txt'];
 
 load(fname);
