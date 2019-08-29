@@ -63,7 +63,7 @@ for nblk = 1:size(x95.lat,1)
   %   end
   savefig(nblk,fullfile(folder,['pole_',num2str(nblk)]))
 end
-savefig(100,fullfile(folder,['pole_',num2str(nblk)]))
+savefig(100,fullfile(folder,'pole_allblock'))
 
 end
 
