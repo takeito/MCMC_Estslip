@@ -7,7 +7,6 @@ meanp.y = TCHA.AVEPOL(2:3:end);
 meanp.z = TCHA.AVEPOL(3:3:end);
 [meanp.lat,meanp.lon,meanp.ang] = xyzp2lla(meanp.x,meanp.y,meanp.z);
 
-
 burnid = round(size(TCHA.SMPPOL,2)*burn/100);
 p.x = TCHA.SMPPOL(1:3:end,burnid:thin:end);
 p.y = TCHA.SMPPOL(2:3:end,burnid:thin:end);
@@ -28,12 +27,8 @@ filename   = gunzip('gshhs_c.b.gz', tempdir);
 shorelines = gshhs(filename{1});
 figure(100); clf(100)
 geoshow([shorelines.Lat],[shorelines.Lon])
-% for ns = 1:size(shorelines,1)
-% plot(shorelines(ns).Lon,shorelines(ns).Lat,'k','LineWidth',1); hold on
-% end
 
 for nblk = 1:size(x95.lat,1)
-  %   wbin = max(x95.lon(nblk),x95.lat(nblk));
   wbinlon = x95.lon(nblk);
   wbinlat = x95.lat(nblk);
   if wbinlon<=0; wbinlon = 1; end
