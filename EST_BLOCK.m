@@ -171,7 +171,10 @@ function [POL,PRM]=READ_EULER_POLES(BLK,PRM)
 % BLID  : Block ID that includes fix POLE
 % OMEGA : unit is deg/Myr
 POL.ID=false;
-if exist(PRM.FilePole,'file')~=2; POL.FIXflag=0; return; end
+POL.FLAG=0;
+POL.BLID=0;
+POL.FIXw=zeros(3*BLK(1).NBlock,1);
+if exist(PRM.FilePole,'file')~=2; return; end
 % 
 POL.FIXflag=1;
 FID=fopen(PRM.FilePole,'r');
