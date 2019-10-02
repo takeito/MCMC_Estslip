@@ -183,6 +183,10 @@ end
 %% Find shared point between blocks
 function [Ca,LCa]=mach_bo(BLK,NB1,NB2)
 LCa=inpolygon(BLK(NB1).LON,BLK(NB1).LAT,BLK(NB2).LON,BLK(NB2).LAT);
+if (LCa(1)==true && LCa(end)==true) && (LCa(2)==false && LCa(end-1)==false)  % eliminate Quadruple-junction
+  LCa( 1 ) = false;
+  LCa(end) = false;
+end
 Ca=find(LCa);
 if ~isempty(Ca)
   if and(LCa(1),LCa(end))
