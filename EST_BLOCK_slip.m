@@ -329,6 +329,7 @@ D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
+D(1).McID=zeros(3*BLK(1).NB,BLK(1).NB);
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
@@ -355,6 +356,7 @@ for NB1=1:BLK(1).NBlock
       D(1).mID=zeros(BLK(1).NB,1);
       D(1).mID(MR:MR+NF-1)=1;
       D(1).MID=[D(1).MID D(1).mID];
+      D(1).McID=repmat(eye(NF),3,1);
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
@@ -543,9 +545,6 @@ while not(COUNT==PRM.THR)
     Mp.SMP=Mp.OLD+RWD.*MpScale.*rMp(:,iT);
     Mi.SMP=Mi.OLD+RWD.*MiScale.*rMi(:,iT);
     La.SMP=La.OLD+RWD.*La.STD.*rLa(:,iT);
-% MAKE Mc.SMPMAT
-    Mc.SMPMAT=repmat(Mc.SMP,3,D.CNT);
-    Mc.SMPMAT=Mc.SMPMAT(D.MID);
 % Calc GPU memory free capacity
     if PRM.GPU~=99
       Byte1=whos('G');
@@ -553,9 +552,9 @@ while not(COUNT==PRM.THR)
       b=waitGPU(Byte1.bytes+Byte2.bytes);
     end
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
-    CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*D(1).CFINV.*Mc.SMPMAT);
-    CAL.INE=G.I*Mi.SMP;
+    CAL.RIG=G(1).P*Mp.SMP;
+    CAL.ELA=G(1).C*((G(1).TB*Mp.SMP).*D(1).CFINV.*(D(1).McID*Mc.SMP));
+    CAL.INE=G(1).I*Mi.SMP;
 %     CAL.SMP=CAL.RIG+CAL.ELA;
     CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
     if PRM.GPU~=99
@@ -658,10 +657,9 @@ while not(COUNT==PRM.THR)
   Mpmean=mean(CHA.Mp,2);
   Mcmean=mean(CHA.Mc,2);
   Mimean=mean(CHA.Mi,2);
-  Mcmeanrep=repmat(Mcmean,3,D.CNT);Mcmeanrep=Mcmeanrep(D.MID);
-  VEC.RIG=G.P*Mpmean;
-  VEC.ELA=G.C*((G.TB*Mpmean).*D(1).CFINV.*Mcmeanrep);
-  VEC.INE=G.I*Mimean;
+  VEC.RIG=G(1).P*Mpmean;
+  VEC.ELA=G(1).C*((G(1).TB*Mpmean).*D(1).CFINV.*(D(1).McID*Mcmean));
+  VEC.INE=G(1).I*Mimean;
 %   VEC.SUM=VEC.RIG+VEC.ELA;
   VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
 %   vec.rel=G.C*((G.TB*poltmp).*CF);

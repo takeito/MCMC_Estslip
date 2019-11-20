@@ -338,6 +338,7 @@ D(1).IND=find(TMP.ERR~=0)';
 D(1).OBS=TMP.OBS(D(1).IND)';
 D(1).ERR=TMP.ERR(D(1).IND)';
 D(1).MID=[];
+D(1).McID=zeros(3*BLK(1).NB,BLK(1).NB);
 D(1).CNT=0;
 %
 % (G(1).C * (( G(1).T * ( G(1).B1 - G(1).B2 ) * Mp)*Mc ) + G(1).P * Mp
@@ -361,6 +362,7 @@ for NB1=1:BLK(1).NBlock
       D(1).mID=zeros(BLK(1).NB,1);
       D(1).mID(MR:MR+NF-1)=1;
       D(1).MID=[D(1).MID D(1).mID];
+      D(1).McID=repmat(eye(NF),3,1);
       TMP.C(1:3*NOBS,MC     :MC+  NF-1)=TRI(1).BOUND(NB1,NB2).GSTR;
       TMP.C(1:3*NOBS,MC+  NF:MC+2*NF-1)=TRI(1).BOUND(NB1,NB2).GDIP;
       TMP.C(1:3*NOBS,MC+2*NF:MC+3*NF-1)=TRI(1).BOUND(NB1,NB2).GTNS;
@@ -478,6 +480,10 @@ DPT.MID   = repmat(D(1).MID,1,NReplica);
 DPT.CFINV = repmat(D(1).CFINV,1,NReplica);
 LO_Mc=0;
 UP_Mc=1;
+% Inverse temperatures
+Tmax  = 100;
+dT    = Tmax^(1/(NReplica-1));
+T_inv = 1 ./ (dT.^[0:NReplica-1]);
 % GPU Initialize 
 if PRM.GPU~=99
   g=gpuDevice(PRM.GPU);
@@ -526,8 +532,8 @@ while not(COUNT==PRM.THR)
   rMp=zeros(NReplica*Mp.N,PRM.CHA);
   rMi=zeros(NReplica*Mi.N,PRM.CHA);
   rLa=zeros(NReplica*La.N,PRM.CHA);
-  logU =log(rand(PRM.CHA,1,precision));
-  logEX=log(rand(   Ex.N,1,precision));
+  logU=log(rand(PRM.CHA,1,precision));
+  logE=log(rand(PRM.CHA,1,precision));
   for PT=1:NReplica
     rMctmp=RWD*    McScale*(TIT^(PT-1)^0.5).*(-0.5+rand(Mc.N,PRM.CHA,precision));
     rMptmp=RWD*    MpScale*(TIT^(PT-1)^0.5).*(-0.5+rand(Mp.N,PRM.CHA,precision));
@@ -542,13 +548,13 @@ while not(COUNT==PRM.THR)
   end
   if PRM.GPU~=99
     logU=gpuArray(logU);
-    logEX=gpuArray(logEX);
+    logE=gpuArray(logE);
     rMc=gpuArray(rMc);
     rMp=gpuArray(rMp);
     rMi=gpuArray(rMi);
     rLa=gpuArray(rLa);
   end
-  rEx=randi(NReplica-1,Ex.N,1);
+  rEx=randi(NReplica-1,PRM.CHA,1);
   EXN=0;
   for iT=1:PRM.CHA
     RMc=reshape(rMc(:,iT),Mc.N,NReplica);
@@ -574,7 +580,7 @@ while not(COUNT==PRM.THR)
     end
 % CALC APRIORI AND RESIDUAL COUPLING RATE SECTION
     CAL.RIG=G.P*Mp.SMP;
-    CAL.ELA=G.C*((G.TB*Mp.SMP).*DPT(1).CFINV.*Mc.SMPMAT);
+    CAL.ELA=G.C*((G.TB*Mp.SMP).*DPT(1).CFINV.*(D(1).McID*Mc.SMP));
     CAL.INE=G.I*Mi.SMP;
     CAL.SMP=CAL.RIG+CAL.ELA+CAL.INE;   % including internal deformation
     if PRM.GPU~=99
@@ -591,9 +597,10 @@ while not(COUNT==PRM.THR)
 %   q2 = logproppdf(y,x0);
 % this is a generic formula.
 %   rho = (q1+logpdf(y))-(q2+logpdf(x0));
-    Pdf = -0.5.*...
-         ((RES.SMP+La.SMP+exp(-La.SMP))...
-         -(RES.OLD+La.OLD+exp(-La.OLD)));
+    Pdf = -0.5.* ...
+         ((RES.SMP+La.SMP+exp(-La.SMP)) ...
+         -(RES.OLD+La.OLD+exp(-La.OLD))).* ...
+         T_inv;
 %   Pdf = -0.5.*(RES.SMP-RES.OLD);
     ACC=Pdf > logU(iT);
     Mc.OLD(:,ACC) = Mc.SMP(:,ACC);
@@ -602,48 +609,17 @@ while not(COUNT==PRM.THR)
     La.OLD(:,ACC) = La.SMP(:,ACC);
     RES.OLD(ACC)  = RES.SMP(ACC);
 % Replica exchange section
-    EXCID=mod(iT,exFREQ);
-    if EXCID==0
-      EXN=EXN+1;
-      RMc(:,[rEx(EXN),rEx(EXN)+1])=RMc(:,[rEx(EXN)+1,rEx(EXN)]);
-      RMp(:,[rEx(EXN),rEx(EXN)+1])=RMp(:,[rEx(EXN)+1,rEx(EXN)]);
-      RMi(:,[rEx(EXN),rEx(EXN)+1])=RMi(:,[rEx(EXN)+1,rEx(EXN)]);
-      RLa(:,[rEx(EXN),rEx(EXN)+1])=RLa(:,[rEx(EXN)+1,rEx(EXN)]);
-      LaEX.STD=La.STD;
-      LaEX.STD([rEx(EXN),rEx(EXN)+1])=LaEX.STD([rEx(EXN)+1,rEx(EXN)]);
-      % Exchanged sample
-      McEXTMP=Mc.OLD+RMc;
-      McEX.SMP=max(min(McEXTMP,UP_Mc),LO_Mc);
-      MpEX.SMP=Mp.OLD+RMp;
-      MiEX.SMP=Mi.OLD+RMi;
-      LaEX.SMP=La.OLD+RLa;
-      McEX.SMPMAT=reshape(...
-                 repmat(McEX.SMP,3*D.CNT,1)...
-                     ,3*Mc.N,NReplica*D.CNT);  
-      McEX.SMPMAT=reshape(McEX.SMPMAT(DPT.MID),3*Mc.N,NReplica);
-      CALEX.RIG=G.P*MpEX.SMP;
-      CALEX.ELA=G.C*((G.TB*MpEX.SMP).*DPT(1).CFINV.*McEX.SMPMAT);
-      CALEX.INE=G.I*MiEX.SMP;
-      CALEX.SMP=CALEX.RIG+CALEX.ELA+CALEX.INE;
-      if PRM.GPU~=99
-          clear('CALEX.RIG','CALEX,ELA','CALEX.INE');
-      end
-      RES.EXSMP=sum((((DPT(1).OBS-CALEX.SMP)./DPT(1).ERR).^2),1);
-      EXPdf = -0.5.*...
-            ((RES.EXSMP(rEx(EXN)  )+LaEX.SMP(rEx(EXN)  )+exp(-LaEX.SMP(rEx(EXN)  ))...
-             +RES.EXSMP(rEx(EXN)+1)+LaEX.SMP(rEx(EXN)+1)+exp(-LaEX.SMP(rEx(EXN)+1)))...
-            -(RES.SMP(  rEx(EXN)  )+La.SMP(  rEx(EXN)  )+exp(-La.SMP(  rEx(EXN)  ))...
-             +RES.SMP(  rEx(EXN)+1)+La.SMP(  rEx(EXN)+1)+exp(-La.SMP(  rEx(EXN)+1))));
-      ACEX=EXPdf > logEX(EXN);
-      if ACEX
-%         fprintf('Replica exchanged in %6d iteration\n',iT);
-        Mc.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mc.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
-        Mp.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mp.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
-        Mi.OLD(:,[rEx(EXN),rEx(EXN)+1]) = Mi.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
-        La.OLD(:,[rEx(EXN),rEx(EXN)+1]) = La.OLD(:,[rEx(EXN)+1,rEx(EXN)]);
-        RES.OLD([rEx(EXN),rEx(EXN)+1])  = RES.OLD([rEx(EXN)+1,rEx(EXN)]) ;
+    if mod(it,exFREQ)==0
+      R = -0.5 .* (RES.SMP(rEx(iT)+1)-RES.SMP(rEx(iT))) * (T_inv(rEx(iT))-T_inv(rEx(iT)+1));
+      if R > logE(iT)
+        Mc.OLD(:,[rEx(iT),rEx(iT)+1]) = fliplr(Mc.OLD(:,[rEx(iT),rEx(iT)+1]));
+        Mp.OLD(:,[rEx(iT),rEx(iT)+1]) = fliplr(Mp.OLD(:,[rEx(iT),rEx(iT)+1]));
+        Mi.OLD(:,[rEx(iT),rEx(iT)+1]) = fliplr(Mi.OLD(:,[rEx(iT),rEx(iT)+1]));
+        La.OLD(:,[rEx(iT),rEx(iT)+1]) = fliplr(La.OLD(:,[rEx(iT),rEx(iT)+1]));
+        RES.OLD(:,[rEx(iT),rEx(iT)+1]) = fliplr(RES.OLD(:,[rEx(iT),rEx(iT)+1]));
       end
     end
+
 % KEEP SECTION
     if iT > PRM.CHA-PRM.KEP
       if PRM.GPU~=99
@@ -707,13 +683,9 @@ while not(COUNT==PRM.THR)
   Mpmean=reshape(mean(CHA.Mp,2),Mp.N,NReplica);
   Mcmean=reshape(mean(CHA.Mc,2),Mc.N,NReplica);
   Mimean=reshape(mean(CHA.Mi,2),Mi.N,NReplica);
-  Mcmeanrep=reshape(...
-             repmat(Mcmean,3*D.CNT,1)...
-                 ,3*Mc.N,NReplica*D.CNT);  
-  Mcmeanrep=reshape(Mcmeanrep(DPT.MID),3*Mc.N,NReplica);
-  VEC.RIG=G.P*Mpmean;
-  VEC.ELA=G.C*((G.TB*Mpmean).*DPT(1).CFINV.*Mcmeanrep);
-  VEC.INE=G.I*Mimean;
+  VEC.RIG=G(1).P*Mpmean;
+  VEC.ELA=G(1).C*((G(1).TB*Mpmean).*DPT(1).CFINV.*(D(1).McID*Mcmean));
+  VEC.INE=G(1).I*Mimean;
   VEC.SUM=VEC.RIG+VEC.ELA+VEC.INE;   % including internal deformation
   % debug-----------
   if PRM.GPU~=99
