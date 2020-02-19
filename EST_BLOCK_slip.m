@@ -11,14 +11,14 @@ INPUT.Optfile='./PARAMETER/opt_bound_par.txt';
 [OBS]=READ_OBS(PRM.FileOBS);
 % READ BLOCK BOUNDARY FILE in DIRECTORY
 [BLK,OBS]=READ_BLOCK_BOUND(PRM.DIRBlock,OBS);
+% READ DIPPING BOUNDARIES
+[BLK,PRM] = READ_BOUNDARY_TYPE(BLK,PRM);
 % READ BLOCK INTERFACE BOUNDARY in DIRECTORY 
 [BLK]=READ_BLOCK_INTERFACE(BLK,PRM);
 % SHOW BLOCK BOUNDARY MAP
 SHOW_BLOCK_BOUND(BLK)
 % READ FIX EULER POLES
 [POL,PRM]=READ_EULER_POLES(BLK,PRM);
-% READ RIGID BLOCK BOUNDARY
-[BLK,PRM]=READ_DIPPING_BOUND(BLK,PRM);
 % READ INTERNAL DEFORMATION PARAMETER
 [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM);
 % CALC. GREEN FUNCTION
@@ -264,8 +264,8 @@ PRM.DIRBlock_Interface=fullfile(PRM.HOME_D,DIRBlock_Interface);
 FilePole=fscanf(Fid,'%s \n',[1,1]);
 PRM.FilePole=fullfile(PRM.HOME_D,FilePole);
 [~]=fgetl(Fid);
-FileDipb=fscanf(Fid,'%s \n',[1,1]);
-PRM.FileDipb=fullfile(PRM.HOME_D,FileDipb);
+FileBound=fscanf(Fid,'%s \n',[1,1]);
+PRM.FileBound=fullfile(PRM.HOME_D,FileBound);
 [~]=fgetl(Fid);
 FileInternal=fscanf(Fid,'%s \n',[1,1]);
 PRM.FileInternal=fullfile(PRM.HOME_D,FileInternal);
@@ -299,7 +299,7 @@ fprintf('FileOBS                  : %s \n',PRM.FileOBS)
 fprintf('DIRBlock                 : %s \n',PRM.DIRBlock)
 fprintf('DIRBlock_Interface       : %s \n',PRM.DIRBlock_Interface) 
 fprintf('File fixed epole         : %s \n',PRM.FilePole) 
-fprintf('File Dipping boundary    : %s \n',PRM.FileDipb) 
+fprintf('File Dipping boundary    : %s \n',PRM.FileBound) 
 fprintf('File Internal deformation: %s \n',PRM.FileInternal) 
 fprintf('DIRResult                : %s \n',PRM.DirResult) 
 fprintf('GPUdev (CPU:99)          : %i \n',PRM.GPU) 
@@ -914,22 +914,44 @@ DIRBLK=PRM.DIRBlock_Interface;
 BLK(1).NB=0;
 for NB1=1:BLK(1).NBlock
   for NB2=NB1+1:BLK(1).NBlock
-    BLK(1).BOUND(NB1,NB2).type=1;
+    BLK(1).BOUND(NB1,NB2).FLAG1 = 0;
     pre_tri_f=fullfile(DIRBLK,['triB_',num2str(NB1),'_',num2str(NB2),'.txt']); 
     Fid=fopen(pre_tri_f,'r');
     if Fid >= 0
       fprintf('BLOCK INTERFACE: %2i  %2i \n',NB1,NB2)
       fprintf('READ INTERFACE TRI BOUDARY FILE : %s \n',pre_tri_f)
+      for ii = 1:size(BLK(1).DIPBO,1)
+        DIPPINGID = ismember([NB1 NB2],BLK(1).DIPBO(ii,2:3));
+        ispair    = sum(DIPPINGID);
+        if ispair == 2
+          if max(BLK(1).DIPBO(ii,2:3)) == BLK(1).DIPBO(ii,1)
+            BLK(1).BOUND(NB1,NB2).FLAG1 = 1;
+          else
+            BLK(1).BOUND(NB1,NB2).FLAG1 = 2;
+          end
+          break
+        end
+      end
       NF=0;
-      blon=zeros(1,3);blat=zeros(1,3);bdep=zeros(1,3);
+      blon=zeros(1,3);
+      blat=zeros(1,3);
+      bdep=zeros(1,3);
+      type=0;
       while 1
         NF=NF+1;
-        loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
         tline = fgetl(Fid); if ~ischar(tline); break; end
+        lchar = strsplit(tline); if strcmpi(lchar{1},''); break; end
+        loc_f=fscanf(Fid,'%f %f %f \n', [3 3]);
         blon(NF,:)=loc_f(1,:);%Lon
         blat(NF,:)=loc_f(2,:);%Lat
         bdep(NF,:)=loc_f(3,:);%Hight
+        if size(lchar,2) < 2
+          type(NF) = BLK(1).BOUND(NB1,NB2).FLAG1;
+        else
+          type(NF) = str2num(lchar{2});
+        end
         tline = fgetl(Fid); if ~ischar(tline); break; end
+        lchar = strsplit(tline); if strcmpi(lchar{1},''); break; end
       end
       fclose(Fid);
       BO_tri_f=fullfile(DIRBLK,['triBO_',num2str(NB1),'_',num2str(NB2),'.txt']); 
@@ -943,16 +965,30 @@ for NB1=1:BLK(1).NBlock
         blon=blon(ID,:);
         blat=blat(ID,:);
         bdep=bdep(ID,:);
+        type=type(ID);
       end
-      BLK(1).BOUND(NB1,NB2).blon=blon;%Lon
-      BLK(1).BOUND(NB1,NB2).blat=blat;%Lat
-      BLK(1).BOUND(NB1,NB2).bdep=bdep;%Hight      
+      BLK(1).BOUND(NB1,NB2).blon=blon;  % Lon
+      BLK(1).BOUND(NB1,NB2).blat=blat;  % Lat
+      BLK(1).BOUND(NB1,NB2).bdep=bdep;  % Hight      
+      BLK(1).BOUND(NB1,NB2).type=type;  % Mesh Type
     else
       sub_f=fullfile(DIRBLK,['B_',num2str(NB1),'_',num2str(NB2),'.txt']);
       Fid=fopen(sub_f,'r');
       if Fid >= 0
         fprintf('BLOCK INTERFACE: %2i  %2i \n',NB1,NB2)
         fprintf('READ INTERFACE BOUDARY SHAPE FILE : %s \n',sub_f)
+        for ii = 1:size(BLK(1).DIPBO,1)
+          DIPPINGID = ismember([NB1 NB2],BLK(1).DIPBO(ii,2:3));
+          ispair    = sum(DIPPINGID);
+          if ispair == 2
+            if max(BLK(1).DIPBO(ii,2:3)) == BLK(1).DIPBO(ii,1)
+              BLK(1).BOUND(NB1,NB2).FLAG1 = 1;
+            else
+              BLK(1).BOUND(NB1,NB2).FLAG1 = 2;
+            end
+            break
+          end
+        end
         dep_blk=textscan(Fid,'%f%f%f'); fclose(Fid);
         dep_blk=cell2mat(dep_blk);
         F=scatteredInterpolant(dep_blk(:,1),dep_blk(:,2),dep_blk(:,3));
@@ -986,7 +1022,6 @@ for NB1=1:BLK(1).NBlock
           Bstri(1:LENG-1     ,1:3)=[1     :LENG-1;     2:LENG    ;LENG+2:2*LENG]';
           Bstri(LENG:2*LENG-1,1:3)=[LENG+1:2*LENG;LENG+2:2*LENG+1;     1:  LENG]';
           fprintf('BLOCK INTERFACE: %2i  %2i AUTO SET %4i \n',NB1,NB2,(LENG-1)*2+1)
-          BLK(1).BOUND(NB1,NB2).type=5;
         else
           BLK(1).BOUND(NB1,NB2).blon=[];
           BLK(1).BOUND(NB1,NB2).blat=[];
@@ -997,16 +1032,34 @@ for NB1=1:BLK(1).NBlock
         BLK(1).BOUND(NB1,NB2).blon=[Bslon(Bstri(:,1)),Bslon(Bstri(:,2)),Bslon(Bstri(:,3))];
         BLK(1).BOUND(NB1,NB2).blat=[Bslat(Bstri(:,1)),Bslat(Bstri(:,2)),Bslat(Bstri(:,3))];
         BLK(1).BOUND(NB1,NB2).bdep=[Bsdep(Bstri(:,1)),Bsdep(Bstri(:,2)),Bsdep(Bstri(:,3))];
+        BLK(1).BOUND(NB1,NB2).type=BLK(1).BOUND(NB1,NB2).FLAG1.*ones(1,size(Bstri,1));
 %
         out_tri_f=fullfile(PRM.DIRBlock,['triB_',num2str(NB1),'_',num2str(NB2),'.out']);
         nlen=length(BLK(1).BOUND(NB1,NB2).blat(:,1));
         Fid_out=fopen(out_tri_f,'w+');
-        fprintf(Fid_out,'%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n> \n',...
-        reshape([BLK(1).BOUND(NB1,NB2).blon(:,1),BLK(1).BOUND(NB1,NB2).blat(:,1),BLK(1).BOUND(NB1,NB2).bdep(:,1),...
-                 BLK(1).BOUND(NB1,NB2).blon(:,2),BLK(1).BOUND(NB1,NB2).blat(:,2),BLK(1).BOUND(NB1,NB2).bdep(:,2),...
-                 BLK(1).BOUND(NB1,NB2).blon(:,3),BLK(1).BOUND(NB1,NB2).blat(:,3),BLK(1).BOUND(NB1,NB2).bdep(:,3),...
-                 BLK(1).BOUND(NB1,NB2).blon(:,1),BLK(1).BOUND(NB1,NB2).blat(:,1),BLK(1).BOUND(NB1,NB2).bdep(:,1)]',4*nlen,3));
+        for ntri = 1:nlen
+          fprintf(Fid_out,'> %i\n',BLK(1).BOUND(NB1,NB2).type(ntri));
+          fprintf(Fid_out,'%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n%10.5f %9.5f %9.3f \n',...
+                  [BLK(1).BOUND(NB1,NB2).blon(ntri,1), BLK(1).BOUND(NB1,NB2).blat(ntri,1), BLK(1).BOUND(NB1,NB2).bdep(ntri,1);...
+                   BLK(1).BOUND(NB1,NB2).blon(ntri,2), BLK(1).BOUND(NB1,NB2).blat(ntri,2), BLK(1).BOUND(NB1,NB2).bdep(ntri,2);...
+                   BLK(1).BOUND(NB1,NB2).blon(ntri,3), BLK(1).BOUND(NB1,NB2).blat(ntri,3), BLK(1).BOUND(NB1,NB2).bdep(ntri,3);...
+                   BLK(1).BOUND(NB1,NB2).blon(ntri,1), BLK(1).BOUND(NB1,NB2).blat(ntri,1), BLK(1).BOUND(NB1,NB2).bdep(ntri,1)]');
+        end
         fclose(Fid_out);
+      end
+    end
+    % Grouping boundary type
+    BLK(1).BOUND(NB1,NB2).FLAG1 = 0;
+    for ii = 1:size(BLK(1).DIPBO,1)
+      dippingid = ismember([NB1 NB2],BLK(1).DIPBO(ii,2:3));
+      ispair    = sum(dippingid);
+      if ispair == 2
+        if max(BLK(1).DIPBO(ii,2:3)) == BLK(1).DIPBO(ii,1)
+          BLK(1).BOUND(NB1,NB2).FLAG1 = 1;
+        else
+          BLK(1).BOUND(NB1,NB2).FLAG1 = 2;
+        end
+        break
       end
     end
     BLK(1).NB=BLK(1).NB+size(BLK(1).BOUND(NB1,NB2).blon,1);
@@ -1055,13 +1108,47 @@ POL.FIXw=reshape(FIXw',3*BLK(1).NBlock,1);
 PRM.APRIORIPOLE=TMP';
 % 
 end
-%% READ DIPPING BLOCK BOUNDARY
-function [BLK,PRM]=READ_DIPPING_BOUND(BLK,PRM)
-BLK(1).DIPPING=zeros(1,3);
-if exist(PRM.FileDipb,'file')~=2; return; end
-FID=fopen(PRM.FileDipb,'r');
-TMP=fscanf(FID,'%d %d %d\n',[3 Inf]);
-BLK(1).DIPPING=TMP';
+%% Identify dipping boundaries
+function [BLK,PRM] = READ_BOUNDARY_TYPE(BLK,PRM)
+% Note:
+% Prepare the export parameter file in the 'PARAMETER' folder as bellows,
+%--example from here--
+% # Dipping boundaries
+% 8 7 8
+% 11 8 11
+% 9 8 9
+% 10 9 10
+% 12 10 12
+% --- END HERE ---
+%--end of example--
+
+FID = fopen(PRM.FileBound,'r');
+BLK(1).DIPBO  = [];
+BLK(1).MECHBO = [];
+if FID ~= 0
+  tline = char(fgetl(FID));
+  while 1
+    switch tline
+      case '# Dipping boundaries'
+        while 1
+          tline = char(fgetl(FID));
+          Tline = strtrim(strsplit(tline));
+          if ~or(strcmpi(Tline(1),'---'),or(strcmpi(Tline(1),'#'),strcmpi(Tline(1),'')))
+            Tline=str2num(char(Tline));
+            if ~isempty(Tline)
+              BLK(1).DIPBO = [BLK(1).DIPBO; Tline'];
+            end
+          else
+            break
+          end
+        end
+      otherwise
+        tline = char(fgetl(FID));
+    end
+    if strcmpi(tline,'--- END HERE ---'); break; end
+  end
+end
+
 end
 %% READ FLAG FILE FOR CALCULATION OF INTERNAL STRAIN
 function [BLK,PRM]=READ_INTERNAL_DEFORMATION(BLK,OBS,PRM)
@@ -1123,20 +1210,6 @@ for NB1=1:BLK(1).NBlock
 %
       fprintf('==================\n Block %2i : Block %2i \n Number of TRI sub-faults : %4i \n',NB1,NB2,NF)
 %
-      BLK(1).BOUND(NB1,NB2).FLAG1=0;
-      for ii=1:size(BLK(1).DIPPING,1)
-        DIPPINGID=ismember([NB1 NB2],BLK(1).DIPPING(ii,2:3));
-        ISPAIR=sum(DIPPINGID);
-        if ISPAIR==2
-          if max(BLK(1).DIPPING(ii,2:3))==BLK(1).DIPPING(ii,1)
-            BLK(1).BOUND(NB1,NB2).FLAG1=1;
-          else
-            BLK(1).BOUND(NB1,NB2).FLAG1=2;
-          end
-          break
-        end
-      end
-
       for N=1:NF
         [TRIx,TRIy]=PLTXY(BLK(1).BOUND(NB1,NB2).blat(N,:),BLK(1).BOUND(NB1,NB2).blon(N,:),ALAT,ALON);
         TRIz=-1.*BLK(1).BOUND(NB1,NB2).bdep(N,:);
@@ -1180,7 +1253,7 @@ end
 %% Calculate correction factor of (STR, DIP, TNS) unit vectors
 function [TRI]=CorrectFactor(BLK,TRI,NB1,NB2,DP,N,NF)
 % Coded by H.Kimura 2018/1/31 (test ver.)
-switch BLK(1).BOUND(NB1,NB2).FLAG1
+switch BLK(1).BOUND(NB1,NB2).type(NF)
   case {1,2}
     TRI(1).CF(3*TRI(1).NB+NF+N)=1/sqrt(DP(1)^2+DP(2)^2);  % 1=sqrt(DP(1)^2+DP(2)^2+DP(3)^2): norm of DP
   case 0
@@ -1191,7 +1264,7 @@ end
 function [BLK,TRI]=DISCRIMINATE_DIRECTION(BLK,TRI,NB1,NB2,TRIx,TRIy,N,NF)
 % Coded by H.Kimura 2017/4/28 (test ver.)
 % Modified by H.Kimura 2018/2/6
-switch BLK(1).BOUND(NB1,NB2).FLAG1
+switch BLK(1).BOUND(NB1,NB2).type(NF)
   case 1
     TRI(1).INV(3*TRI(1).NB     +N)= 1;
     TRI(1).INV(3*TRI(1).NB+  NF+N)= 1;

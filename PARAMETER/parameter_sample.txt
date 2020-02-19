@@ -2,7 +2,7 @@ OBSDATA/GPS_GPSA_sample.txt               : FileOBS GNSS_ITRF2008_Colombia_matla
 MODEL_sample/BLOCK_sw_japan               : DIRBlock
 MODEL_sample/BLOCK_Int_sw_japan           : DIRBlock_Interface
 MODEL_sample/euler_poles_fix.txt          : FilePole
-MODEL_sample/dipping_boundary.txt         : FileDippingBound
+MODEL_sample/boundary_type.txt            : FileBoundaryType
 MODEL_sample/internal_deformation.txt     : FileInternalDeformation
 Result                                    : DIRResult
 99                                        : GPUdev (CPU:99)
