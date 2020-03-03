@@ -41,24 +41,25 @@ function [PAR]=ReadPara(Parfile)
 % AM,PAC,OK,PHS,IMP
 % # Coupling_Pair
 % Inland
-% 1 3
-% 2 3
-% 3 5
-% 4 6
+% 1 3 0
+% 2 3 0
+% 3 5 0
+% 4 6 0
 % # Elastic_Pair
 % MTL
-% 7 9
-% 9 10
+% 7 9 1
+% 9 10 1
 % PAC
-% 11 12
-% 10 11
-% 9 11
+% 11 12 1
+% 10 11 1
+% 9 11 1
 % # GRID_SETTING
 % 120 150 
 % 20 50 
 % 0.4
 % --- END HERE ---
 %--end of example--
+% Note the 
 PAR=[];
 PDIR=pwd;
 Parfile=fullfile(PDIR,Parfile);
@@ -1192,9 +1193,9 @@ warning('off','all')
 %	sphere of radius A at depth F, in a homogeneous, semi-infinite elastic
 %	body and approximation for A << F (center of dilatation).
 %
-%	MOGI(R,F,V) and MOGI(R,F,A,???¿½?¿½,P) are also allowed for compatibility 
+%	MOGI(R,F,V) and MOGI(R,F,A,???ï¿½ï¿½?ï¿½ï¿½,P) are also allowed for compatibility 
 %	(Mogi's original equation considers an isotropic material with Lam?s 
-%	constants equal, i.e., lambda = ???¿½?¿½, Poisson's ratio = 0.25).
+%	constants equal, i.e., lambda = ???ï¿½ï¿½?ï¿½ï¿½, Poisson's ratio = 0.25).
 %
 %	Input variables are:
 %	   F: depth of the center of the sphere from the surface,
@@ -1203,15 +1204,15 @@ warning('off','all')
 %	   P: hydrostatic pressure change in the sphere,
 %	   E: elasticity (Young's modulus),
 %	  nu: Poisson's ratio,
-%	   ???¿½?¿½: rigidity (Lam?s constant in case of isotropic material).
+%	   ???ï¿½ï¿½?ï¿½ï¿½: rigidity (Lam?s constant in case of isotropic material).
 %
 %	Notes:
-%		- Equations are all vectorized, so variables R,F,V,A,???¿½?¿½ and P are 
+%		- Equations are all vectorized, so variables R,F,V,A,???ï¿½ï¿½?ï¿½ï¿½ and P are 
 %		  scalar but any of them can be vector or matrix, then outputs 
 %		  will be vector or matrix of the same size.
 %		- Convention: Uz > 0 = UP, F is depth so in -Z direction.
 %		- Units should be constistent, e.g.: R, F, A, Ur and Uz in m imply
-%		  V in m3; E, ???¿½?¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
+%		  V in m3; E, ???ï¿½ï¿½?ï¿½ï¿½ and P in Pa; Dt in rad, Er, Et and nu dimensionless.
 %
 %	Example for a 3-D plot of exagerated deformed surface due to a 1-bar
 %	overpressure in a 10-cm radius sphere at 1-m depth in rock:
@@ -1247,7 +1248,7 @@ switch nargin
 	case 4	% MOGI(R,F,V,nu)
 		v = varargin{3};
 		nu = varargin{4};
-	case 5	% MOGI(R,F,A,???¿½?¿½,P)
+	case 5	% MOGI(R,F,A,???ï¿½ï¿½?ï¿½ï¿½,P)
 		a = varargin{3};
 		mu = varargin{4};
 		p = varargin{5};
@@ -1478,7 +1479,7 @@ for NB1=1:BLK(1).NBlock
     if NF~=0
       FLAG=0;
       for PN=1:size(PAIR,1)
-        PAIRID=ismember([NB1 NB2],PAIR(PN,:));
+        PAIRID=ismember([NB1 NB2],PAIR(PN,1:2));
         ISPAIR=sum(PAIRID);
         if ISPAIR==2;FLAG=1;break;end
       end
@@ -1487,9 +1488,10 @@ for NB1=1:BLK(1).NBlock
         TMP.C(1:3*NGRD,MC+  NF:MC+2*NF-1)=zeros(size(TRIg(1).BOUND(NB1,NB2).GDIP));
         TMP.C(1:3*NGRD,MC+2*NF:MC+3*NF-1)=zeros(size(TRIg(1).BOUND(NB1,NB2).GTNS));
       else
-        TMP.C(1:3*NGRD,MC     :MC+  NF-1)=TRIg(1).BOUND(NB1,NB2).GSTR;
-        TMP.C(1:3*NGRD,MC+  NF:MC+2*NF-1)=TRIg(1).BOUND(NB1,NB2).GDIP;
-        TMP.C(1:3*NGRD,MC+2*NF:MC+3*NF-1)=TRIg(1).BOUND(NB1,NB2).GTNS;
+        ID = BLK(1).BOUND(NB1,NB2).type == PAIR(3);
+        TMP.C(1:3*NGRD,MC     :MC+  NF-1)=ID.*TRIg(1).BOUND(NB1,NB2).GSTR;
+        TMP.C(1:3*NGRD,MC+  NF:MC+2*NF-1)=ID.*TRIg(1).BOUND(NB1,NB2).GDIP;
+        TMP.C(1:3*NGRD,MC+2*NF:MC+3*NF-1)=ID.*TRIg(1).BOUND(NB1,NB2).GTNS;
       end
       MC=MC+3*NF;
       MT=MT+2*NF;
